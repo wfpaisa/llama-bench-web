@@ -1,1 +1,58 @@
-[]
+[
+  {
+    "id": "f6e5d9d2-7797-4959-bcff-79c02736473d",
+    "timestamp": "2026-06-22T23:33:57.166Z",
+    "config": {
+      "binary": "/home/projects/ia/llama.cpp_vulkan/build-vulkan/bin/llama-server",
+      "model": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL",
+      "ctxSize": 12000,
+      "batchSize": 512,
+      "ubatchSize": 256,
+      "tensorSplit": "",
+      "device": "Vulkan0,Vulkan1",
+      "nGpuLayers": 999,
+      "cacheTypeK": "q4_0",
+      "cacheTypeV": "q4_0",
+      "flashAttn": "on",
+      "noMmap": true,
+      "jinja": true,
+      "noMmproj": true,
+      "temp": 0.6,
+      "topP": 0.95,
+      "topK": 20,
+      "specType": "draft-mtp",
+      "specDraftNMax": 1,
+      "metrics": true,
+      "logPrefix": true,
+      "cacheReuse": 256,
+      "host": "127.0.0.1",
+      "port": 8081
+    },
+    "promptTokensPerSecond": null,
+    "generationTokensPerSecond": null,
+    "draftAcceptance": null,
+    "loadTimeSeconds": null,
+    "requestLatencyMs": 26.14026699999522,
+    "prompt": "Explica qué es Vulkan en 100 palabras",
+    "response": "",
+    "gpus": [
+      {
+        "index": "nvidia0",
+        "vendor": "nvidia",
+        "gpuUtilPct": 0,
+        "memUsedMiB": 30,
+        "memTotalMiB": 16303
+      },
+      {
+        "index": "amdgpu-card3",
+        "vendor": "amd",
+        "memUsedMiB": 3795.53515625,
+        "memTotalMiB": 8176,
+        "gpuUtilPct": 0
+      }
+    ],
+    "errors": [
+      "Fallo en request: Unable to connect. Is the computer able to access the url?"
+    ]
+  }
+]

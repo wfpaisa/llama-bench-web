@@ -20,7 +20,9 @@ import type {
 } from "./types.ts";
 
 // ─── Configuración del entorno ────────────────────────────────────────────────
-const PORT = Number(process.env.PORT ?? 8080);
+// Puerto del backend web. NO usar 8080: es el default de llama-server y
+// chocaría/confundiría con él.
+const PORT = Number(process.env.PORT ?? 8765);
 const LLAMA_BINARY_DEFAULT = process.env.LLAMA_SERVER_PATH ?? "./llama-server";
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "data");
 const HISTORY_FILE = join(DATA_DIR, "history.json");
