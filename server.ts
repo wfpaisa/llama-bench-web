@@ -7,7 +7,7 @@
 import { spawn, type Subprocess } from "bun";
 import { mkdir, readFile, writeFile, readdir, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   ServerConfig,
@@ -129,7 +129,18 @@ async function startServer(cfg: ServerConfig): Promise<number> {
   if (managed) throw new Error("Ya hay un servidor corriendo. Detenlo primero.");
 
   const args = buildArgs(cfg);
-  systemLog(`spawn: ${cfg.binary} ${args.join(" ")}`);
+
+  // Resolver el directorio del binario para:
+  //   1. Ponerlo como cwd (refleja lo que el usuario hace en la terminal).
+  //   2. Añadirlo a LD_LIBRARY_PATH para que encuentre .so relativas
+  //      (p.ej. libllama-server-impl.so).
+  const binAbs = resolve(cfg.binary);
+  const binDir = dirname(binAbs);
+  const env = { ...process.env } as Record<string, string>;
+  const existing = env["LD_LIBRARY_PATH"] || "";
+  env["LD_LIBRARY_PATH"] = existing ? `${binDir}:${existing}` : binDir;
+
+  systemLog(`spawn: ${cfg.binary} ${args.join(" ")}  (cwd=${binDir})`);
 
   let resolveReady: (() => void) | undefined;
   let rejectReady: ((e: Error) => void) | undefined;
@@ -142,6 +153,8 @@ async function startServer(cfg: ServerConfig): Promise<number> {
     cmd: [cfg.binary, ...args],
     stdout: "pipe",
     stderr: "pipe",
+    cwd: binDir,
+    env,
     // Nuevo grupo de proceso (setsid): matamos a todo el árbol con kill(-pid).
     detached: true,
   });
