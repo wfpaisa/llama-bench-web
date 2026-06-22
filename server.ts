@@ -446,6 +446,36 @@ function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
   return m;
 }
 
+// ─── Health-check del servidor ──────────────────────────────────────────────────
+const HEALTH_POLL_MS = 500;
+const HEALTH_TIMEOUT_MS = 120_000; // 2 min para modelos muy grandes.
+
+/**
+ * Hace polling a `GET /health` (o `GET /`) hasta que responda 200.
+ * Los últimos llama.cpp exponen /health; si no existe, cae a "/".
+ */
+async function waitForServer(base: string): Promise<void> {
+  const deadline = Date.now() + HEALTH_TIMEOUT_MS;
+  for (;;) {
+    try {
+      const resp = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
+      if (resp.ok) return;
+      // 404: endpoint no existe, probamos con "/".
+      if (resp.status === 404) {
+        const resp2 = await fetch(base, { signal: AbortSignal.timeout(3000) });
+        if (resp2.ok) return;
+      }
+      systemLog(`benchmark: health-check respondió ${resp.status}, reintentando…`);
+    } catch (e) {
+      // Connection refused / timeout — esperado mientras arranca.
+    }
+    if (Date.now() >= deadline) {
+      throw new Error(`Servidor no respondió tras ${(HEALTH_TIMEOUT_MS / 1000).toFixed(0)}s`);
+    }
+    await sleep(HEALTH_POLL_MS);
+  }
+}
+
 // ─── Benchmark real contra la API de llama-server ─────────────────────────────
 const DEFAULT_PROMPT = "Explica qué es Vulkan en 100 palabras";
 
@@ -467,8 +497,14 @@ async function runBenchmark(
   }
 
   try {
-    // 2) Request de benchmark.
+    // 2) Esperar que el servidor acepte conexiones HTTP.
+    //    "server is listening" puede aparecer antes de que el socket esté
+    //    realmente listo, especialmente con modelos grandes.
     const base = urlFor(cfg);
+    await waitForServer(base);
+    systemLog("benchmark: servidor responde, ejecutando request…");
+
+    // 3) Request de benchmark.
     const t0 = performance.now();
     let responseText = "";
     try {
