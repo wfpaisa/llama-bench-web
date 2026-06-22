@@ -1,0 +1,17 @@
+{
+  "name": "llama-bench-web",
+  "version": "0.1.0",
+  "description": "Utilidad web ligera para benchmark de modelos locales con llama.cpp (llama-server real + API + /metrics + GPU stats)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch server.ts",
+    "start": "bun server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  },
+  "trustedDependencies": []
+}

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llama-bench · benchmark real con llama-server</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>llama-bench <small>Vulkan · multi-GPU</small></h1>
+    <div class="status-bar">
+      <span id="status-dot" class="dot stopped" title="estado"></span>
+      <span id="status-text">desconocido</span>
+      <span id="status-meta" class="muted"></span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ── Configuración ── -->
+    <section class="card">
+      <h2>Configuración del servidor</h2>
+      <div class="grid">
+        <label>Binario llama-server
+          <input id="cfg-binary" type="text" placeholder="./llama-server" />
+        </label>
+        <label>Modelo HF <small>(repo o repo:file)</small>
+          <input id="cfg-model" type="text" />
+        </label>
+        <label>Context Size
+          <input id="cfg-ctxSize" type="number" />
+        </label>
+        <label>Batch Size
+          <input id="cfg-batchSize" type="number" />
+        </label>
+        <label>UBatch Size
+          <input id="cfg-ubatchSize" type="number" />
+        </label>
+        <label>Tensor Split <small>(vacío = auto)</small>
+          <input id="cfg-tensorSplit" type="text" placeholder="2,7" />
+        </label>
+        <label>Device
+          <input id="cfg-device" type="text" placeholder="Vulkan0,Vulkan1" />
+        </label>
+        <label>N GPU Layers
+          <input id="cfg-nGpuLayers" type="number" />
+        </label>
+        <label>Cache Type K
+          <select id="cfg-cacheTypeK"><option>f16</option><option>q8_0</option><option>q4_0</option></select>
+        </label>
+        <label>Cache Type V
+          <select id="cfg-cacheTypeV"><option>f16</option><option>q8_0</option><option selected>q4_0</option></select>
+        </label>
+        <label>Flash Attn
+          <select id="cfg-flashAttn"><option>on</option><option>off</option></select>
+        </label>
+        <label>Cache Reuse
+          <input id="cfg-cacheReuse" type="number" />
+        </label>
+        <label>Host
+          <input id="cfg-host" type="text" />
+        </label>
+        <label>Port
+          <input id="cfg-port" type="number" />
+        </label>
+        <label>Spec Type
+          <input id="cfg-specType" type="text" placeholder="draft-mtp" />
+        </label>
+        <label>Spec Draft N Max
+          <input id="cfg-specDraftNMax" type="number" />
+        </label>
+        <label>Temp
+          <input id="cfg-temp" type="number" step="0.05" />
+        </label>
+        <label>Top-P
+          <input id="cfg-topP" type="number" step="0.01" />
+        </label>
+        <label>Top-K
+          <input id="cfg-topK" type="number" />
+        </label>
+        <label class="checks">
+          Flags
+          <span><input id="cfg-noMmap" type="checkbox" /> <code>--no-mmap</code></span>
+          <span><input id="cfg-jinja" type="checkbox" /> <code>--jinja</code></span>
+          <span><input id="cfg-noMmproj" type="checkbox" /> <code>--no-mmproj</code></span>
+          <span><input id="cfg-metrics" type="checkbox" /> <code>--metrics</code></span>
+          <span><input id="cfg-logPrefix" type="checkbox" /> <code>--log-prefix</code></span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="btn-start" class="primary">▶ Play</button>
+        <button id="btn-stop" class="danger" disabled>■ Stop</button>
+        <button id="btn-apply-default" class="ghost">Restaurar default</button>
+        <span id="argv-preview" class="muted small"></span>
+      </div>
+    </section>
+
+    <!-- ── Benchmark automático ── -->
+    <section class="card">
+      <h2>Benchmark automático</h2>
+      <p class="muted small">
+        Inicia llama-server → espera <code>server is listening</code> → POST
+        <code>/v1/chat/completions</code> → parsea timings de logs → lee GPU →
+        guarda resultado → detiene el servidor.
+      </p>
+      <label class="full">Prompt estándar
+        <textarea id="bench-prompt" rows="2">Explica qué es Vulkan en 100 palabras</textarea>
+      </label>
+      <div class="actions">
+        <button id="btn-benchmark" class="primary">⏱ Benchmark</button>
+        <span id="bench-state" class="muted small"></span>
+      </div>
+    </section>
+
+    <!-- ── GPUs ── -->
+    <section class="card">
+      <h2>GPUs en vivo <button id="btn-gpu-refresh" class="ghost tiny">↻</button></h2>
+      <div id="gpu-list" class="gpu-grid">—</div>
+    </section>
+
+    <!-- ── Resultado actual ── -->
+    <section class="card" id="last-result-card" hidden>
+      <h2>Último resultado</h2>
+      <div class="metrics" id="last-result"></div>
+    </section>
+
+    <!-- ── Historial ── -->
+    <section class="card">
+      <div class="row-between">
+        <h2>Historial</h2>
+        <div>
+          <button id="btn-compare" class="ghost">Comparar</button>
+          <button id="btn-clear-history" class="ghost danger">Limpiar todo</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Fecha</th>
+              <th>Modelo</th>
+              <th>ctx</th>
+              <th>batch</th>
+              <th>cache</th>
+              <th>device</th>
+              <th>tsplit</th>
+              <th>prompt T/s</th>
+              <th>gen T/s</th>
+              <th>draft acc</th>
+              <th>load s</th>
+              <th>VRAM</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Logs ── -->
+    <section class="card">
+      <div class="row-between">
+        <h2>Logs en tiempo real</h2>
+        <div>
+          <label class="muted small inline">
+            <input id="autoscroll" type="checkbox" checked /> auto-scroll
+          </label>
+          <button id="btn-clear-logs" class="ghost tiny">limpiar</button>
+        </div>
+      </div>
+      <pre id="logs" class="logs"></pre>
+    </section>
+  </main>
+
+  <footer class="muted small">
+    Bun + TypeScript · sin frameworks · benchmark real contra llama-server
+  </footer>
+
+  <!-- Modal de comparación -->
+  <div id="compare-modal" class="modal" hidden>
+    <div class="modal-content">
+      <div class="row-between">
+        <h2>Comparación</h2>
+        <button id="btn-compare-close" class="ghost tiny">✕</button>
+      </div>
+      <div id="compare-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
