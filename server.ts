@@ -54,7 +54,8 @@ function pushLog(stream: LogEntry["stream"], msg: string) {
   const line = msg.replace(/\r?\n$/, "");
   if (!line) return;
   logBuffer.push({ t: Date.now() - bootTime, stream, msg: line });
-  if (logBuffer.length > LOG_CAP) logBuffer.splice(0, logBuffer.length - LOG_CAP);
+  if (logBuffer.length > LOG_CAP)
+    logBuffer.splice(0, logBuffer.length - LOG_CAP);
 }
 function systemLog(msg: string) {
   pushLog("system", `[backend] ${msg}`);
@@ -91,7 +92,7 @@ function defaultConfig(): ServerConfig {
     logPrefix: true,
     cacheReuse: 256,
     host: "127.0.0.1",
-    port: 8081,
+    port: 8080,
   };
 }
 
@@ -126,7 +127,8 @@ function buildArgs(c: ServerConfig): string[] {
 
 // ─── Gestión del proceso llama-server ─────────────────────────────────────────
 async function startServer(cfg: ServerConfig): Promise<number> {
-  if (managed) throw new Error("Ya hay un servidor corriendo. Detenlo primero.");
+  if (managed)
+    throw new Error("Ya hay un servidor corriendo. Detenlo primero.");
 
   const args = buildArgs(cfg);
 
@@ -196,17 +198,22 @@ async function startServer(cfg: ServerConfig): Promise<number> {
     managed = null;
     if (status !== "error") status = "stopped";
     if (wasStarting && rejectReady) {
-      rejectReady(new Error(`El proceso terminó antes de estar listo (exit=${code}).`));
+      rejectReady(
+        new Error(`El proceso terminó antes de estar listo (exit=${code}).`),
+      );
     }
   });
 
   // Timeout de arranque: 5 min para modelos grandes con offload.
-  setTimeout(() => {
-    if (managed && status === "starting") {
-      // No lo matamos: modelos grandes tardan. Solo lo dejamos intentar.
-      systemLog("Aviso: el servidor sigue en 'starting' tras 5 min.");
-    }
-  }, 5 * 60 * 1000);
+  setTimeout(
+    () => {
+      if (managed && status === "starting") {
+        // No lo matamos: modelos grandes tardan. Solo lo dejamos intentar.
+        systemLog("Aviso: el servidor sigue en 'starting' tras 5 min.");
+      }
+    },
+    5 * 60 * 1000,
+  );
 
   return pid;
 }
@@ -224,7 +231,8 @@ async function drainStream(
 ) {
   const decoder = new TextDecoder();
   let buf = "";
-  const READY = /server is listening|llama server is listening|HTTP server listening|all slots are ready/i;
+  const READY =
+    /server is listening|llama server is listening|HTTP server listening|all slots are ready/i;
   try {
     for (;;) {
       const { done, value } = await reader.read();
@@ -244,7 +252,10 @@ async function drainStream(
     }
     if (buf) pushLog(stream, buf);
   } catch (e) {
-    pushLog("system", `[backend] error leyendo ${stream}: ${(e as Error).message}`);
+    pushLog(
+      "system",
+      `[backend] error leyendo ${stream}: ${(e as Error).message}`,
+    );
   }
 }
 
@@ -348,7 +359,8 @@ async function readAmdGpus(): Promise<GpuInfo[]> {
     } catch {
       continue;
     }
-    if (!vendor.includes("0x1002") && !/amd|advanced micro/i.test(vendor)) continue;
+    if (!vendor.includes("0x1002") && !/amd|advanced micro/i.test(vendor))
+      continue;
     const gi: GpuInfo = {
       index: `amdgpu-${c}`,
       vendor: "amd",
@@ -406,7 +418,9 @@ function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
   for (let i = lines.length - 1; i >= 0; i--) {
     const l = lines[i].msg;
     if (m.promptTokensPerSecond === null) {
-      const mm = l.match(/prompt eval time.*?(\d+(?:\.\d+)?)\s*tokens per second/i);
+      const mm = l.match(
+        /prompt eval time.*?(\d+(?:\.\d+)?)\s*tokens per second/i,
+      );
       if (mm) m.promptTokensPerSecond = Number(mm[1]);
     }
     if (m.generationTokensPerSecond === null) {
@@ -458,19 +472,25 @@ async function waitForServer(base: string): Promise<void> {
   const deadline = Date.now() + HEALTH_TIMEOUT_MS;
   for (;;) {
     try {
-      const resp = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
+      const resp = await fetch(`${base}/health`, {
+        signal: AbortSignal.timeout(3000),
+      });
       if (resp.ok) return;
       // 404: endpoint no existe, probamos con "/".
       if (resp.status === 404) {
         const resp2 = await fetch(base, { signal: AbortSignal.timeout(3000) });
         if (resp2.ok) return;
       }
-      systemLog(`benchmark: health-check respondió ${resp.status}, reintentando…`);
+      systemLog(
+        `benchmark: health-check respondió ${resp.status}, reintentando…`,
+      );
     } catch (e) {
       // Connection refused / timeout — esperado mientras arranca.
     }
     if (Date.now() >= deadline) {
-      throw new Error(`Servidor no respondió tras ${(HEALTH_TIMEOUT_MS / 1000).toFixed(0)}s`);
+      throw new Error(
+        `Servidor no respondió tras ${(HEALTH_TIMEOUT_MS / 1000).toFixed(0)}s`,
+      );
     }
     await sleep(HEALTH_POLL_MS);
   }
@@ -630,7 +650,8 @@ async function handleRequest(req: Request): Promise<Response> {
     "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: cors });
 
   const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), {
@@ -652,7 +673,8 @@ async function handleRequest(req: Request): Promise<Response> {
   }
 
   if (path === "/start" && req.method === "POST") {
-    if (managed) return json({ ok: false, error: "Ya hay un servidor corriendo." }, 409);
+    if (managed)
+      return json({ ok: false, error: "Ya hay un servidor corriendo." }, 409);
     let cfg: ServerConfig;
     try {
       const body = await req.json();
@@ -698,7 +720,10 @@ async function handleRequest(req: Request): Promise<Response> {
       return json({ ok: false, error: "Ya hay un benchmark corriendo." }, 409);
     if (managed)
       return json(
-        { ok: false, error: "Detén el servidor manual antes de benchmark automático." },
+        {
+          ok: false,
+          error: "Detén el servidor manual antes de benchmark automático.",
+        },
         409,
       );
     benchmarkRunning = true;
@@ -707,7 +732,8 @@ async function handleRequest(req: Request): Promise<Response> {
     try {
       const body = await req.json().catch(() => ({}));
       cfg = { ...defaultConfig(), ...(body?.config ?? {}) };
-      if (typeof body?.prompt === "string" && body.prompt.trim()) prompt = body.prompt;
+      if (typeof body?.prompt === "string" && body.prompt.trim())
+        prompt = body.prompt;
     } catch {
       cfg = defaultConfig();
     }
@@ -745,14 +771,17 @@ async function handleRequest(req: Request): Promise<Response> {
   const staticRoot = join(dirname(fileURLToPath(import.meta.url)), "public");
   let filePath = join(staticRoot, path === "/" ? "index.html" : path);
   // Evitar path traversal.
-  if (!filePath.startsWith(staticRoot)) return new Response("Forbidden", { status: 403 });
-  if (path === "/" || path === "/index.html") filePath = join(staticRoot, "index.html");
+  if (!filePath.startsWith(staticRoot))
+    return new Response("Forbidden", { status: 403 });
+  if (path === "/" || path === "/index.html")
+    filePath = join(staticRoot, "index.html");
   else if (path === "/app.js") filePath = join(staticRoot, "app.js");
   else if (path === "/style.css") filePath = join(staticRoot, "style.css");
   else return new Response("Not found", { status: 404, headers: cors });
 
   const file = Bun.file(filePath);
-  if (!(await file.exists())) return new Response("Not found", { status: 404, headers: cors });
+  if (!(await file.exists()))
+    return new Response("Not found", { status: 404, headers: cors });
   return new Response(file);
 }
 

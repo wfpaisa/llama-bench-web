@@ -2,61 +2,233 @@
 // Comunica con el backend mediante fetch. Polling de logs cada 1s.
 
 const $ = (id) => document.getElementById(id);
-const fields = [
-  "binary", "model", "ctxSize", "batchSize", "ubatchSize", "tensorSplit",
-  "device", "nGpuLayers", "cacheTypeK", "cacheTypeV", "flashAttn", "cacheReuse",
-  "host", "port", "specType", "specDraftNMax", "temp", "topP", "topK",
-  "noMmap", "jinja", "noMmproj", "metrics", "logPrefix",
+
+// ── Definición declarativa de campos (orden = aparición de arriba abajo) ──
+// Cada campo tiene: key, label, type, flag (para preview), y opciones según tipo.
+const FIELD_DEFS = [
+  { key: "binary",    label: "Binario llama-server",  type: "text",   placeholder: "./llama-server", flag: null },
+  { key: "model",     label: "Modelo HF",             type: "text",   placeholder: "repo o repo:file", flag: "-hf" },
+  { key: "ctxSize",    label: "Context Size",           type: "number", placeholder: "", flag: "--ctx-size" },
+  { key: "batchSize",  label: "Batch Size",            type: "number", placeholder: "", flag: "--batch-size" },
+  { key: "ubatchSize", label: "UBatch Size",           type: "number", placeholder: "", flag: "--ubatch-size" },
+  { key: "tensorSplit",label: "Tensor Split",          type: "text",   placeholder: "vacío = auto", flag: "--tensor-split" },
+  { key: "device",     label: "Device",                type: "text",   placeholder: "Vulkan0,Vulkan1", flag: "--device" },
+  { key: "nGpuLayers", label: "N GPU Layers",           type: "number", placeholder: "", flag: "--n-gpu-layers" },
+  { key: "cacheTypeK", label: "Cache Type K",          type: "select", options: ["f16","q8_0","q4_0"], flag: "--cache-type-k" },
+  { key: "cacheTypeV", label: "Cache Type V",          type: "select", options: ["f16","q8_0","q4_0"], flag: "--cache-type-v" },
+  { key: "flashAttn",  label: "Flash Attn",            type: "select", options: ["on","off"], flag: "--flash-attn" },
+  { key: "cacheReuse", label: "Cache Reuse",           type: "number", placeholder: "", flag: "--cache-reuse" },
+  { key: "host",       label: "Host",                   type: "text",   placeholder: "127.0.0.1", flag: "--host" },
+  { key: "port",       label: "Port",                   type: "number", placeholder: "", flag: "--port" },
+  { key: "specType",   label: "Spec Type",             type: "text",   placeholder: "draft-mtp", flag: "--spec-type" },
+  { key: "specDraftNMax", label: "Spec Draft N Max",    type: "number", placeholder: "", flag: "--spec-draft-n-max" },
+  { key: "temp",       label: "Temp",                   type: "number", placeholder: "", step: "0.05", flag: null },
+  { key: "topP",       label: "Top-P",                  type: "number", placeholder: "", step: "0.01", flag: null },
+  { key: "topK",       label: "Top-K",                  type: "number", placeholder: "", flag: null },
+  { key: "noMmap",     label: "No mmap",                type: "checkbox", flag: "--no-mmap" },
+  { key: "jinja",      label: "Jinja",                  type: "checkbox", flag: "--jinja" },
+  { key: "noMmproj",   label: "No mmproj",              type: "checkbox", flag: "--no-mmproj" },
+  { key: "metrics",    label: "Metrics",                type: "checkbox", flag: "--metrics" },
+  { key: "logPrefix",  label: "Log prefix",             type: "checkbox", flag: "--log-prefix" },
 ];
 
+const STORAGE_KEY  = "llama-bench-cfg";
+const STORAGE_ENA  = "llama-bench-ena";  // checkboxes de habilitación
+
+const allKeys = FIELD_DEFS.map((f) => f.key);
+
+// ── Generar formulario dinámicamente ──
+function buildForm() {
+  const container = $("cfg-form");
+  container.innerHTML = "";
+  for (const def of FIELD_DEFS) {
+    const row = document.createElement("div");
+    row.className = "cfg-row";
+    row.dataset.key = def.key;
+
+    // Checkbox de habilitación.
+    const toggle = document.createElement("input");
+    toggle.type = "checkbox";
+    toggle.className = "cfg-toggle";
+    toggle.checked = isEnabled(def.key);
+    toggle.title = "Activar/desactivar este campo";
+    toggle.addEventListener("change", () => {
+      row.classList.toggle("disabled", !toggle.checked);
+      saveEnabled();
+      updateArgvPreview();
+    });
+
+    // Label clickeable (activa/desactiva el toggle).
+    const label = document.createElement("label");
+    label.className = "cfg-label";
+    label.textContent = def.label;
+    label.title = def.key;
+    label.addEventListener("click", (e) => {
+      if (e.target === toggle) return; // no doble-toggle
+      toggle.checked = !toggle.checked;
+      toggle.dispatchEvent(new Event("change"));
+    });
+
+    // Flag badge.
+    const flagSpan = document.createElement("span");
+    flagSpan.className = "cfg-flag";
+    flagSpan.textContent = def.flag || "";
+
+    // Input wrapper.
+    const inputWrap = document.createElement("div");
+    inputWrap.className = "cfg-input";
+
+    if (def.type === "checkbox") {
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = `cfg-${def.key}`;
+      cb.checked = false;
+      cb.addEventListener("change", () => { saveConfig(); updateArgvPreview(); });
+      inputWrap.appendChild(cb);
+    } else if (def.type === "select") {
+      const sel = document.createElement("select");
+      sel.id = `cfg-${def.key}`;
+      for (const opt of def.options) {
+        const o = document.createElement("option");
+        o.value = opt;
+        o.textContent = opt;
+        sel.appendChild(o);
+      }
+      sel.addEventListener("change", () => { saveConfig(); updateArgvPreview(); });
+      inputWrap.appendChild(sel);
+    } else {
+      const inp = document.createElement("input");
+      inp.type = def.type;
+      inp.id = `cfg-${def.key}`;
+      if (def.placeholder) inp.placeholder = def.placeholder;
+      if (def.step) inp.step = def.step;
+      inp.addEventListener("input", () => { saveConfig(); updateArgvPreview(); });
+      inputWrap.appendChild(inp);
+    }
+
+    row.appendChild(toggle);
+    row.appendChild(label);
+    label.appendChild(flagSpan);
+    row.appendChild(inputWrap);
+    container.appendChild(row);
+
+    // Aplicar estado inicial de habilitación.
+    row.classList.toggle("disabled", !toggle.checked);
+  }
+}
+
+// ── Leer / escribir configuración desde los campos del DOM ──
 function readConfig() {
   const c = {};
-  for (const f of fields) {
-    const el = $(`cfg-${f}`);
-    if (!el) continue;
-    if (el.type === "checkbox") c[f] = el.checked;
-    else if (el.type === "number") c[f] = el.value === "" ? 0 : Number(el.value);
-    else c[f] = el.value;
+  for (const def of FIELD_DEFS) {
+    if (def.type === "checkbox") {
+      c[def.key] = $(`cfg-${def.key}`).checked;
+    } else if (def.type === "number") {
+      const v = $(`cfg-${def.key}`).value;
+      c[def.key] = v === "" ? 0 : Number(v);
+    } else {
+      c[def.key] = $(`cfg-${def.key}`).value;
+    }
   }
   return c;
 }
+
 function writeConfig(c) {
-  for (const f of fields) {
-    const el = $(`cfg-${f}`);
+  for (const def of FIELD_DEFS) {
+    const el = $(`cfg-${def.key}`);
     if (!el) continue;
-    if (el.type === "checkbox") el.checked = !!c[f];
-    else el.value = c[f] ?? "";
+    if (def.type === "checkbox") {
+      el.checked = !!c[def.key];
+    } else {
+      el.value = c[def.key] ?? "";
+    }
   }
   updateArgvPreview();
 }
 
+// ── Habilitación de campos (checkboxes) ──
+function isEnabled(key) {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_ENA));
+    return s?.[key] !== false; // default: habilitado
+  } catch {
+    return true;
+  }
+}
+
+function saveEnabled() {
+  const s = {};
+  for (const def of FIELD_DEFS) {
+    s[def.key] = $(`cfg-form`).querySelector(`.cfg-row[data-key="${def.key}"] .cfg-toggle`).checked;
+  }
+  localStorage.setItem(STORAGE_ENA, JSON.stringify(s));
+}
+
+// ── localStorage: config values ──
+function loadConfigFromStorage() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s && Object.keys(s).length) return s;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function saveConfig() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(readConfig()));
+}
+
+function clearConfigStorage() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_ENA);
+  toast("Configuración local eliminada.");
+}
+
+// ── Generar argv (solo campos habilitados) ──
 function buildArgv(c) {
   const a = [];
-  if (c.model) a.push("-hf", c.model);
-  a.push("--n-gpu-layers", String(c.nGpuLayers));
-  a.push("--ctx-size", String(c.ctxSize));
-  a.push("--batch-size", String(c.batchSize));
-  a.push("--ubatch-size", String(c.ubatchSize));
-  if (c.cacheTypeK) a.push("--cache-type-k", c.cacheTypeK);
-  if (c.cacheTypeV) a.push("--cache-type-v", c.cacheTypeV);
-  if (c.cacheReuse > 0) a.push("--cache-reuse", String(c.cacheReuse));
-  if (c.flashAttn === "on") a.push("--flash-attn", "on");
-  if (c.noMmap) a.push("--no-mmap");
-  if (c.jinja) a.push("--jinja");
-  if (c.noMmproj) a.push("--no-mmproj");
-  if (c.specType) { a.push("--spec-type", c.specType); a.push("--spec-draft-n-max", String(c.specDraftNMax)); }
-  if (c.metrics) a.push("--metrics");
-  if (c.logPrefix) a.push("--log-prefix");
-  if (c.device) a.push("--device", c.device);
-  if (c.tensorSplit) a.push("--tensor-split", c.tensorSplit);
-  a.push("--host", c.host || "127.0.0.1");
-  a.push("--port", String(c.port));
+  for (const def of FIELD_DEFS) {
+    if (!isEnabled(def.key)) continue;
+    const v = c[def.key];
+    switch (def.key) {
+      case "binary": break; // no es un flag
+      case "model":
+        if (v) a.push("-hf", v);
+        break;
+      case "nGpuLayers": a.push("--n-gpu-layers", String(v)); break;
+      case "ctxSize": a.push("--ctx-size", String(v)); break;
+      case "batchSize": a.push("--batch-size", String(v)); break;
+      case "ubatchSize": a.push("--ubatch-size", String(v)); break;
+      case "cacheTypeK": if (v) a.push("--cache-type-k", v); break;
+      case "cacheTypeV": if (v) a.push("--cache-type-v", v); break;
+      case "cacheReuse": if (v > 0) a.push("--cache-reuse", String(v)); break;
+      case "flashAttn": if (v === "on") a.push("--flash-attn", "on"); break;
+      case "noMmap": if (v) a.push("--no-mmap"); break;
+      case "jinja": if (v) a.push("--jinja"); break;
+      case "noMmproj": if (v) a.push("--no-mmproj"); break;
+      case "specType":
+        if (v) { a.push("--spec-type", v); a.push("--spec-draft-n-max", String(c.specDraftNMax)); }
+        break;
+      case "specDraftNMax": break; // ya se incluye con specType
+      case "metrics": if (v) a.push("--metrics"); break;
+      case "logPrefix": if (v) a.push("--log-prefix"); break;
+      case "device": if (v) a.push("--device", v); break;
+      case "tensorSplit": if (v) a.push("--tensor-split", v); break;
+      case "host": a.push("--host", v || "127.0.0.1"); break;
+      case "port": a.push("--port", String(v)); break;
+      case "temp":
+      case "topP":
+      case "topK":
+        // No son flags de llama-server, son params de API.
+        break;
+    }
+  }
   return a;
 }
 
 function updateArgvPreview() {
-  const argv = buildArgv(readConfig());
-  $("argv-preview").textContent = `${readConfig().binary} ${argv.join(" ")}`;
+  const c = readConfig();
+  const argv = buildArgv(c);
+  $("argv-preview").textContent = `${c.binary} ${argv.join(" ")}`;
 }
 
 // ── Toast ──
@@ -112,7 +284,6 @@ function refreshButtons(s) {
   const running = s.status === "running" || s.status === "starting";
   $("btn-start").disabled = running;
   $("btn-stop").disabled = !running;
-  // Benchmark requiere que no haya nada corriendo.
   $("btn-benchmark").disabled = running || benchRunning;
 }
 
@@ -129,14 +300,12 @@ async function pollLogs() {
         div.className = `ln-${e.stream}`;
         const ts = document.createElement("span");
         ts.className = "ts";
-        const d = new Date(Date.now() - 0); // e.t ya es relativo; mostramos solo segundos
         ts.textContent = `+${(e.t / 1000).toFixed(1)}s`;
         div.appendChild(ts);
         div.appendChild(document.createTextNode(e.msg));
         frag.appendChild(div);
       }
       logsEl.appendChild(frag);
-      // Limitar DOM a últimas ~4000 líneas.
       while (logsEl.childNodes.length > 4000) logsEl.removeChild(logsEl.firstChild);
       if ($("autoscroll").checked) logsEl.scrollTop = logsEl.scrollHeight;
       logCursor = data.cursor;
@@ -162,20 +331,38 @@ $("btn-stop").addEventListener("click", async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-// ── Restaurar default ──
+// ── Restaurar default (del backend) ──
 $("btn-apply-default").addEventListener("click", async () => {
   try {
     const c = await api("/config");
     writeConfig(c);
+    saveConfig();
+    // Re-habilitar todos los campos.
+    document.querySelectorAll(".cfg-row").forEach((row) => {
+      row.querySelector(".cfg-toggle").checked = true;
+      row.classList.remove("disabled");
+    });
+    saveEnabled();
     toast("Configuración por defecto cargada.");
   } catch (e) { toast(e.message, true); }
 });
 
-// Cada cambio actualiza preview.
-for (const f of fields) {
-  const el = $(`cfg-${f}`);
-  if (el) ["input", "change"].forEach((ev) => el.addEventListener(ev, updateArgvPreview));
-}
+// ── Reset: limpiar localStorage y restaurar default del backend ──
+$("btn-reset-storage").addEventListener("click", async () => {
+  if (!confirm("¿Limpiar toda la configuración guardada y restaurar defaults?")) return;
+  clearConfigStorage();
+  // Restaurar defaults del backend.
+  try {
+    const c = await api("/config");
+    writeConfig(c);
+  } catch { /* ignore */ }
+  // Re-habilitar todos.
+  document.querySelectorAll(".cfg-row").forEach((row) => {
+    row.querySelector(".cfg-toggle").checked = true;
+    row.classList.remove("disabled");
+  });
+  updateArgvPreview();
+});
 
 // ── Benchmark ──
 let benchRunning = false;
@@ -275,7 +462,6 @@ function shortModel(m) {
 function renderHistory() {
   const tbody = $("history-table").querySelector("tbody");
   tbody.innerHTML = "";
-  // Mejores valores por columna (para resaltar).
   const best = {
     p: Math.max(...history.map((h) => h.promptTokensPerSecond ?? -Infinity), -Infinity),
     g: Math.max(...history.map((h) => h.generationTokensPerSecond ?? -Infinity), -Infinity),
@@ -311,7 +497,6 @@ function renderHistory() {
     }).join("");
     tbody.appendChild(tr);
   }
-  // Eventos por fila.
   tbody.querySelectorAll("tr").forEach((tr) => {
     const id = tr.dataset.id;
     tr.querySelector(".sel").addEventListener("change", (e) => {
@@ -380,10 +565,23 @@ function renderCompare(items) {
 
 // ── Bootstrap ──
 async function init() {
-  try {
-    const c = await api("/config");
-    writeConfig(c);
-  } catch { updateArgvPreview(); }
+  // 1) Generar formulario.
+  buildForm();
+
+  // 2) Cargar config: localStorage tiene prioridad sobre defaults del backend.
+  const stored = loadConfigFromStorage();
+  if (stored) {
+    writeConfig(stored);
+  } else {
+    try {
+      const c = await api("/config");
+      writeConfig(c);
+      saveConfig(); // guardar defaults como base en localStorage
+    } catch {
+      updateArgvPreview();
+    }
+  }
+
   await pollStatus();
   await loadHistory();
   await loadGpus();
