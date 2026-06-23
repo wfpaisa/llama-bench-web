@@ -484,6 +484,7 @@ function renderHistory() {
       fmt(r.promptTokensPerSecond), fmt(r.generationTokensPerSecond),
       fmt(r.draftAcceptance, 3), fmt(r.loadTimeSeconds, 2),
       gpuTxt,
+      `<button class="ghost tiny apply" title="Cargar config">↗</button>`,
       `<button class="ghost tiny del">✕</button>`,
     ];
     tr.innerHTML = cells.map((c, i) => {
@@ -509,6 +510,15 @@ function renderHistory() {
       selected.delete(id);
       await loadHistory();
       toast("Resultado eliminado.");
+    });
+    tr.querySelector(".apply").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const item = history.find((h) => h.id === id);
+      if (item) {
+        writeConfig(item.config);
+        saveConfig();
+        toast(`Config de ${shortModel(item.config.model)} cargada.`);
+      }
     });
   });
 }
