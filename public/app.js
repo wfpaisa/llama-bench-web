@@ -278,7 +278,17 @@ function buildArgv(c) {
 function updateArgvPreview() {
     const c = readConfig()
     const argv = buildArgv(c)
-    $("argv-preview").textContent = `${c.binary} ${argv.join(" ")}`
+    const lines = []
+    for (let i = 0; i < argv.length; i++) {
+        const item = argv[i]
+        if (item.startsWith("-") && i + 1 < argv.length && !argv[i + 1].startsWith("-")) {
+            lines.push(`  ${item} ${argv[++i]}`)
+        } else {
+            lines.push(`  ${item}`)
+        }
+    }
+    const joined = lines.map((l, i) => l + (i < lines.length - 1 ? " \\" : "")).join("\n")
+    $("argv-preview").textContent = `${c.binary} \\\n${joined}`
 }
 
 // ── Toast ──

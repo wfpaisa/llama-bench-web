@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,30 +20,32 @@
       <!-- ── Configuración ── -->
       <section class="card">
         <h2>Configuración del servidor</h2>
+
         <div id="cfg-form" class="cfg-form"></div>
         <div class="actions">
-          <button id="btn-start" class="primary">▶ Play</button>
-          <button id="btn-stop" class="danger" disabled>■ Stop</button>
-          <button id="btn-apply-default" class="ghost">
-            Restaurar default
-          </button>
-          <button id="btn-reset-storage" class="ghost danger">Reset</button>
-          <pre id="argv-preview" class="muted small"></pre>
+          <div id="blq-preview">
+            <pre id="argv-preview" class="muted small" contenteditable="true" spellcheck="false"></pre>
+          </div>
+
+          <div class="buttons">
+            <button id="btn-start" class="primary">▶ Play</button>
+            <button id="btn-stop" class="danger" disabled>■ Stop</button>
+            <button id="btn-apply-default" class="ghost">Default</button>
+            <button id="btn-reset-storage" class="ghost danger">Reset storage</button>
+          </div>
         </div>
+      </section>
 
       <!-- ── Benchmark automático ── -->
       <section class="card">
         <h2>Benchmark automático</h2>
         <p class="muted small">
-          Inicia llama-server → espera <code>server is listening</code> → POST
-          <code>/v1/chat/completions</code> → parsea timings de logs → lee GPU →
-          guarda resultado → detiene el servidor.
+          Inicia llama-server → espera <code>server is listening</code> → POST <code>/v1/chat/completions</code> → parsea timings de logs → lee GPU → guarda resultado → detiene el
+          servidor.
         </p>
         <label class="full"
           >Prompt estándar
-          <textarea id="bench-prompt" rows="2">
-Explica qué es Vulkan en 100 palabras</textarea
-          >
+          <textarea id="bench-prompt" rows="2">Explica qué es Vulkan en 100 palabras</textarea>
         </label>
         <div class="actions">
           <button id="btn-benchmark" class="primary">⏱ Benchmark</button>
@@ -72,9 +74,7 @@ Explica qué es Vulkan en 100 palabras</textarea
           <h2>Historial</h2>
           <div>
             <button id="btn-compare" class="ghost">Comparar</button>
-            <button id="btn-clear-history" class="ghost danger">
-              Limpiar todo
-            </button>
+            <button id="btn-clear-history" class="ghost danger">Limpiar todo</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -107,9 +107,7 @@ Explica qué es Vulkan en 100 palabras</textarea
         <div class="row-between">
           <h2>Logs en tiempo real</h2>
           <div>
-            <label class="muted small inline">
-              <input id="autoscroll" type="checkbox" checked /> auto-scroll
-            </label>
+            <label class="muted small inline"> <input id="autoscroll" type="checkbox" checked /> auto-scroll </label>
             <button id="btn-clear-logs" class="ghost tiny">limpiar</button>
           </div>
         </div>
@@ -117,9 +115,7 @@ Explica qué es Vulkan en 100 palabras</textarea
       </section>
     </main>
 
-    <footer class="muted small">
-      Bun + TypeScript · sin frameworks · benchmark real contra llama-server
-    </footer>
+    <footer class="muted small">Bun + TypeScript · sin frameworks · benchmark real contra llama-server</footer>
 
     <!-- Modal de comparación -->
     <div id="compare-modal" class="modal" hidden>
