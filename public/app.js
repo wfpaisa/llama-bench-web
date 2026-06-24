@@ -476,7 +476,7 @@ function renderGpus(gpus) {
         div.className = "gpu"
         div.innerHTML = `
       <div class="name">${g.index} <span class="muted">(${g.vendor})</span></div>
-      <div>VRAM: ${used ?? "?"} / ${total ?? "?"} MiB</div>
+      <div>VRAM: ${(used != null ? (used / 1024).toFixed(1) : "?")} / ${(total != null ? (total / 1024).toFixed(1) : "?")} GB</div>
       <div>Util: ${g.gpuUtilPct ?? "?"}%</div>
       <div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div>`
         el.appendChild(div)
@@ -491,7 +491,7 @@ function metric(k, v, unit = "", cls = "") {
 }
 function renderLastResult(r) {
     $("last-result-card").hidden = false
-    const gpuLine = r.gpus.map((g) => `${g.index}: ${Math.round(g.memUsedMiB ?? 0)} MiB`).join(" · ") || "—"
+    const gpuLine = r.gpus.map((g) => `${g.index}: ${(g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : "?")} GB`).join(" · ") || "—"
     $("last-result").innerHTML =
         metric("Prompt T/s", r.promptTokensPerSecond, "tok/s", "green") +
         metric("Gen T/s", r.generationTokensPerSecond, "tok/s", "green") +
@@ -537,7 +537,13 @@ function renderHistory() {
         const tr = document.createElement("tr")
         tr.dataset.id = r.id
         if (selected.has(r.id)) tr.classList.add("selected")
-        const gpuTxt = r.gpus.map((g) => `${g.index.replace(/^(nvidia|amdgpu-)/i, "")}:${Math.round(g.memUsedMiB ?? 0)}`).join(" ") || "—"
+        const gpuTxt = r.gpus.map((g) => {
+            const vendor = (g.vendor || "gpu").replace(/^amdgpu/i, "AmdGPU")
+            const val = g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : "?"
+            return `${vendor}:${val}`
+        }).join(", ") || "—"
+        const totalVram = r.gpus.reduce((sum, g) => sum + (g.memUsedMiB ?? 0), 0) / 1024
+        const totalVramStr = totalVram > 0 ? `${totalVram.toFixed(1)} GB` : "—"
         const date = new Date(r.timestamp)
         const cells = [
             `<input type="checkbox" class="sel" ${selected.has(r.id) ? "checked" : ""}/>`,
@@ -553,6 +559,7 @@ function renderHistory() {
             fmt(r.draftAcceptance, 3),
             fmt(r.loadTimeSeconds, 2),
             gpuTxt,
+            totalVramStr,
             `<button class="ghost tiny apply" title="Cargar config">↗</button>`,
             `<button class="ghost tiny del">✕</button>`,
         ]
@@ -634,7 +641,7 @@ function renderCompare(items) {
         ["Draft acc", (r) => fmt(r.draftAcceptance, 3)],
         ["Load (s)", (r) => fmt(r.loadTimeSeconds, 2)],
         ["Latencia (ms)", (r) => fmt(r.requestLatencyMs, 0)],
-        ["VRAM (MiB)", (r) => r.gpus.map((g) => Math.round(g.memUsedMiB ?? 0)).join(" + ") || "—"],
+        ["VRAM (GB)", (r) => r.gpus.map((g) => (g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : "?")).join(" + ") || "—"],
     ]
     let html = '<div class="table-wrap"><table><thead><tr><th>Métrica</th>'
     for (const r of items) html += `<th>${new Date(r.timestamp).toLocaleString()}</th>`
