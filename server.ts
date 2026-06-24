@@ -698,8 +698,8 @@ async function handleRequest(req: Request): Promise<Response> {
 
   if (path === "/logs" && req.method === "GET") {
     const since = Number(url.searchParams.get("since") ?? "0");
-    const entries = logBuffer.filter((e) => e.t >= since);
-    const cursor = logBuffer.length ? logBuffer[logBuffer.length - 1].t : 0;
+    const entries = logBuffer.slice(since);
+    const cursor = logBuffer.length;
     const body: LogsResponse = { entries, cursor };
     return json(body);
   }
