@@ -451,13 +451,22 @@ code {
   background: #010409;
   border-radius: 3px;
   overflow: hidden;
-  margin-top: 4px;
+  margin: 0.5rem 0;
 }
 
 .gpu .bar > span {
   display: block;
   height: 100%;
-  background: var(--accent);
+}
+
+.gpu .bar.green > span {
+  background: #22c55e;
+}
+.gpu .bar.yellow > span {
+  background: #eab308;
+}
+.gpu .bar.red > span {
+  background: #ef4444;
 }
 
 /* Tabla historial */

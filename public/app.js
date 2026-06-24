@@ -472,13 +472,16 @@ function renderGpus(gpus) {
         const pct = g.gpuUtilPct ?? 0
         const used = g.memUsedMiB != null ? Math.round(g.memUsedMiB) : null
         const total = g.memTotalMiB != null ? Math.round(g.memTotalMiB) : null
+        const vramPct = used != null && total != null && total > 0 ? Math.round((used / total) * 100) : 0
+        function alertCls(p) { return p > 90 ? "red" : p > 70 ? "yellow" : "green" }
         const div = document.createElement("div")
         div.className = "gpu"
         div.innerHTML = `
       <div class="name">${g.index} <span class="muted">(${g.vendor})</span></div>
       <div>VRAM: ${(used != null ? (used / 1024).toFixed(1) : "?")} / ${(total != null ? (total / 1024).toFixed(1) : "?")} GB</div>
+      <div class="bar vram-bar ${alertCls(vramPct)}"><span style="width:${Math.min(100, vramPct)}%"></span></div>
       <div>Util: ${g.gpuUtilPct ?? "?"}%</div>
-      <div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div>`
+      <div class="bar util-bar ${alertCls(pct)}"><span style="width:${Math.min(100, pct)}%"></span></div>`
         el.appendChild(div)
     }
 }
