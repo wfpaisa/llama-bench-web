@@ -363,7 +363,7 @@ $('btn-benchmark').addEventListener('click', async () => {
       body: JSON.stringify({
         script: getScript(),
         prompt: getPromptEl().value,
-        max_tokens: parseInt(($('bench-max-tokens') as HTMLInputElement).value) || 8192,
+        max_tokens: parseInt(($('bench-max-tokens') as HTMLInputElement).value) || 2048,
       }),
     })
     if (data.ok && data.result) {

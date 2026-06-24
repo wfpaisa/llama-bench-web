@@ -17,7 +17,7 @@ import { emptyParsedScript } from './state.ts'
  * Ejecuta un benchmark completo contra llama-server.
  * Garantiza que el servidor se detenga al final (finally).
  */
-export async function runBenchmark(script: string, prompt: string, maxTokens: number = 8192): Promise<BenchmarkResult> {
+export async function runBenchmark(script: string, prompt: string, maxTokens: number = 2048): Promise<BenchmarkResult> {
   const errors: string[] = []
 
   // 0) Parsear el script. Si falla, no hay nada que ejecutar.

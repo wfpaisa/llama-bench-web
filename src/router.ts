@@ -156,7 +156,7 @@ export async function handleRequest(req: Request): Promise<Response> {
     setBenchmarkRunning(true)
     let script = ''
     let prompt = DEFAULT_PROMPT
-    let maxTokens = 8192
+    let maxTokens = 2048
     try {
       const body = await req.json().catch(() => ({}))
       if (typeof body?.script === 'string') script = body.script
