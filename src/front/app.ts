@@ -350,12 +350,39 @@ $('btn-prompt-restore-default').addEventListener('click', async () => {
 
 // ── Benchmark ──
 let benchRunning = false
+let benchTimerId: ReturnType<typeof setInterval> | null = null
+let benchStartTime: number = 0
+
+function formatElapsed(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const min = Math.floor(totalSec / 60)
+  const sec = totalSec % 60
+  return `${min}:${sec.toString().padStart(2, '0')}`
+}
+
+function startBenchTimer(): void {
+  benchStartTime = Date.now()
+  benchTimerId = setInterval(() => {
+    ;($('bench-timer') as HTMLElement).textContent = formatElapsed(Date.now() - benchStartTime)
+  }, 200)
+}
+
+function stopBenchTimer(): void {
+  if (benchTimerId !== null) {
+    clearInterval(benchTimerId)
+    benchTimerId = null
+  }
+  ;($('bench-timer') as HTMLElement).textContent = ''
+}
+
 $('btn-benchmark').addEventListener('click', async () => {
   if (benchRunning) return
   benchRunning = true
   ;($('btn-benchmark') as HTMLButtonElement).disabled = true
+  ;($('btn-bench-stop') as HTMLButtonElement).hidden = false
   $('bench-state').textContent = 'iniciando servidor y midiendo… (puede tardar)'
   ;($('response-card') as HTMLElement).hidden = true
+  startBenchTimer()
   try {
     const data = await api<{ ok: boolean; result?: BenchmarkResult; error?: string }>('/benchmark', {
       method: 'POST',
@@ -384,8 +411,20 @@ $('btn-benchmark').addEventListener('click', async () => {
   } finally {
     benchRunning = false
     ;($('btn-benchmark') as HTMLButtonElement).disabled = false
+    ;($('btn-bench-stop') as HTMLButtonElement).hidden = true
     $('bench-state').textContent = ''
+    stopBenchTimer()
     pollStatus()
+  }
+})
+
+$('btn-bench-stop').addEventListener('click', async () => {
+  if (!benchRunning) return
+  try {
+    await api('/benchmark/stop', { method: 'POST' })
+    $('bench-state').textContent = 'deteniendo…'
+  } catch {
+    /* ignora errores — el benchmark puede haber terminado ya */
   }
 })
 
@@ -444,6 +483,7 @@ function renderLastResult(r: BenchmarkResult): void {
     metric('Gen tokens', r.genTokens, '', '') +
     metric('Acc tokens', r.accTokens, '', '') +
     metric('Load time', r.loadTimeSeconds, 's') +
+    metric('Gen time', fmtMs(r.generationTimeMs), '', 'green', 'Tiempo de generación (sin prompt ni startup)') +
     metric('Latencia req', r.requestLatencyMs, 'ms') +
     `<div class="metric" style="grid-column: span 2"><div class="k">VRAM</div><div class="v" style="font-size:13px">${gpuLine}</div></div>`
   if (r.errors.length) {
@@ -474,6 +514,7 @@ const sortFns: Record<string, (r: BenchmarkResult) => number> = {
   genTps: (r) => r.generationTokensPerSecond ?? -Infinity,
   draftAcc: (r) => r.draftAcceptance ?? -Infinity,
   loadTime: (r) => r.loadTimeSeconds ?? Infinity,
+  generationTime: (r) => r.generationTimeMs ?? Infinity,
   totalVram: (r) => r.gpus.reduce((s, g) => s + (g.memUsedMiB ?? 0), 0),
 }
 
@@ -531,6 +572,13 @@ function populateModelFilter(): void {
 }
 function fmt(n: number | null | undefined, d = 2): string {
   return n == null ? '—' : Number(n).toFixed(d)
+}
+function fmtMs(ms: number | null | undefined): string {
+  if (ms == null) return '—'
+  const totalSec = Math.round(ms / 1000)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 function shortModel(m: string | null | undefined): string {
   if (!m) return '—'
@@ -652,6 +700,7 @@ function renderHistory(): void {
     g: Math.max(...history.map((h) => h.generationTokensPerSecond ?? -Infinity), -Infinity),
     d: Math.max(...history.map((h) => h.draftAcceptance ?? -Infinity), -Infinity),
     l: Math.min(...history.map((h) => h.loadTimeSeconds ?? Infinity), Infinity),
+    gt: Math.min(...history.map((h) => h.generationTimeMs ?? Infinity), Infinity),
   }
   for (const r of history) {
     // Filtro por modelo base.
@@ -681,7 +730,7 @@ function renderHistory(): void {
 
     // Índices: 0 sel, 1 fecha, 2 modelo, 3 ctx, 4 batch, 5 cache, 6 device,
     // 7 tsplit, 8 promptTps, 9 genTps, 10 draftAcc, 11 genDrafts, 12 accDrafts,
-    // 13 genTokens, 14 accTokens, 15 loadTime, 16 vram, 17 totalVram, 18 apply, 19 del.
+    // 13 genTokens, 14 accTokens, 15 loadTime, 16 genTime, 17 vram, 18 totalVram, 19 apply, 20 del.
     const cells = [
       `<input type="checkbox" class="sel" ${selected.has(r.id) ? 'checked' : ''}/>`,
       date.toLocaleString(),
@@ -699,6 +748,7 @@ function renderHistory(): void {
       fmt(r.genTokens, 0),
       fmt(r.accTokens, 0),
       fmt(r.loadTimeSeconds, 2),
+      fmtMs(r.generationTimeMs),
       gpuTxt,
       totalVramStr,
       applyBtn,
@@ -706,13 +756,14 @@ function renderHistory(): void {
     ]
     tr.innerHTML = cells
       .map((cell, i) => {
-        // Columnas numéricas: promptTps(8)..loadTime(15).
-        const cls = i >= 8 && i <= 15 ? 'num' : ''
+        // Columnas numéricas: promptTps(8)..genTime(16).
+        const cls = i >= 8 && i <= 16 ? 'num' : ''
         let extra = ''
         if (i === 8 && r.promptTokensPerSecond === best.p && best.p > -Infinity) extra = 'best'
         if (i === 9 && r.generationTokensPerSecond === best.g && best.g > -Infinity) extra = 'best'
         if (i === 10 && r.draftAcceptance === best.d && best.d > -Infinity) extra = 'best'
         if (i === 15 && r.loadTimeSeconds === best.l && best.l < Infinity) extra = 'best'
+        if (i === 16 && r.generationTimeMs === best.gt && best.gt < Infinity) extra = 'best'
         return `<td class="${cls} ${extra}">${cell}</td>`
       })
       .join('')
@@ -789,6 +840,7 @@ function renderCompare(items: BenchmarkResult[]): void {
     ['Gen tokens', (r) => fmt(r.genTokens, 0)],
     ['Acc tokens', (r) => fmt(r.accTokens, 0)],
     ['Load (s)', (r) => fmt(r.loadTimeSeconds, 2)],
+    ['Gen time', (r) => fmtMs(r.generationTimeMs)],
     ['Latencia (ms)', (r) => fmt(r.requestLatencyMs, 0)],
     ['VRAM (GB)', (r) => r.gpus.map((g) => (g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?')).join(' + ') || '—'],
   ]

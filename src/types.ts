@@ -127,6 +127,8 @@ export interface BenchmarkResult {
   accTokens: number | null
   /** Tiempo de carga del modelo en segundos. */
   loadTimeSeconds: number | null
+  /** Tiempo de generación (eval time) en ms, sin incluir prompt ni startup. */
+  generationTimeMs: number | null
   /** Latencia total del request de benchmark en ms. */
   requestLatencyMs: number | null
   /** Prompt usado. */

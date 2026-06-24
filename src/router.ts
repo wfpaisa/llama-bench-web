@@ -6,7 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { LogsResponse, StatusResponse } from './types.ts'
-import { managed, benchmarkRunning, setBenchmarkRunning, status, statusError } from './state.ts'
+import { managed, benchmarkRunning, setBenchmarkRunning, benchAbortController, status, statusError } from './state.ts'
 import { parseScript } from './script-parser.ts'
 import { startServer, stopServer, urlFor } from './server-manager.ts'
 import { readGpuStats } from './gpu.ts'
@@ -173,6 +173,14 @@ export async function handleRequest(req: Request): Promise<Response> {
     } finally {
       setBenchmarkRunning(false)
     }
+  }
+
+  if (path === '/benchmark/stop' && req.method === 'POST') {
+    if (benchAbortController) {
+      benchAbortController.abort()
+      return json({ ok: true })
+    }
+    return json({ ok: false, error: 'No hay un benchmark en ejecución.' }, 404)
   }
 
   // ── Historial ──

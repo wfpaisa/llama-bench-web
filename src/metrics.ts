@@ -16,6 +16,8 @@ export interface ParsedMetrics {
   genTokens: number | null
   accTokens: number | null
   loadTimeSeconds: number | null
+  /** Tiempo de generación (eval time) en ms, sin incluir prompt ni startup. */
+  generationTimeMs: number | null
 }
 
 /** Prompt por defecto del benchmark — exige razonamiento real del modelo. */
@@ -34,9 +36,10 @@ const HEALTH_TIMEOUT_MS = 120_000 // 2 min para modelos muy grandes.
  * Hace polling a `GET /health` (o `GET /`) hasta que responda 200.
  * Los últimos llama.cpp exponen /health; si no existe, cae a "/".
  */
-export async function waitForServer(base: string): Promise<void> {
+export async function waitForServer(base: string, signal?: AbortSignal): Promise<void> {
   const deadline = Date.now() + HEALTH_TIMEOUT_MS
   for (;;) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     try {
       const resp = await fetch(`${base}/health`, {
         signal: AbortSignal.timeout(3000),
@@ -69,6 +72,7 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     genTokens: null,
     accTokens: null,
     loadTimeSeconds: null,
+    generationTimeMs: null,
   }
   // Tomamos desde el final para quedarnos con la última medición.
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -80,6 +84,10 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     if (m.generationTokensPerSecond === null) {
       const mm = l.match(/eval time.*?(\d+(?:\.\d+)?)\s*tokens per second/i)
       if (mm) m.generationTokensPerSecond = Number(mm[1])
+    }
+    if (m.generationTimeMs === null) {
+      const mm = l.match(/(?<!prompt )eval time\s*=\s*(\d+(?:\.\d+)?)\s*ms/i)
+      if (mm) m.generationTimeMs = Number(mm[1])
     }
     if (m.draftAcceptance === null) {
       const mm = l.match(/draft acceptance\s*=?\s*([0-9.]+)/i)
@@ -101,7 +109,7 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
       const mm = l.match(/model loaded.*?([0-9.]+)\s*ms/i)
       if (mm) m.loadTimeSeconds = Number(mm[1]) / 1000
     }
-    if (m.promptTokensPerSecond !== null && m.generationTokensPerSecond !== null && m.draftAcceptance !== null && m.genDrafts !== null && m.loadTimeSeconds !== null) {
+    if (m.promptTokensPerSecond !== null && m.generationTokensPerSecond !== null && m.draftAcceptance !== null && m.genDrafts !== null && m.loadTimeSeconds !== null && m.generationTimeMs !== null) {
       break
     }
   }

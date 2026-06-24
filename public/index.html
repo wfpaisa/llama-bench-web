@@ -67,7 +67,9 @@
         <div class="actions">
           <div class="buttons">
             <button id="btn-benchmark" class="primary">⏱ Benchmark</button>
+            <button id="btn-bench-stop" class="danger" hidden>■ Detener</button>
             <span id="bench-state" class="muted small"></span>
+            <span id="bench-timer" class="muted small"></span>
           </div>
         </div>
       </section>
@@ -127,6 +129,7 @@
                 <th title="draft-mtp: generated tokens (#gen tokens)">gen tk</th>
                 <th title="draft-mtp: accepted tokens (#acc tokens)">acc tk</th>
                 <th data-sort="loadTime" title="Model load time in seconds">load s</th>
+                <th data-sort="generationTime" title="Generación - Generation time (MM:SS)">gen</th>
                 <th title="VRAM used per GPU (GB)">VRAM</th>
                 <th data-sort="totalVram" title="Total VRAM used across all GPUs (GB)">Total VRAM</th>
                 <th></th>

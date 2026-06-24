@@ -54,6 +54,13 @@ export function setBenchmarkRunning(v: boolean): void {
   benchmarkRunning = v
 }
 
+/** AbortController para cancelar un benchmark en ejecución. */
+export let benchAbortController: AbortController | null = null
+
+export function setBenchAbortController(c: AbortController | null): void {
+  benchAbortController = c
+}
+
 // ── Trims del buffer de logs ─────────────────────────────────────────────────
 export function trimLogBuffer(): void {
   if (logBuffer.length > LOG_CAP) logBuffer.splice(0, logBuffer.length - LOG_CAP)

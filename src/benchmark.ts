@@ -11,7 +11,7 @@ import { startServer, stopServer, urlFor } from './server-manager.ts'
 import { saveResult } from './history.ts'
 import { systemLog } from './logs.ts'
 import { getLogBuffer } from './logs.ts'
-import { emptyParsedScript } from './state.ts'
+import { emptyParsedScript, setBenchAbortController } from './state.ts'
 
 /**
  * Ejecuta un benchmark completo contra llama-server.
@@ -34,6 +34,17 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
   // 0b) Capturar baseline de GPU antes de iniciar (para restar VRAM ya usada).
   const gpuBaseline = await readGpuStats()
 
+  // Inicializar AbortController para permitir cancelación desde la UI.
+  const controller = new AbortController()
+  setBenchAbortController(controller)
+
+  const checkAbort = (): void => {
+    if (controller.signal.aborted) {
+      systemLog('benchmark: cancelado por el usuario.')
+      throw new Error('Benchmark cancelado por el usuario.')
+    }
+  }
+
   // 1) Arrancar servidor.
   systemLog('benchmark: iniciando llama-server…')
   try {
@@ -44,11 +55,14 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
   }
 
   try {
+    checkAbort()
+
     // 2) Esperar que el servidor acepte conexiones HTTP.
     //    "server is listening" puede aparecer antes de que el socket esté
     //    realmente listo, especialmente con modelos grandes.
     const base = urlFor(parsed)
-    await waitForServer(base)
+    await waitForServer(base, controller.signal)
+    checkAbort()
     systemLog('benchmark: servidor responde, ejecutando request…')
 
     // 3) Request de benchmark. Se omite cualquier parámetro de sampling que
@@ -72,6 +86,7 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: controller.signal,
       })
       if (!resp.ok) {
         errors.push(`HTTP ${resp.status} en /v1/chat/completions`)
@@ -83,12 +98,16 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
         responseText = content || reasoning || ''
       }
     } catch (e) {
+      if ((e as Error).name === 'AbortError') throw e
       errors.push(`Fallo en request: ${(e as Error).message}`)
     }
     const requestLatencyMs = performance.now() - t0
 
+    checkAbort()
+
     // Dar un pequeño margen para que el servidor flushee las líneas de timing.
     await sleep(400)
+    checkAbort()
 
     // 4) Parsear métricas de logs.
     const relevantLines = getLogBuffer().slice(logStartIndex)
@@ -110,6 +129,7 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
       genTokens: parsedMetrics.genTokens,
       accTokens: parsedMetrics.accTokens,
       loadTimeSeconds: parsedMetrics.loadTimeSeconds,
+      generationTimeMs: parsedMetrics.generationTimeMs,
       requestLatencyMs,
       prompt,
       response: responseText,
@@ -123,6 +143,7 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
   } finally {
     // 6) Detener el servidor automáticamente.
     await stopServer()
+    setBenchAbortController(null)
   }
 }
 
@@ -140,6 +161,7 @@ function finalize(parsed: ParsedScript | null, prompt: string, errors: string[])
     genTokens: null,
     accTokens: null,
     loadTimeSeconds: null,
+    generationTimeMs: null,
     requestLatencyMs: null,
     prompt,
     response: '',
