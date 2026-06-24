@@ -93,6 +93,18 @@ function defaultConfig(): ServerConfig {
     cacheReuse: 256,
     host: "127.0.0.1",
     port: 8080,
+    nCpuMoe: 0,
+    minP: 0.0,
+    repeatPenalty: 1.0,
+    repeatLastN: 64,
+    presencePenalty: 0.0,
+    dryMultiplier: 0.0,
+    dryBase: 1.75,
+    dryAllowedLength: 2,
+    dryPenaltyLastN: -1,
+    alias: "",
+    noContextShift: false,
+    chatTemplateKwargs: "",
   };
 }
 
@@ -119,6 +131,24 @@ function buildArgs(c: ServerConfig): string[] {
   if (c.logPrefix) a.push("--log-prefix");
   if (c.device) a.push("--device", c.device);
   if (c.tensorSplit) a.push("--tensor-split", c.tensorSplit);
+  // MoE
+  if (c.nCpuMoe > 0) a.push("--n-cpu-moe", String(c.nCpuMoe));
+  // Sampling
+  if (c.minP > 0) a.push("--min-p", String(c.minP));
+  if (c.repeatPenalty !== 1.0) a.push("--repeat-penalty", String(c.repeatPenalty));
+  if (c.repeatLastN !== 64) a.push("--repeat-last-n", String(c.repeatLastN));
+  if (c.presencePenalty > 0) a.push("--presence-penalty", String(c.presencePenalty));
+  // DRY
+  if (c.dryMultiplier > 0) {
+    a.push("--dry-multiplier", String(c.dryMultiplier));
+    a.push("--dry-base", String(c.dryBase));
+    a.push("--dry-allowed-length", String(c.dryAllowedLength));
+    a.push("--dry-penalty-last-n", String(c.dryPenaltyLastN));
+  }
+  // Server / Template
+  if (c.alias) a.push("--alias", c.alias);
+  if (c.noContextShift) a.push("--no-context-shift");
+  if (c.chatTemplateKwargs) a.push("--chat-template-kwargs", c.chatTemplateKwargs);
   // Importante: forzar host/port para poder hablar con la API.
   a.push("--host", c.host || "127.0.0.1");
   a.push("--port", String(c.port));

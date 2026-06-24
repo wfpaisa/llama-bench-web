@@ -47,6 +47,30 @@ export interface ServerConfig {
   logPrefix: boolean;
   /** --cache-reuse */
   cacheReuse: number;
+  /** --n-cpu-moe (número de capas MoE en CPU). */
+  nCpuMoe: number;
+  /** --min-p (sampling). */
+  minP: number;
+  /** --repeat-penalty. */
+  repeatPenalty: number;
+  /** --repeat-last-n. */
+  repeatLastN: number;
+  /** --presence-penalty. */
+  presencePenalty: number;
+  /** --dry-multiplier. */
+  dryMultiplier: number;
+  /** --dry-base. */
+  dryBase: number;
+  /** --dry-allowed-length. */
+  dryAllowedLength: number;
+  /** --dry-penalty-last-n. */
+  dryPenaltyLastN: number;
+  /** --alias. */
+  alias: string;
+  /** --no-context-shift. */
+  noContextShift: boolean;
+  /** --chat-template-kwargs. */
+  chatTemplateKwargs: string;
   /** Host/port donde escuchará llama-server (lo lanza el backend). */
   host: string;
   /** Puerto del servidor llama.cpp interno. */

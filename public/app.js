@@ -25,6 +25,18 @@ const FIELD_DEFS = [
     { key: "temp", label: "Temp", type: "number", placeholder: "", step: "0.05", flag: null },
     { key: "topP", label: "Top-P", type: "number", placeholder: "", step: "0.01", flag: null },
     { key: "topK", label: "Top-K", type: "number", placeholder: "", flag: null },
+    { key: "minP", label: "Min-P", type: "number", step: "0.01", placeholder: "0", flag: "--min-p" },
+    { key: "repeatPenalty", label: "Repeat Penalty", type: "number", step: "0.01", placeholder: "1.0", flag: "--repeat-penalty" },
+    { key: "repeatLastN", label: "Repeat Last N", type: "number", placeholder: "64", flag: "--repeat-last-n" },
+    { key: "presencePenalty", label: "Presence Penalty", type: "number", step: "0.1", placeholder: "0", flag: "--presence-penalty" },
+    { key: "nCpuMoe", label: "N CPU MoE", type: "number", placeholder: "0", flag: "--n-cpu-moe" },
+    { key: "dryMultiplier", label: "Dry Multiplier", type: "number", step: "0.1", placeholder: "0", flag: "--dry-multiplier" },
+    { key: "dryBase", label: "Dry Base", type: "number", step: "0.05", placeholder: "1.75", flag: "--dry-base" },
+    { key: "dryAllowedLength", label: "Dry Allowed Length", type: "number", placeholder: "2", flag: "--dry-allowed-length" },
+    { key: "dryPenaltyLastN", label: "Dry Penalty Last N", type: "number", placeholder: "-1", flag: "--dry-penalty-last-n" },
+    { key: "alias", label: "Alias", type: "text", placeholder: "ej. Qwen3.6-35B", flag: "-a" },
+    { key: "noContextShift", label: "No Context Shift", type: "checkbox", flag: "--no-context-shift" },
+    { key: "chatTemplateKwargs", label: "Template Kwargs", type: "text", placeholder: '{"enable_thinking":false}', flag: "--chat-template-kwargs" },
     { key: "noMmap", label: "No mmap", type: "checkbox", flag: "--no-mmap" },
     { key: "jinja", label: "Jinja", type: "checkbox", flag: "--jinja" },
     { key: "noMmproj", label: "No mmproj", type: "checkbox", flag: "--no-mmproj" },
@@ -270,6 +282,42 @@ function buildArgv(c) {
             case "topK":
                 // No son flags de llama-server, son params de API.
                 break
+            case "nCpuMoe":
+                if (v > 0) a.push("--n-cpu-moe", String(v))
+                break
+            case "alias":
+                if (v) a.push("--alias", v)
+                break
+            case "noContextShift":
+                if (v) a.push("--no-context-shift")
+                break
+            case "chatTemplateKwargs":
+                if (v) a.push("--chat-template-kwargs", v)
+                break
+            case "minP":
+                if (v > 0) a.push("--min-p", String(v))
+                break
+            case "repeatPenalty":
+                if (v && v !== 1.0) a.push("--repeat-penalty", String(v))
+                break
+            case "repeatLastN":
+                if (v && v !== 64) a.push("--repeat-last-n", String(v))
+                break
+            case "presencePenalty":
+                if (v > 0) a.push("--presence-penalty", String(v))
+                break
+            case "dryMultiplier":
+                if (v > 0) {
+                    a.push("--dry-multiplier", String(v))
+                    a.push("--dry-base", String(c.dryBase))
+                    a.push("--dry-allowed-length", String(c.dryAllowedLength))
+                    a.push("--dry-penalty-last-n", String(c.dryPenaltyLastN))
+                }
+                break
+            case "dryBase":
+            case "dryAllowedLength":
+            case "dryPenaltyLastN":
+                break // Se inyectan en dryMultiplier
         }
     }
     return a

@@ -197,7 +197,7 @@ main {
 
 .cfg-row .cfg-input input,
 .cfg-row .cfg-input select {
-  min-width: 1rem;
+  min-width: 3rem;
   field-sizing: content;
 }
 
