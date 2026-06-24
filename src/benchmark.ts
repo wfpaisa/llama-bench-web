@@ -20,6 +20,7 @@ import { emptyParsedScript } from "./state.ts";
 export async function runBenchmark(
   script: string,
   prompt: string,
+  maxTokens: number = 8192,
 ): Promise<BenchmarkResult> {
   const errors: string[] = [];
 
@@ -60,7 +61,7 @@ export async function runBenchmark(
     //    no estuviera en el script (temp/topP/topK = null).
     const body: Record<string, unknown> = {
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 2048,
+      max_tokens: maxTokens,
       stream: false,
     };
     if (parsed.model) {
@@ -82,7 +83,6 @@ export async function runBenchmark(
         errors.push(`HTTP ${resp.status} en /v1/chat/completions`);
       } else {
         const data = await resp.json();
-        console.log('->', JSON.stringify(data, null, 2));
         const msg = data?.choices?.[0]?.message;
         const content = msg?.content ?? "";
         const reasoning = msg?.reasoning_content ?? "";
@@ -118,7 +118,7 @@ export async function runBenchmark(
       loadTimeSeconds: parsedMetrics.loadTimeSeconds,
       requestLatencyMs,
       prompt,
-      response: responseText.slice(0, 4000),
+      response: responseText,
       gpus,
       errors,
     };

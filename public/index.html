@@ -46,9 +46,22 @@
 
         <label class="full">Prompt de evaluación</label>
         <textarea id="bench-prompt" rows="4" class="bench-prompt"></textarea>
-        <div class="prompt-actions">
-          <button id="btn-prompt-save-default" class="ghost tiny">Guardar default</button>
-          <button id="btn-prompt-restore-default" class="ghost tiny">Restablecer default</button>
+        <div class="bench-params">
+          <div class="prompt-actions">
+            <button id="btn-prompt-save-default" class="ghost tiny">Guardar default</button>
+            <button id="btn-prompt-restore-default" class="ghost tiny">Restablecer default</button>
+          </div>
+
+          <div class="bench-row">
+            <label
+              for="bench-max-tokens"
+              class="muted small"
+              title="Cantidad máxima de tokens que puede generar el modelo en la respuesta. Un valor mayor produce respuestas más largas, pero aumenta el tiempo de generación. Para dejarlo ilimitado asignar: -1"
+            >
+              Max Tokens
+            </label>
+            <input type="number" id="bench-max-tokens" value="8192" min="1" class="bench-max-tokens" />
+          </div>
         </div>
 
         <div class="actions">

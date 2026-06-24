@@ -367,7 +367,11 @@ $("btn-benchmark").addEventListener("click", async () => {
     const data = await api<{ ok: boolean; result?: BenchmarkResult; error?: string }>("/benchmark", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ script: getScript(), prompt: getPromptEl().value }),
+      body: JSON.stringify({
+        script: getScript(),
+        prompt: getPromptEl().value,
+        max_tokens: parseInt(($("bench-max-tokens") as HTMLInputElement).value) || 8192,
+      }),
     });
     if (data.ok && data.result) {
       renderLastResult(data.result);
