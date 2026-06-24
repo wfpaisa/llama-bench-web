@@ -38,36 +38,36 @@ Por eso esta herramienta hace el benchmark real:
 
 ```bash
 bun install
-bun start              # producción (http://localhost:8765)
+bun start              # producción (http://localhost:3000)
 bun dev                # desarrollo con --watch
 ```
 
 Variables de entorno:
 
-| Variable           | Default          | Descripción                                  |
-|--------------------|------------------|----------------------------------------------|
-| `PORT`             | `8765`           | Puerto del backend web (no 8080: es el de llama-server). |
-| `LLAMA_SERVER_PATH`| `./llama-server` | Ruta al binario por defecto en la UI.         |
-| `DATA_DIR`         | `./data`         | Carpeta donde se guarda `history.json`.       |
+| Variable            | Default          | Descripción                                              |
+| ------------------- | ---------------- | -------------------------------------------------------- |
+| `PORT`              | `3000`           | Puerto del backend web (no 8080: es el de llama-server). |
+| `LLAMA_SERVER_PATH` | `./llama-server` | Ruta al binario por defecto en la UI.                    |
+| `DATA_DIR`          | `./data`         | Carpeta donde se guarda `history.json`.                  |
 
 Apuntá el campo **Binario llama-server** de la UI a tu `llama-server`
 (p. ej. `/home/felipe/llama.cpp/build/bin/llama-server`).
 
 ## Endpoints
 
-| Método | Ruta            | Descripción                                  |
-|--------|-----------------|----------------------------------------------|
+| Método | Ruta            | Descripción                                            |
+| ------ | --------------- | ------------------------------------------------------ |
 | GET    | `/status`       | Estado del proceso (`stopped/starting/running/error`). |
-| POST   | `/start`        | Inicia `llama-server` con la config del body.|
-| POST   | `/stop`         | SIGTERM (SIGKUL tras 8s si no muere).        |
-| GET    | `/logs?since=T` | Logs incrementales desde el cursor `T`.      |
-| POST   | `/logs/clear`   | Vacía el buffer de logs.                     |
-| GET    | `/config`       | Configuración por defecto.                    |
-| GET    | `/gpu`          | Métricas en vivo de NVIDIA + AMD.            |
-| POST   | `/benchmark`    | Ejecuta el benchmark completo.               |
-| GET    | `/history`      | Lista de resultados guardados.               |
-| DELETE | `/history`      | Borra todo el historial.                     |
-| DELETE | `/history/:id`  | Borra un resultado.                          |
+| POST   | `/start`        | Inicia `llama-server` con la config del body.          |
+| POST   | `/stop`         | SIGTERM (SIGKUL tras 8s si no muere).                  |
+| GET    | `/logs?since=T` | Logs incrementales desde el cursor `T`.                |
+| POST   | `/logs/clear`   | Vacía el buffer de logs.                               |
+| GET    | `/config`       | Configuración por defecto.                             |
+| GET    | `/gpu`          | Métricas en vivo de NVIDIA + AMD.                      |
+| POST   | `/benchmark`    | Ejecuta el benchmark completo.                         |
+| GET    | `/history`      | Lista de resultados guardados.                         |
+| DELETE | `/history`      | Borra todo el historial.                               |
+| DELETE | `/history/:id`  | Borra un resultado.                                    |
 
 ## Métricas almacenadas
 
@@ -79,8 +79,18 @@ Apuntá el campo **Binario llama-server** de la UI a tu `llama-server`
   "loadTimeSeconds": 5.44,
   "requestLatencyMs": 4520.0,
   "gpus": [
-    { "index": "nvidia0", "memUsedMiB": 7200, "memTotalMiB": 16303, "gpuUtilPct": 95 },
-    { "index": "amdgpu-card3", "memUsedMiB": 14800, "memTotalMiB": 8176, "gpuUtilPct": 80 }
+    {
+      "index": "nvidia0",
+      "memUsedMiB": 7200,
+      "memTotalMiB": 16303,
+      "gpuUtilPct": 95
+    },
+    {
+      "index": "amdgpu-card3",
+      "memUsedMiB": 14800,
+      "memTotalMiB": 8176,
+      "gpuUtilPct": 80
+    }
   ]
 }
 ```

@@ -16,5 +16,5 @@
     "erasableSyntaxOnly": false,
     "types": ["bun-types"]
   },
-  "include": ["*.ts", "public/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
