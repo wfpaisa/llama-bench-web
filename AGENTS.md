@@ -85,12 +85,12 @@ En `src/server.ts` (entry), al bootstrap:
 
 ```ts
 const result = await Bun.build({
-  entrypoints: [import.meta.dir + "/front/app.ts"],
-  target: "browser",
-  format: "esm",
-  external: ["https://esm.sh/codemirror*", "https://esm.sh/@codemirror/*"],
-});
-const appJs = await result.outputs[0].text();
+  entrypoints: [import.meta.dir + '/front/app.ts'],
+  target: 'browser',
+  format: 'esm',
+  external: ['https://esm.sh/codemirror*', 'https://esm.sh/@codemirror/*'],
+})
+const appJs = await result.outputs[0].text()
 ```
 
 El router sirve `appJs` en `/app.js`. Con `bun dev --watch`, Bun re-ejecuta el entry al detectar cambios y rebundlea automáticamente.

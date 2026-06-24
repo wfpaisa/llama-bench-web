@@ -22,119 +22,119 @@
  */
 export interface ParsedScript {
   /** Script crudo tal como se edita (con continuaciones `\` y newlines). */
-  script: string;
+  script: string
   /** Ruta/nombre del binario (primer token del script). */
-  binary: string;
+  binary: string
   /** Argumentos tokenizados (sin el binario). */
-  argv: string[];
+  argv: string[]
 
   // ── Escalares extraídos para historial + benchmark ──
   /** Modelo HF repo/file (`-hf`). null si no estaba. */
-  model: string | null;
+  model: string | null
   /** Host (`--host`); default "127.0.0.1" si no estaba. */
-  host: string;
+  host: string
   /** Puerto (`--port`); default 8080 si no estaba. */
-  port: number;
+  port: number
   /** `--ctx-size`. null si no estaba. */
-  ctxSize: number | null;
+  ctxSize: number | null
   /** `--batch-size`. null si no estaba. */
-  batchSize: number | null;
+  batchSize: number | null
   /** `--ubatch-size`. null si no estaba. */
-  ubatchSize: number | null;
+  ubatchSize: number | null
   /** `--cache-type-k`. null si no estaba. */
-  cacheTypeK: string | null;
+  cacheTypeK: string | null
   /** `--cache-type-v`. null si no estaba. */
-  cacheTypeV: string | null;
+  cacheTypeV: string | null
   /** `--device` (p.ej. "Vulkan0,Vulkan1"). null si no estaba. */
-  device: string | null;
+  device: string | null
   /** `--tensor-split`. null si no estaba. */
-  tensorSplit: string | null;
+  tensorSplit: string | null
   /** `--temp` (sampling, usado en el request del benchmark). null si no estaba. */
-  temp: number | null;
+  temp: number | null
   /** `--top-p` (sampling). null si no estaba. */
-  topP: number | null;
+  topP: number | null
   /** `--top-k` (sampling). null si no estaba. */
-  topK: number | null;
+  topK: number | null
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */
-export type ServerStatus = "stopped" | "starting" | "running" | "error";
+export type ServerStatus = 'stopped' | 'starting' | 'running' | 'error'
 
 /** Respuesta de GET /status. */
 export interface StatusResponse {
-  status: ServerStatus;
+  status: ServerStatus
   /** PID del proceso si está corriendo. */
-  pid: number | null;
+  pid: number | null
   /** Timestamp ISO de inicio. */
-  startedAt: string | null;
+  startedAt: string | null
   /** URL base de llama-server cuando está corriendo. */
-  url: string | null;
+  url: string | null
   /** Mensaje de error si lo hubiera. */
-  error: string | null;
+  error: string | null
 }
 
 /** Línea de log del proceso. */
 export interface LogEntry {
   /** Monotónico (ms) desde arranque del backend, para ordenar. */
-  t: number;
+  t: number
   /** 'stdout' | 'stderr' | 'system'. */
-  stream: "stdout" | "stderr" | "system";
-  msg: string;
+  stream: 'stdout' | 'stderr' | 'system'
+  msg: string
 }
 
 /** Respuesta de GET /logs. */
 export interface LogsResponse {
-  entries: LogEntry[];
+  entries: LogEntry[]
   /** Índice de la última línea incluida, para polling incremental. */
-  cursor: number;
+  cursor: number
 }
 
 /** Métricas de una GPU. */
 export interface GpuInfo {
   /** Índice/identificador (p.ej. "nvidia0", "amdgpu-card0"). */
-  index: string;
+  index: string
   /** Marca. */
-  vendor: "nvidia" | "amd";
+  vendor: 'nvidia' | 'amd'
   /** VRAM usada en MiB. */
-  memUsedMiB: number | null;
+  memUsedMiB: number | null
   /** VRAM total en MiB. */
-  memTotalMiB: number | null;
+  memTotalMiB: number | null
   /** % utilización del GPU. */
-  gpuUtilPct: number | null;
+  gpuUtilPct: number | null
 }
 
 /** Resultado completo de un benchmark. */
 export interface BenchmarkResult {
   /** ID único. */
-  id: string;
+  id: string
   /** Timestamp ISO. */
-  timestamp: string;
+  timestamp: string
   /** Configuración usada (snapshot del script parseado). */
-  config: ParsedScript;
+  config: ParsedScript
   /** Tokens por segundo en prompt eval (TG inverso). */
-  promptTokensPerSecond: number | null;
+  promptTokensPerSecond: number | null
   /** Tokens por segundo en generación. */
-  generationTokensPerSecond: number | null;
+  generationTokensPerSecond: number | null
   /** Aceptación del draft (speculative / MTP). */
-  draftAcceptance: number | null;
+  draftAcceptance: number | null
   /** draft-mtp: drafts generados (`#gen drafts`). null si no aplica. */
-  genDrafts: number | null;
+  genDrafts: number | null
   /** draft-mtp: drafts aceptados (`#acc drafts`). null si no aplica. */
-  accDrafts: number | null;
+  accDrafts: number | null
   /** draft-mtp: tokens generados (`#gen tokens`). null si no aplica. */
-  genTokens: number | null;
+  genTokens: number | null
   /** draft-mtp: tokens aceptados (`#acc tokens`). null si no aplica. */
-  accTokens: number | null;
+  accTokens: number | null
   /** Tiempo de carga del modelo en segundos. */
-  loadTimeSeconds: number | null;
+  loadTimeSeconds: number | null
   /** Latencia total del request de benchmark en ms. */
-  requestLatencyMs: number | null;
+  requestLatencyMs: number | null
   /** Prompt usado. */
-  prompt: string;
+  prompt: string
   /** Respuesta generada (truncada). */
-  response: string;
+  response: string
   /** Métricas de GPUs. */
-  gpus: GpuInfo[];
+  gpus: GpuInfo[]
   /** Errores encontrados durante el run. */
-  errors: string[];
+  errors: string[]
 }

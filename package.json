@@ -7,10 +7,12 @@
   "scripts": {
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "fix": "bunx prettier . --write"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "prettier": "3.8.4",
     "typescript": "^5.6.0"
   },
   "trustedDependencies": []

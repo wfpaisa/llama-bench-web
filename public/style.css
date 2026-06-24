@@ -10,7 +10,7 @@
   --green: #3fb950;
   --red: #f85149;
   --amber: #d29922;
-  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
 
 * {
@@ -28,7 +28,7 @@ body {
   font-family:
     system-ui,
     -apple-system,
-    "Segoe UI",
+    'Segoe UI',
     Roboto,
     sans-serif;
   font-size: 14px;
@@ -161,8 +161,8 @@ main {
   opacity: 0.5;
 }
 
-input[type="text"],
-input[type="number"],
+input[type='text'],
+input[type='number'],
 select,
 textarea {
   background: var(--panel-2);
@@ -507,11 +507,11 @@ th.sort-active {
   color: var(--accent);
 }
 th.sort-asc::after {
-  content: " ▲";
+  content: ' ▲';
   font-size: 9px;
 }
 th.sort-desc::after {
-  content: " ▼";
+  content: ' ▼';
   font-size: 9px;
 }
 td.num {
