@@ -80,20 +80,20 @@
           <table id="history-table">
             <thead>
               <tr>
-                <th></th>
-                <th>Fecha</th>
-                <th>Modelo</th>
-                <th>ctx</th>
-                <th>batch</th>
-                <th>cache</th>
-                <th>device</th>
-                <th>tsplit</th>
-                <th>prompt T/s</th>
-                <th>gen T/s</th>
-                <th>draft acc</th>
-                <th>load s</th>
-                <th>VRAM</th>
-                <th>Total VRAM</th>
+                <th title="Select row for comparison"></th>
+                <th title="Benchmark run timestamp">Fecha</th>
+                <th title="Model path/name">Modelo</th>
+                <th title="Context window size (tokens)">ctx</th>
+                <th title="Batch size / Ubatch size">batch</th>
+                <th title="KV cache quantization type (K / V)">cache</th>
+                <th title="Compute device (e.g. CUDA, Vulkan)">device</th>
+                <th title="Tensor parallel split ratio across GPUs">tsplit</th>
+                <th title="Prompt evaluation tokens per second">prompt T/s</th>
+                <th title="Generation tokens per second">gen T/s</th>
+                <th title="Speculative draft acceptance rate (0-1)">draft acc</th>
+                <th title="Model load time in seconds">load s</th>
+                <th title="VRAM used per GPU (GB)">VRAM</th>
+                <th title="Total VRAM used across all GPUs (GB)">Total VRAM</th>
                 <th></th>
               </tr>
             </thead>
