@@ -315,17 +315,22 @@ function renderGpus(gpus) {
 $("btn-gpu-refresh").addEventListener("click", loadGpus)
 
 // ── Resultado actual ──
-function metric(k, v, unit = "", cls = "") {
+function metric(k, v, unit = "", cls = "", sub = "") {
   const val = v == null ? "—" : typeof v === "number" ? v.toFixed(2) : v
-  return `<div class="metric"><div class="k">${k}</div><div class="v ${cls}">${val}<small style="font-size:12px;color:var(--muted)"> ${unit}</small></div></div>`
+  const subHtml = sub ? `<div class="k-sub">${sub}</div>` : ""
+  return `<div class="metric"><div class="k">${k}</div>${subHtml}<div class="v ${cls}">${val}<small style="font-size:12px;color:var(--muted)"> ${unit}</small></div></div>`
 }
 function renderLastResult(r) {
   $("last-result-card").hidden = false
   const gpuLine = r.gpus.map((g) => `${g.index}: ${(g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : "?")} GB`).join(" · ") || "—"
   $("last-result").innerHTML =
-    metric("Prompt T/s", r.promptTokensPerSecond, "tok/s", "green") +
-    metric("Gen T/s", r.generationTokensPerSecond, "tok/s", "green") +
+    metric("Prompt T/s", r.promptTokensPerSecond, "tok/s", "green", "Reading (prompt processing)") +
+    metric("Gen T/s", r.generationTokensPerSecond, "tok/s", "green", "Generation (token output)") +
     metric("Draft acc", r.draftAcceptance, "", "amber") +
+    metric("Gen drafts", r.genDrafts, "", "") +
+    metric("Acc drafts", r.accDrafts, "", "") +
+    metric("Gen tokens", r.genTokens, "", "") +
+    metric("Acc tokens", r.accTokens, "", "") +
     metric("Load time", r.loadTimeSeconds, "s") +
     metric("Latencia req", r.requestLatencyMs, "ms") +
     `<div class="metric" style="grid-column: span 2"><div class="k">VRAM</div><div class="v" style="font-size:13px">${gpuLine}</div></div>`
@@ -379,12 +384,31 @@ async function loadHistory() {
   try {
     const data = await api("/history")
     history = data.results || []
+    populateModelFilter()
     applySort()
     renderHistory()
     updateSortUI()
   } catch {
     /* ignore */
   }
+}
+
+/** Llena el <select> de filtro de modelo con los modelos base únicos del historial. */
+function populateModelFilter() {
+  const sel = $("model-filter")
+  if (!sel) return
+  const bases = new Set()
+  for (const r of history) {
+    const b = modelBase(r.config?.model)
+    if (b) bases.add(b)
+  }
+  const sorted = [...bases].sort((a, b) => a.localeCompare(b))
+  // Preservar selección actual aunque ya no esté en la lista.
+  const current = sel.value
+  sel.innerHTML = `<option value="">Todos</option>` +
+    sorted.map((b) => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join("")
+  if (sorted.includes(current)) sel.value = current
+  else { modelFilter = ""; localStorage.setItem(STORAGE_MODEL_FILTER_KEY, "") }
 }
 function fmt(n, d = 2) {
   return n == null ? "—" : Number(n).toFixed(d)
@@ -393,6 +417,95 @@ function shortModel(m) {
   if (!m) return "—"
   const base = m.split(":")[0]
   return base.split("/").pop()?.slice(0, 22) || base
+}
+
+/**
+ * Normaliza un modelo a su base comparable (sin org/ ni sufijo de quant tras ':')
+ * para agrupar/filtrar. p.ej. "unsloth/Qwen3.6-35B-A3B-UD-Q4_K_S" -> "Qwen3.6-35B-A3B".
+ */
+function modelBase(m) {
+  if (!m) return null
+  const noOrg = m.split(":")[0].split("/").pop() || m
+  return noOrg
+}
+
+// ── Filtro por modelo (persistido) ──
+const STORAGE_MODEL_FILTER_KEY = "llama-bench-model-filter"
+let modelFilter = (() => {
+  try { return localStorage.getItem(STORAGE_MODEL_FILTER_KEY) || "" } catch { return "" }
+})()
+
+// Patrones para partir el nombre del modelo en piezas (badges).
+const SIZE_RE = /^(\d+B(?:-A\d+B)?|MoE|A\d+B)$/i
+// Quant: tokens tipo "Q4_K_S", "Q4_K_M", "Q8_0", "F16", "BF16", "UD-Q4_K_S", "IQL", etc.
+const QUANT_RE = /^(UD-)?(I?Q\d[_A-Z0-9]*|IQ\d[_A-Z0-9]*|F16|F32|BF16|FP16|FP8|TQ\d[_A-Z0-9]*)$/i
+
+/**
+ * Parte un nombre de modelo en { base, size, quant, mtp }.
+ *   "Qwen3.6-35B-A3B-UD-Q4_K_S" -> { base:"Qwen3.6", size:"35B-A3B", quant:"UD-Q4_K_S", mtp:false }
+ *   "Modelo-7B-MTP"             -> { base:"Modelo", size:"7B", quant:null, mtp:true }
+ */
+function parseModel(m) {
+  if (!m) return null
+  const full = modelBase(m) ?? m
+  const hasMtp = /MTP/i.test(full)
+  // Sufijo de quant tras ':' (p.ej. "Qwen...:UD-Q4_K_S").
+  let quant = null
+  let body = full
+  if (m.includes(":")) {
+    quant = m.split(":").slice(1).join(":")
+    body = m.split(":")[0].split("/").pop() || full
+  }
+  const parts = body.split(/-/).filter(Boolean)
+  let size = null
+  let sizeStart = -1
+  let sizeEnd = -1
+  // Localizar el token de tamaño (p.ej. "35B", agrupado con un posible "A3B" MoE).
+  for (let i = 0; i < parts.length; i++) {
+    if (SIZE_RE.test(parts[i])) {
+      sizeStart = i
+      if (i + 1 < parts.length && /^A\d+B$/i.test(parts[i + 1])) {
+        size = `${parts[i]}-${parts[i + 1]}`
+        sizeEnd = i + 1
+      } else {
+        size = parts[i]
+        sizeEnd = i
+      }
+      break
+    }
+  }
+  // base = todo lo anterior al tamaño (o el primer token si no hay tamaño).
+  const baseEnd = sizeStart >= 0 ? sizeStart : 1
+  const base = parts.slice(0, baseEnd).join("-") || body
+  // Quant por sufijo si no vino en ':'.
+  if (!quant) {
+    for (let i = sizeEnd + 1; i < parts.length; i++) {
+      if (QUANT_RE.test(parts[i])) {
+        quant = parts.slice(i).join("-")
+        break
+      }
+    }
+  }
+  return { base, size, quant, mtp: hasMtp }
+}
+
+/** Render HTML de la celda de modelo con badges. */
+function renderModelCell(m) {
+  const p = parseModel(m)
+  if (!p) return "—"
+  let html = `<span class="model-cell" title="${m ?? ""}">`
+  html += `<span class="model-name">${escapeHtml(p.base)}</span>`
+  if (p.size) html += `<span class="badge badge-size">${escapeHtml(p.size)}</span>`
+  if (p.quant) html += `<span class="badge badge-quant">${escapeHtml(p.quant)}</span>`
+  if (p.mtp) html += `<span class="badge badge-mtp">MTP</span>`
+  html += "</span>"
+  return html
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]))
 }
 function renderHistory() {
   const tbody = $("history-table").querySelector("tbody")
@@ -404,6 +517,9 @@ function renderHistory() {
     l: Math.min(...history.map((h) => h.loadTimeSeconds ?? Infinity), Infinity),
   }
   for (const r of history) {
+    // Filtro por modelo base.
+    if (modelFilter && modelBase(r.config?.model) !== modelFilter) continue
+
     const tr = document.createElement("tr")
     tr.dataset.id = r.id
     if (selected.has(r.id)) tr.classList.add("selected")
@@ -425,10 +541,13 @@ function renderHistory() {
       ? `<button class="ghost tiny apply" title="Cargar script en editor">↗</button>`
       : ""
 
+    // Índices: 0 sel, 1 fecha, 2 modelo, 3 ctx, 4 batch, 5 cache, 6 device,
+    // 7 tsplit, 8 promptTps, 9 genTps, 10 draftAcc, 11 genDrafts, 12 accDrafts,
+    // 13 genTokens, 14 accTokens, 15 loadTime, 16 vram, 17 totalVram, 18 apply, 19 del.
     const cells = [
       `<input type="checkbox" class="sel" ${selected.has(r.id) ? "checked" : ""}/>`,
       date.toLocaleString(),
-      `<span title="${c.model ?? ""}">${shortModel(c.model)}</span>`,
+      renderModelCell(c.model),
       fmt(c.ctxSize),
       `${fmt(c.batchSize)}/${fmt(c.ubatchSize)}`,
       `${c.cacheTypeK ?? "—"}/${c.cacheTypeV ?? "—"}`,
@@ -437,6 +556,10 @@ function renderHistory() {
       fmt(r.promptTokensPerSecond),
       fmt(r.generationTokensPerSecond),
       fmt(r.draftAcceptance, 3),
+      fmt(r.genDrafts, 0),
+      fmt(r.accDrafts, 0),
+      fmt(r.genTokens, 0),
+      fmt(r.accTokens, 0),
       fmt(r.loadTimeSeconds, 2),
       gpuTxt,
       totalVramStr,
@@ -445,12 +568,13 @@ function renderHistory() {
     ]
     tr.innerHTML = cells
       .map((c, i) => {
-        const cls = i >= 8 && i <= 11 ? "num" : ""
+        // Columnas numéricas: promptTps(8)..loadTime(15).
+        const cls = i >= 8 && i <= 15 ? "num" : ""
         let extra = ""
         if (i === 8 && r.promptTokensPerSecond === best.p && best.p > -Infinity) extra = "best"
         if (i === 9 && r.generationTokensPerSecond === best.g && best.g > -Infinity) extra = "best"
         if (i === 10 && r.draftAcceptance === best.d && best.d > -Infinity) extra = "best"
-        if (i === 11 && r.loadTimeSeconds === best.l && best.l < Infinity) extra = "best"
+        if (i === 15 && r.loadTimeSeconds === best.l && best.l < Infinity) extra = "best"
         return `<td class="${cls} ${extra}">${c}</td>`
       })
       .join("")
@@ -522,6 +646,10 @@ function renderCompare(items) {
     ["Prompt T/s", (r) => fmt(r.promptTokensPerSecond)],
     ["Gen T/s", (r) => fmt(r.generationTokensPerSecond)],
     ["Draft acc", (r) => fmt(r.draftAcceptance, 3)],
+    ["Gen drafts", (r) => fmt(r.genDrafts, 0)],
+    ["Acc drafts", (r) => fmt(r.accDrafts, 0)],
+    ["Gen tokens", (r) => fmt(r.genTokens, 0)],
+    ["Acc tokens", (r) => fmt(r.accTokens, 0)],
     ["Load (s)", (r) => fmt(r.loadTimeSeconds, 2)],
     ["Latencia (ms)", (r) => fmt(r.requestLatencyMs, 0)],
     ["VRAM (GB)", (r) => r.gpus.map((g) => (g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : "?")).join(" + ") || "—"],
@@ -564,6 +692,17 @@ async function init() {
       updateSortUI()
     })
   })
+
+  // Filtro por modelo.
+  const modelSel = $("model-filter")
+  if (modelSel) {
+    modelSel.value = modelFilter
+    modelSel.addEventListener("change", () => {
+      modelFilter = modelSel.value
+      localStorage.setItem(STORAGE_MODEL_FILTER_KEY, modelFilter)
+      renderHistory()
+    })
+  }
 
   // Polling.
   setInterval(pollStatus, 1500)

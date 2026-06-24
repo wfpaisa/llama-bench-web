@@ -462,6 +462,10 @@ interface ParsedMetrics {
   promptTokensPerSecond: number | null;
   generationTokensPerSecond: number | null;
   draftAcceptance: number | null;
+  genDrafts: number | null;
+  accDrafts: number | null;
+  genTokens: number | null;
+  accTokens: number | null;
   loadTimeSeconds: number | null;
 }
 
@@ -471,6 +475,10 @@ function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     promptTokensPerSecond: null,
     generationTokensPerSecond: null,
     draftAcceptance: null,
+    genDrafts: null,
+    accDrafts: null,
+    genTokens: null,
+    accTokens: null,
     loadTimeSeconds: null,
   };
   // Tomamos desde el final para quedarnos con la última medición.
@@ -490,6 +498,20 @@ function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
       const mm = l.match(/draft acceptance\s*=?\s*([0-9.]+)/i);
       if (mm) m.draftAcceptance = Number(mm[1]);
     }
+    // draft-mtp: una sola línea con #gen drafts, #acc drafts, #gen tokens, #acc tokens.
+    //   statistics        draft-mtp: #calls(b,g,a) = ..., #gen drafts =  418,
+    //   #acc drafts = 403, #gen tokens = 836, #acc tokens = 783, ...
+    if (m.genDrafts === null) {
+      const mm = l.match(
+        /draft-mtp:.*?#gen drafts\s*=\s*(\d+).*?#acc drafts\s*=\s*(\d+).*?#gen tokens\s*=\s*(\d+).*?#acc tokens\s*=\s*(\d+)/i,
+      );
+      if (mm) {
+        m.genDrafts = Number(mm[1]);
+        m.accDrafts = Number(mm[2]);
+        m.genTokens = Number(mm[3]);
+        m.accTokens = Number(mm[4]);
+      }
+    }
     if (m.loadTimeSeconds === null) {
       const mm = l.match(/model loaded.*?([0-9.]+)\s*ms/i);
       if (mm) m.loadTimeSeconds = Number(mm[1]) / 1000;
@@ -498,6 +520,7 @@ function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
       m.promptTokensPerSecond !== null &&
       m.generationTokensPerSecond !== null &&
       m.draftAcceptance !== null &&
+      m.genDrafts !== null &&
       m.loadTimeSeconds !== null
     ) {
       break;
@@ -665,6 +688,10 @@ async function runBenchmark(
       promptTokensPerSecond: parsedMetrics.promptTokensPerSecond,
       generationTokensPerSecond: parsedMetrics.generationTokensPerSecond,
       draftAcceptance: parsedMetrics.draftAcceptance,
+      genDrafts: parsedMetrics.genDrafts,
+      accDrafts: parsedMetrics.accDrafts,
+      genTokens: parsedMetrics.genTokens,
+      accTokens: parsedMetrics.accTokens,
       loadTimeSeconds: parsedMetrics.loadTimeSeconds,
       requestLatencyMs,
       prompt,
@@ -712,6 +739,10 @@ function finalize(
     promptTokensPerSecond: null,
     generationTokensPerSecond: null,
     draftAcceptance: null,
+    genDrafts: null,
+    accDrafts: null,
+    genTokens: null,
+    accTokens: null,
     loadTimeSeconds: null,
     requestLatencyMs: null,
     prompt,

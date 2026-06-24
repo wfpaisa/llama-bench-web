@@ -83,15 +83,24 @@
               <tr>
                 <th title="Select row for comparison"></th>
                 <th data-sort="date" title="Benchmark run timestamp">Fecha</th>
-                <th title="Model path/name">Modelo</th>
+                <th class="th-filter" title="Model path/name">
+                  <span>Modelo</span>
+                  <select id="model-filter" class="col-filter" title="Filtrar por modelo">
+                    <option value="">Todos</option>
+                  </select>
+                </th>
                 <th data-sort="ctx" title="Context window size (tokens)">ctx</th>
                 <th title="Batch size / Ubatch size">batch</th>
                 <th title="KV cache quantization type (K / V)">cache</th>
                 <th title="Compute device (e.g. CUDA, Vulkan)">device</th>
                 <th title="Tensor parallel split ratio across GPUs">tsplit</th>
-                <th data-sort="promptTps" title="Prompt evaluation tokens per second">prompt T/s</th>
-                <th data-sort="genTps" title="Generation tokens per second">gen T/s</th>
-                <th data-sort="draftAcc" title="Speculative draft acceptance rate (0-1)">draft acc</th>
+                <th data-sort="promptTps" title="Lectura - Prompt evaluation tokens per second">prompt T/s</th>
+                <th data-sort="genTps" title="Generación - Generation tokens per second">gen T/s</th>
+                <th data-sort="draftAcc" title="Especificación - Speculative draft acceptance rate (0-1)">draft acc</th>
+                <th title="draft-mtp: generated drafts (#gen drafts)">gen dr</th>
+                <th title="draft-mtp: accepted drafts (#acc drafts)">acc dr</th>
+                <th title="draft-mtp: generated tokens (#gen tokens)">gen tk</th>
+                <th title="draft-mtp: accepted tokens (#acc tokens)">acc tk</th>
                 <th data-sort="loadTime" title="Model load time in seconds">load s</th>
                 <th title="VRAM used per GPU (GB)">VRAM</th>
                 <th data-sort="totalVram" title="Total VRAM used across all GPUs (GB)">Total VRAM</th>

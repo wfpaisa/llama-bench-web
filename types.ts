@@ -117,6 +117,14 @@ export interface BenchmarkResult {
   generationTokensPerSecond: number | null;
   /** Aceptación del draft (speculative / MTP). */
   draftAcceptance: number | null;
+  /** draft-mtp: drafts generados (`#gen drafts`). null si no aplica. */
+  genDrafts: number | null;
+  /** draft-mtp: drafts aceptados (`#acc drafts`). null si no aplica. */
+  accDrafts: number | null;
+  /** draft-mtp: tokens generados (`#gen tokens`). null si no aplica. */
+  genTokens: number | null;
+  /** draft-mtp: tokens aceptados (`#acc tokens`). null si no aplica. */
+  accTokens: number | null;
   /** Tiempo de carga del modelo en segundos. */
   loadTimeSeconds: number | null;
   /** Latencia total del request de benchmark en ms. */
