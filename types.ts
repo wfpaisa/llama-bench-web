@@ -1,80 +1,60 @@
 // Tipos compartidos entre backend y frontend.
 // Se mantienen intencionalmente simples (sin dependencias externas).
+//
+// NOTA IMPORTANTE (cambio de arquitectura):
+//   La fuente de verdad de la configuración del servidor pasó de ser un objeto
+//   estructurado (ServerConfig) a un SCRIPT de shell crudo editado en la UI.
+//   ParsedScript representa tanto el script tal cual como los escalares que el
+//   backend extrae de él (para display de historial y para la API de benchmark).
 
-/** Parámetros que el usuario puede editar en la UI. Reflejan un subconjunto de flags de llama-server. */
-export interface ServerConfig {
-  /** Ruta o nombre del binario llama-server (p.ej. "./llama-server"). */
+/**
+ * Script de llama-server ya parseado: texto crudo + tokens + escalares extraídos.
+ *
+ * - `script`: el texto exacto que edita el usuario (con `\` y saltos de línea).
+ * - `binary` / `argv`: tokens resultantes de parsear `script` (listo para spawn).
+ * - Los escalares (`model`, `ctxSize`, etc.) vienen del parseo de `argv`;
+ *   un valor `null` significa "el flag no estaba en el script". Se usan tanto
+ *   para poblar columnas del historial como para armar el request del benchmark.
+ *
+ * Backward-compat: las entradas viejas del historial guardaban una ServerConfig
+ * estructurada con estas mismas claves escalares. El render usa `?? "—"`, así
+ * que siguen funcionando. Solo las entradas nuevas traen `script`.
+ */
+export interface ParsedScript {
+  /** Script crudo tal como se edita (con continuaciones `\` y newlines). */
+  script: string;
+  /** Ruta/nombre del binario (primer token del script). */
   binary: string;
-  /** Modelo HF repo/file. p.ej. "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL". */
-  model: string;
-  /** --ctx-size */
-  ctxSize: number;
-  /** --batch-size */
-  batchSize: number;
-  /** --ubatch-size */
-  ubatchSize: number;
-  /** --tensor-split (string "2,7"). Vacío = no usar el flag. */
-  tensorSplit: string;
-  /** --device (p.ej. "Vulkan0,Vulkan1"). */
-  device: string;
-  /** --n-gpu-layers */
-  nGpuLayers: number;
-  /** --cache-type-k (f16 | q8_0 | q4_0). */
-  cacheTypeK: string;
-  /** --cache-type-v (f16 | q8_0 | q4_0). */
-  cacheTypeV: string;
-  /** --flash-attn (on | off). */
-  flashAttn: string;
-  /** --no-mmap */
-  noMmap: boolean;
-  /** --jinja */
-  jinja: boolean;
-  /** --no-mmproj */
-  noMmproj: boolean;
-  /** Temperatura de muestreo (para el benchmark; se pasa a la API, no a --temp). */
-  temp: number;
-  /** top-p (API). */
-  topP: number;
-  /** top-k (API). */
-  topK: number;
-  /** --spec-type (draft-mtp | ...). Vacío = no usar el flag. */
-  specType: string;
-  /** --spec-draft-n-max */
-  specDraftNMax: number;
-  /** --metrics */
-  metrics: boolean;
-  /** --log-prefix */
-  logPrefix: boolean;
-  /** --cache-reuse */
-  cacheReuse: number;
-  /** --n-cpu-moe (número de capas MoE en CPU). */
-  nCpuMoe: number;
-  /** --min-p (sampling). */
-  minP: number;
-  /** --repeat-penalty. */
-  repeatPenalty: number;
-  /** --repeat-last-n. */
-  repeatLastN: number;
-  /** --presence-penalty. */
-  presencePenalty: number;
-  /** --dry-multiplier. */
-  dryMultiplier: number;
-  /** --dry-base. */
-  dryBase: number;
-  /** --dry-allowed-length. */
-  dryAllowedLength: number;
-  /** --dry-penalty-last-n. */
-  dryPenaltyLastN: number;
-  /** --alias. */
-  alias: string;
-  /** --no-context-shift. */
-  noContextShift: boolean;
-  /** --chat-template-kwargs. */
-  chatTemplateKwargs: string;
-  /** Host/port donde escuchará llama-server (lo lanza el backend). */
+  /** Argumentos tokenizados (sin el binario). */
+  argv: string[];
+
+  // ── Escalares extraídos para historial + benchmark ──
+  /** Modelo HF repo/file (`-hf`). null si no estaba. */
+  model: string | null;
+  /** Host (`--host`); default "127.0.0.1" si no estaba. */
   host: string;
-  /** Puerto del servidor llama.cpp interno. */
+  /** Puerto (`--port`); default 8080 si no estaba. */
   port: number;
+  /** `--ctx-size`. null si no estaba. */
+  ctxSize: number | null;
+  /** `--batch-size`. null si no estaba. */
+  batchSize: number | null;
+  /** `--ubatch-size`. null si no estaba. */
+  ubatchSize: number | null;
+  /** `--cache-type-k`. null si no estaba. */
+  cacheTypeK: string | null;
+  /** `--cache-type-v`. null si no estaba. */
+  cacheTypeV: string | null;
+  /** `--device` (p.ej. "Vulkan0,Vulkan1"). null si no estaba. */
+  device: string | null;
+  /** `--tensor-split`. null si no estaba. */
+  tensorSplit: string | null;
+  /** `--temp` (sampling, usado en el request del benchmark). null si no estaba. */
+  temp: number | null;
+  /** `--top-p` (sampling). null si no estaba. */
+  topP: number | null;
+  /** `--top-k` (sampling). null si no estaba. */
+  topK: number | null;
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */
@@ -129,8 +109,8 @@ export interface BenchmarkResult {
   id: string;
   /** Timestamp ISO. */
   timestamp: string;
-  /** Configuración usada (snapshot). */
-  config: ServerConfig;
+  /** Configuración usada (snapshot del script parseado). */
+  config: ParsedScript;
   /** Tokens por segundo en prompt eval (TG inverso). */
   promptTokensPerSecond: number | null;
   /** Tokens por segundo en generación. */

@@ -17,20 +17,21 @@
     </header>
 
     <main>
-      <!-- ── Configuración ── -->
+      <!-- ── Configuración del servidor ── -->
       <section class="card">
         <h2>Configuración del servidor</h2>
 
-        <div id="cfg-form" class="cfg-form"></div>
-        <div class="actions">
-          <div id="blq-preview">
-            <pre id="argv-preview" class="muted small" contenteditable="true" spellcheck="false"></pre>
-          </div>
+        <div class="script-cols">
+          <div id="editor-host"></div>
+          <div class="reserved muted">Reservado</div>
+        </div>
 
+        <div class="actions">
           <div class="buttons">
             <button id="btn-start" class="primary">▶ Play</button>
             <button id="btn-stop" class="danger" disabled>■ Stop</button>
-            <button id="btn-reset-storage" class="ghost danger">Reset storage</button>
+            <button id="btn-save-default" class="ghost">Guardar default</button>
+            <button id="btn-restore-default" class="ghost">Restablecer default</button>
           </div>
         </div>
       </section>
@@ -128,6 +129,6 @@
       </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

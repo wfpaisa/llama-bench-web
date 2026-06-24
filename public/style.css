@@ -127,78 +127,39 @@ main {
   margin: 0;
 }
 
-/* Config form: campos verticales con toggle de habilitación. */
+/* ── Script editor: dos columnas ── */
 
-.cfg-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.script-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.cfg-row {
+.editor-host {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* CodeMirror: altura fija y scroll interno. */
+.editor-host .cm-editor {
+  height: 320px;
+  font-size: 13px;
+}
+
+.editor-host .cm-scroller {
+  overflow: auto;
+}
+
+.reserved {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--border);
-  min-height: 38px;
-}
-
-.cfg-row:last-child {
-  border-bottom: none;
-}
-
-.cfg-row .cfg-toggle {
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  cursor: pointer;
-  accent-color: var(--accent);
-}
-
-.cfg-row .cfg-toggle:checked + .cfg-label {
-  color: var(--text);
-}
-
-.cfg-row .cfg-label {
-  flex: 0 0 auto;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  min-height: 320px;
   font-size: 12px;
-  color: var(--muted);
-  user-select: none;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cfg-row .cfg-flag {
-  font-size: 11px;
-  color: #4a5568;
-  margin-left: 4px;
-  font-family: var(--mono);
-}
-
-.cfg-row .cfg-input {
-  flex: 0 0 auto;
-  min-width: 0;
-}
-
-.cfg-row.disabled .cfg-input,
-.cfg-row.disabled select,
-.cfg-row.disabled textarea {
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-.cfg-row.disabled .cfg-label {
-  opacity: 0.45;
-}
-
-.cfg-row .cfg-input input,
-.cfg-row .cfg-input select {
-  min-width: 3rem;
-  field-sizing: content;
+  opacity: 0.5;
 }
 
 input[type="text"],
@@ -240,19 +201,7 @@ textarea {
     display: flex;
     align-items: center;
     gap: 1rem;
-  }
-
-  #blq-preview {
-    background: #010409;
-    border: 1px solid var(--border);
-    margin-bottom: 1rem;
-    width: 100%;
-    border-radius: 0.5rem;
-    padding: 0rem 0.5rem;
-
-    #argv-preview {
-      outline: none;
-    }
+    flex-wrap: wrap;
   }
 }
 

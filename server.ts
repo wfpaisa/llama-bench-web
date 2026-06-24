@@ -10,7 +10,7 @@ import { existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
-  ServerConfig,
+  ParsedScript,
   ServerStatus,
   StatusResponse,
   LogEntry,
@@ -23,16 +23,18 @@ import type {
 // Puerto del backend web. NO usar 8080: es el default de llama-server y
 // chocaría/confundiría con él.
 const PORT = Number(process.env.PORT ?? 8765);
-const LLAMA_BINARY_DEFAULT = process.env.LLAMA_SERVER_PATH ?? "./llama-server";
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), "data");
 const HISTORY_FILE = join(DATA_DIR, "history.json");
+// Script por defecto guardado desde la UI (botón "Guardar default").
+// Vive fuera de git (.gitignore ignora data/*). Solo existe tras el primer guardado.
+const SCRIPT_FILE = join(DATA_DIR, "script-default.txt");
 
 // ─── Estado global del backend ────────────────────────────────────────────────
 interface ManagedServer {
   proc: Subprocess<"ignore", "pipe", "pipe">;
   pid: number;
   startedAt: string;
-  config: ServerConfig;
+  parsed: ParsedScript;
   // Resuelve cuando el proceso emite "server is listening" o al morir.
   ready: Promise<void>;
   readyResolve?: () => void;
@@ -67,112 +69,139 @@ function urlFor(c: { host: string; port: number }): string {
   return `http://${host}:${c.port}`;
 }
 
-function defaultConfig(): ServerConfig {
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── PARSEO DE SCRIPT ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ESTA SECCIÓN ES LA QUE CONVIERTE EL SCRIPT CRUDO (editado en la UI) EN:
+//   1. Tokens ejecutables (`binary` + `argv`) para Bun.spawn.
+//   2. Escalares para display de historial y para armar el request del benchmark.
+//
+// El script es "binario + flags" estilo:
+//   /path/llama-server \
+//     -hf modelo \
+//     --ctx-size 12000 \
+//     --device Vulkan0,Vulkan1
+//
+// NO soporta pipes/redirecciones/variables de entorno de shell: son pasadas
+// literalmente como argumentos. Es intencional (seguridad + fiabilidad del
+// kill de grupo de proceso). Si el flag no está -> el escalar es null.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Tokeniza un script de shell simple en argumentos.
+ * - Colapsa continuaciones de línea (`\` al final de línea).
+ * - Respeta comillas simples y dobles (sin expansión de variables).
+ * - Ignora comentarios `#` que empiecen una línea (no tras argumentos).
+ * Lanza Error si hay comillas sin cerrar.
+ */
+function tokenizeScript(script: string): string[] {
+  // 1) Quitar comentarios de línea completa (línea cuyo primer no-espacio es #).
+  const lines = script.split(/\r?\n/).filter((l) => {
+    const t = l.trimStart();
+    return !(t.startsWith("#"));
+  });
+  // 2) Unir continuaciones: una línea que termina en '\' se concatena con la
+  //    siguiente reemplazando `\` + newline por un espacio.
+  const joined = lines.join("\n").replace(/\\\n/g, " ");
+  // 3) Tokenizar respetando comillas.
+  const tokens: string[] = [];
+  let i = 0;
+  const n = joined.length;
+  while (i < n) {
+    // Saltar espacios.
+    while (i < n && /\s/.test(joined[i])) i++;
+    if (i >= n) break;
+    let tok = "";
+    while (i < n && !/\s/.test(joined[i])) {
+      const ch = joined[i];
+      if (ch === '"' || ch === "'") {
+        // Leer hasta la comilla de cierre.
+        const quote = ch;
+        i++;
+        const start = i;
+        while (i < n && joined[i] !== quote) i++;
+        if (i >= n) throw new Error(`Comilla ${quote} sin cerrar en el script.`);
+        tok += joined.slice(start, i);
+        i++; // consumir comilla de cierre
+      } else {
+        tok += ch;
+        i++;
+      }
+    }
+    if (tok !== "") tokens.push(tok);
+  }
+  return tokens;
+}
+
+/** Busca el valor de un flag de la forma `--flag valor` o `-x valor`. */
+function flagValue(argv: string[], flag: string): string | null {
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === flag && i + 1 < argv.length) return argv[i + 1];
+  }
+  return null;
+}
+
+/** Convierte a número o null si no es válido. */
+function toNumOrNull(s: string | null): number | null {
+  if (s === null) return null;
+  const v = Number(s);
+  return Number.isFinite(v) ? v : null;
+}
+
+/**
+ * Convierte el script crudo en ParsedScript.
+ * Lanza Error si el binario está vacío (no hay nada que ejecutar).
+ */
+function parseScript(script: string): ParsedScript {
+  const tokens = tokenizeScript(script);
+  if (tokens.length === 0 || !tokens[0]) {
+    throw new Error("El script está vacío: falta el binario de llama-server.");
+  }
+  const binary = tokens[0];
+  const argv = tokens.slice(1);
+
   return {
-    binary: LLAMA_BINARY_DEFAULT,
-    model: "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL",
-    ctxSize: 12000,
-    batchSize: 512,
-    ubatchSize: 256,
-    tensorSplit: "",
-    device: "Vulkan0,Vulkan1",
-    nGpuLayers: 999,
-    cacheTypeK: "q4_0",
-    cacheTypeV: "q4_0",
-    flashAttn: "on",
-    noMmap: true,
-    jinja: true,
-    noMmproj: true,
-    temp: 0.6,
-    topP: 0.95,
-    topK: 20,
-    specType: "draft-mtp",
-    specDraftNMax: 1,
-    metrics: true,
-    logPrefix: true,
-    cacheReuse: 256,
-    host: "127.0.0.1",
-    port: 8080,
-    nCpuMoe: 0,
-    minP: 0.0,
-    repeatPenalty: 1.0,
-    repeatLastN: 64,
-    presencePenalty: 0.0,
-    dryMultiplier: 0.0,
-    dryBase: 1.75,
-    dryAllowedLength: 2,
-    dryPenaltyLastN: -1,
-    alias: "",
-    noContextShift: false,
-    chatTemplateKwargs: "",
+    script,
+    binary,
+    argv,
+    model: flagValue(argv, "-hf"),
+    host: flagValue(argv, "--host") ?? "127.0.0.1",
+    port: toNumOrNull(flagValue(argv, "--port")) ?? 8080,
+    ctxSize: toNumOrNull(flagValue(argv, "--ctx-size")),
+    batchSize: toNumOrNull(flagValue(argv, "--batch-size")),
+    ubatchSize: toNumOrNull(flagValue(argv, "--ubatch-size")),
+    cacheTypeK: flagValue(argv, "--cache-type-k"),
+    cacheTypeV: flagValue(argv, "--cache-type-v"),
+    device: flagValue(argv, "--device"),
+    tensorSplit: flagValue(argv, "--tensor-split"),
+    temp: toNumOrNull(flagValue(argv, "--temp")),
+    topP: toNumOrNull(flagValue(argv, "--top-p")),
+    topK: toNumOrNull(flagValue(argv, "--top-k")),
   };
 }
 
-/** Construye argv de llama-server a partir de ServerConfig. */
-function buildArgs(c: ServerConfig): string[] {
-  const a: string[] = [];
-  if (c.model) a.push("-hf", c.model);
-  a.push("--n-gpu-layers", String(c.nGpuLayers));
-  a.push("--ctx-size", String(c.ctxSize));
-  a.push("--batch-size", String(c.batchSize));
-  a.push("--ubatch-size", String(c.ubatchSize));
-  if (c.cacheTypeK) a.push("--cache-type-k", c.cacheTypeK);
-  if (c.cacheTypeV) a.push("--cache-type-v", c.cacheTypeV);
-  if (c.cacheReuse > 0) a.push("--cache-reuse", String(c.cacheReuse));
-  if (c.flashAttn === "on") a.push("--flash-attn", "on");
-  if (c.noMmap) a.push("--no-mmap");
-  if (c.jinja) a.push("--jinja");
-  if (c.noMmproj) a.push("--no-mmproj");
-  if (c.specType) {
-    a.push("--spec-type", c.specType);
-    a.push("--spec-draft-n-max", String(c.specDraftNMax));
-  }
-  if (c.metrics) a.push("--metrics");
-  if (c.logPrefix) a.push("--log-prefix");
-  if (c.device) a.push("--device", c.device);
-  if (c.tensorSplit) a.push("--tensor-split", c.tensorSplit);
-  // MoE
-  if (c.nCpuMoe > 0) a.push("--n-cpu-moe", String(c.nCpuMoe));
-  // Sampling
-  if (c.minP > 0) a.push("--min-p", String(c.minP));
-  if (c.repeatPenalty !== 1.0) a.push("--repeat-penalty", String(c.repeatPenalty));
-  if (c.repeatLastN !== 64) a.push("--repeat-last-n", String(c.repeatLastN));
-  if (c.presencePenalty > 0) a.push("--presence-penalty", String(c.presencePenalty));
-  // DRY
-  if (c.dryMultiplier > 0) {
-    a.push("--dry-multiplier", String(c.dryMultiplier));
-    a.push("--dry-base", String(c.dryBase));
-    a.push("--dry-allowed-length", String(c.dryAllowedLength));
-    a.push("--dry-penalty-last-n", String(c.dryPenaltyLastN));
-  }
-  // Server / Template
-  if (c.alias) a.push("--alias", c.alias);
-  if (c.noContextShift) a.push("--no-context-shift");
-  if (c.chatTemplateKwargs) a.push("--chat-template-kwargs", c.chatTemplateKwargs);
-  // Importante: forzar host/port para poder hablar con la API.
-  a.push("--host", c.host || "127.0.0.1");
-  a.push("--port", String(c.port));
-  return a;
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── FIN PARSEO DE SCRIPT ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── Gestión del proceso llama-server ─────────────────────────────────────────
-async function startServer(cfg: ServerConfig): Promise<number> {
+async function startServer(parsed: ParsedScript): Promise<number> {
   if (managed)
     throw new Error("Ya hay un servidor corriendo. Detenlo primero.");
 
-  const args = buildArgs(cfg);
+  const { binary, argv } = parsed;
 
   // Resolver el directorio del binario para:
   //   1. Ponerlo como cwd (refleja lo que el usuario hace en la terminal).
   //   2. Añadirlo a LD_LIBRARY_PATH para que encuentre .so relativas
   //      (p.ej. libllama-server-impl.so).
-  const binAbs = resolve(cfg.binary);
+  const binAbs = resolve(binary);
   const binDir = dirname(binAbs);
   const env = { ...process.env } as Record<string, string>;
   const existing = env["LD_LIBRARY_PATH"] || "";
   env["LD_LIBRARY_PATH"] = existing ? `${binDir}:${existing}` : binDir;
 
-  systemLog(`spawn: ${cfg.binary} ${args.join(" ")}  (cwd=${binDir})`);
+  systemLog(`spawn: ${binary} ${argv.join(" ")}  (cwd=${binDir})`);
 
   let resolveReady: (() => void) | undefined;
   let rejectReady: ((e: Error) => void) | undefined;
@@ -182,7 +211,7 @@ async function startServer(cfg: ServerConfig): Promise<number> {
   });
 
   const proc = spawn({
-    cmd: [cfg.binary, ...args],
+    cmd: [binary, ...argv],
     stdout: "pipe",
     stderr: "pipe",
     cwd: binDir,
@@ -196,7 +225,7 @@ async function startServer(cfg: ServerConfig): Promise<number> {
     proc,
     pid,
     startedAt: new Date().toISOString(),
-    config: cfg,
+    parsed,
     ready,
     readyResolve: resolveReady,
     readyReject: rejectReady,
@@ -547,49 +576,65 @@ function subtractGpuBaseline(final: GpuInfo[], baseline: GpuInfo[]): GpuInfo[] {
 const DEFAULT_PROMPT = "Explica qué es Vulkan en 100 palabras";
 
 async function runBenchmark(
-  cfg: ServerConfig,
+  script: string,
   prompt: string,
 ): Promise<BenchmarkResult> {
   const errors: string[] = [];
+
+  // 0) Parsear el script. Si falla, no hay nada que ejecutar.
+  let parsed: ParsedScript;
+  try {
+    parsed = parseScript(script);
+  } catch (e) {
+    return finalize(null, prompt, [
+      `Script inválido: ${(e as Error).message}`,
+    ], 0);
+  }
+
   // Marcador: índice del log desde el cual parsear al final.
   const logStartIndex = logBuffer.length;
 
-  // 0) Capturar baseline de GPU antes de iniciar (para restar VRAM ya usada).
+  // 0b) Capturar baseline de GPU antes de iniciar (para restar VRAM ya usada).
   const gpuBaseline = await readGpuStats();
 
   // 1) Arrancar servidor.
   systemLog("benchmark: iniciando llama-server…");
   try {
-    await startServer(cfg);
+    await startServer(parsed);
   } catch (e) {
     errors.push(`No se pudo iniciar el servidor: ${(e as Error).message}`);
-    return finalize(cfg, prompt, errors, logStartIndex);
+    return finalize(parsed, prompt, errors, logStartIndex);
   }
 
   try {
     // 2) Esperar que el servidor acepte conexiones HTTP.
     //    "server is listening" puede aparecer antes de que el socket esté
     //    realmente listo, especialmente con modelos grandes.
-    const base = urlFor(cfg);
+    const base = urlFor(parsed);
     await waitForServer(base);
     systemLog("benchmark: servidor responde, ejecutando request…");
 
-    // 3) Request de benchmark.
+    // 3) Request de benchmark. Se omite cualquier parámetro de sampling que
+    //    no estuviera en el script (temp/topP/topK = null).
+    const body: Record<string, unknown> = {
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 256,
+      stream: false,
+    };
+    if (parsed.model) {
+      body.model = parsed.model.split(":")[0] ?? parsed.model;
+    }
+    if (parsed.temp !== null) body.temperature = parsed.temp;
+    if (parsed.topP !== null) body.top_p = parsed.topP;
+    if (parsed.topK !== null) body.top_k = parsed.topK;
+
     const t0 = performance.now();
     let responseText = "";
     try {
       const resp = await fetch(`${base}/v1/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: cfg.model.split(":")[0] ?? cfg.model,
-          messages: [{ role: "user", content: prompt }],
-          temperature: cfg.temp,
-          top_p: cfg.topP,
-          top_k: cfg.topK,
-          max_tokens: 256,
-          stream: false,
-        }),
+        body: JSON.stringify(body),
       });
       if (!resp.ok) {
         errors.push(`HTTP ${resp.status} en /v1/chat/completions`);
@@ -607,7 +652,7 @@ async function runBenchmark(
 
     // 3) Parsear métricas de logs.
     const relevantLines = logBuffer.slice(logStartIndex);
-    const parsed = parseMetricsFromLogs(relevantLines);
+    const parsedMetrics = parseMetricsFromLogs(relevantLines);
 
     // 4) GPU stats finales y restar baseline.
     const gpusFinal = await readGpuStats();
@@ -616,11 +661,11 @@ async function runBenchmark(
     const result: BenchmarkResult = {
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
-      config: { ...cfg },
-      promptTokensPerSecond: parsed.promptTokensPerSecond,
-      generationTokensPerSecond: parsed.generationTokensPerSecond,
-      draftAcceptance: parsed.draftAcceptance,
-      loadTimeSeconds: parsed.loadTimeSeconds,
+      config: parsed,
+      promptTokensPerSecond: parsedMetrics.promptTokensPerSecond,
+      generationTokensPerSecond: parsedMetrics.generationTokensPerSecond,
+      draftAcceptance: parsedMetrics.draftAcceptance,
+      loadTimeSeconds: parsedMetrics.loadTimeSeconds,
       requestLatencyMs,
       prompt,
       response: responseText.slice(0, 4000),
@@ -638,15 +683,32 @@ async function runBenchmark(
 }
 
 function finalize(
-  cfg: ServerConfig,
+  parsed: ParsedScript | null,
   prompt: string,
   errors: string[],
-  logStartIndex: number,
+  _logStartIndex: number,
 ): BenchmarkResult {
   return {
     id: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
-    config: { ...cfg },
+    config: parsed ?? {
+      script: "",
+      binary: "",
+      argv: [],
+      model: null,
+      host: "127.0.0.1",
+      port: 8080,
+      ctxSize: null,
+      batchSize: null,
+      ubatchSize: null,
+      cacheTypeK: null,
+      cacheTypeV: null,
+      device: null,
+      tensorSplit: null,
+      temp: null,
+      topP: null,
+      topK: null,
+    },
     promptTokensPerSecond: null,
     generationTokensPerSecond: null,
     draftAcceptance: null,
@@ -717,24 +779,50 @@ async function handleRequest(req: Request): Promise<Response> {
       status,
       pid: m?.pid ?? null,
       startedAt: m?.startedAt ?? null,
-      url: m ? urlFor(m.config) : null,
+      url: m ? urlFor(m.parsed) : null,
       error: statusError,
     };
     return json(body);
   }
 
+  // ── Script por defecto (guardar / leer) ──
+  if (path === "/script-default" && req.method === "GET") {
+    try {
+      const content = await readFile(SCRIPT_FILE, "utf8");
+      return new Response(content, { headers: { "Content-Type": "text/plain", ...cors } });
+    } catch {
+      return new Response("Not found", { status: 404, headers: cors });
+    }
+  }
+  if (path === "/script-default" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      if (typeof body?.script !== "string") {
+        return json({ ok: false, error: "Falta el campo 'script'." }, 400);
+      }
+      await ensureDataDir();
+      await writeFile(SCRIPT_FILE, body.script, "utf8");
+      systemLog("script-default guardado.");
+      return json({ ok: true });
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500);
+    }
+  }
+
+  // ── Iniciar servidor manual ──
   if (path === "/start" && req.method === "POST") {
     if (managed)
       return json({ ok: false, error: "Ya hay un servidor corriendo." }, 409);
-    let cfg: ServerConfig;
+    let script: string;
     try {
       const body = await req.json();
-      cfg = { ...defaultConfig(), ...body };
+      script = body?.script ?? "";
     } catch {
-      cfg = defaultConfig();
+      return json({ ok: false, error: "Falta el campo 'script'." }, 400);
     }
     try {
-      const pid = await startServer(cfg);
+      const parsed = parseScript(script);
+      const pid = await startServer(parsed);
       // Resolvemos la promesa de ready en background; respondemos ya.
       return json({ ok: true, pid });
     } catch (e) {
@@ -755,11 +843,6 @@ async function handleRequest(req: Request): Promise<Response> {
     return json(body);
   }
 
-  // ── Configuración por defecto ──
-  if (path === "/config" && req.method === "GET") {
-    return json(defaultConfig());
-  }
-
   // ── Métricas de GPU en vivo ──
   if (path === "/gpu" && req.method === "GET") {
     return json({ gpus: await readGpuStats() });
@@ -778,18 +861,18 @@ async function handleRequest(req: Request): Promise<Response> {
         409,
       );
     benchmarkRunning = true;
-    let cfg: ServerConfig;
+    let script = "";
     let prompt = DEFAULT_PROMPT;
     try {
       const body = await req.json().catch(() => ({}));
-      cfg = { ...defaultConfig(), ...(body?.config ?? {}) };
+      if (typeof body?.script === "string") script = body.script;
       if (typeof body?.prompt === "string" && body.prompt.trim())
         prompt = body.prompt;
     } catch {
-      cfg = defaultConfig();
+      /* usa defaults */
     }
     try {
-      const result = await runBenchmark(cfg, prompt);
+      const result = await runBenchmark(script, prompt);
       return json({ ok: true, result });
     } catch (e) {
       return json({ ok: false, error: (e as Error).message }, 500);
@@ -847,5 +930,4 @@ const server = Bun.serve({
 });
 
 systemLog(`backend escuchando en http://localhost:${server.port}`);
-systemLog(`binario llama-server por defecto: ${LLAMA_BINARY_DEFAULT}`);
 console.log(`→ http://localhost:${server.port}`);
