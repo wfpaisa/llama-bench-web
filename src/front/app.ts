@@ -24,6 +24,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
 
 // ── Clave de localStorage para el script ──
 const STORAGE_SCRIPT_KEY = "llama-bench-script";
+const STORAGE_PROMPT_KEY = "llama-bench-prompt";
 
 // ── Placeholder del ejemplo (solo informativo, no se carga por defecto) ──
 const EXAMPLE_SCRIPT = `/home/projects/ia/llama.cpp_vulkan/build-vulkan/bin/llama-server \\
@@ -114,6 +115,61 @@ async function loadScript(): Promise<void> {
     /* 404 o sin backend → editor vacío */
   }
 }
+
+// ── Persistencia del prompt en localStorage ──
+function getPromptEl(): HTMLTextAreaElement {
+  return $("bench-prompt") as HTMLTextAreaElement;
+}
+
+function savePromptToStorage(): void {
+  try {
+    localStorage.setItem(STORAGE_PROMPT_KEY, getPromptEl().value);
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function loadPromptFromStorage(): string | null {
+  try {
+    const s = localStorage.getItem(STORAGE_PROMPT_KEY);
+    return s && s.length > 0 ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Carga inicial del prompt: localStorage > prompt-default > DEFAULT_PROMPT ──
+const DEFAULT_PROMPT_UI = `Un agricultor tiene 17 ovejas. Todas menos 9 se escapan. ¿Cuántas ovejas le quedan? Explica tu razonamiento paso a paso.
+
+Luego resuelve esto sin calculadora: ¿cuántos números primos hay entre 20 y 40? Lista cada uno y verifica brevemente por qué es primo.`;
+
+async function loadPrompt(): Promise<void> {
+  const stored = loadPromptFromStorage();
+  if (stored !== null) {
+    getPromptEl().value = stored;
+    return;
+  }
+  // Intentar cargar el prompt-default del backend.
+  try {
+    const resp = await fetch("/prompt-default");
+    if (resp.ok) {
+      const text = await resp.text();
+      if (text.length > 0) {
+        getPromptEl().value = text;
+        savePromptToStorage();
+        return;
+      }
+    }
+  } catch {
+    /* 404 o sin backend */
+  }
+  // Último recurso: prompt por defecto hardcodeado.
+  getPromptEl().value = DEFAULT_PROMPT_UI;
+  savePromptToStorage();
+}
+
+// ── Autoguardado del prompt en localStorage ──
+getPromptEl().addEventListener("input", () => savePromptToStorage());
 
 // ── Toast ──
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -267,6 +323,38 @@ $("btn-restore-default").addEventListener("click", async () => {
   }
 });
 
+// ── Guardar default / Restablecer default (prompt) ──
+$("btn-prompt-save-default").addEventListener("click", async () => {
+  if (!confirm("¿Guardar el prompt actual como default en data/prompt-default.txt?")) return;
+  try {
+    await api("/prompt-default", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: getPromptEl().value }),
+    });
+    toast("Prompt default guardado ✓");
+  } catch (e) {
+    toast((e as Error).message, true);
+  }
+});
+
+$("btn-prompt-restore-default").addEventListener("click", async () => {
+  if (!confirm("¿Restablecer el prompt al default guardado? Se perderán los cambios no guardados.")) return;
+  try {
+    const resp = await fetch("/prompt-default");
+    if (resp.ok) {
+      const text = await resp.text();
+      getPromptEl().value = text;
+      savePromptToStorage();
+      toast("Prompt default restablecido ✓");
+    } else {
+      toast("No hay prompt default guardado.", true);
+    }
+  } catch (e) {
+    toast((e as Error).message, true);
+  }
+});
+
 // ── Benchmark ──
 let benchRunning = false;
 $("btn-benchmark").addEventListener("click", async () => {
@@ -274,14 +362,19 @@ $("btn-benchmark").addEventListener("click", async () => {
   benchRunning = true;
   ($("btn-benchmark") as HTMLButtonElement).disabled = true;
   $("bench-state").textContent = "iniciando servidor y midiendo… (puede tardar)";
+  ($("response-card") as HTMLElement).hidden = true;
   try {
     const data = await api<{ ok: boolean; result?: BenchmarkResult; error?: string }>("/benchmark", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ script: getScript(), prompt: ($("bench-prompt") as HTMLTextAreaElement).value }),
+      body: JSON.stringify({ script: getScript(), prompt: getPromptEl().value }),
     });
     if (data.ok && data.result) {
       renderLastResult(data.result);
+      // Mostrar la respuesta del modelo.
+      const respText = data.result.response || "—";
+      ($("bench-response") as HTMLPreElement).textContent = respText;
+      ($("response-card") as HTMLElement).hidden = false;
       await loadHistory();
       const r = data.result;
       if (r.errors.length) toast(`Benchmark con errores: ${r.errors.join("; ")}`, true);
@@ -727,6 +820,9 @@ async function init(): Promise<void> {
 
   // 2) Cargar script: localStorage > script-default > vacío.
   await loadScript();
+
+  // 3) Cargar prompt: localStorage > prompt-default > DEFAULT_PROMPT_UI.
+  await loadPrompt();
 
   await pollStatus();
   await loadHistory();

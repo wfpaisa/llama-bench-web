@@ -17,6 +17,9 @@ export const HISTORY_FILE = join(DATA_DIR, "history.json")
 // Vive fuera de git (.gitignore ignora data/*). Solo existe tras el primer guardado.
 export const SCRIPT_FILE = join(DATA_DIR, "script-default.txt")
 
+// Prompt de benchmark por defecto guardado desde la UI.
+export const PROMPT_FILE = join(DATA_DIR, "prompt-default.txt")
+
 // Límite del historial persistido.
 export const HISTORY_CAP = 200
 

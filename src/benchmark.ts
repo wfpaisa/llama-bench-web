@@ -60,7 +60,7 @@ export async function runBenchmark(
     //    no estuviera en el script (temp/topP/topK = null).
     const body: Record<string, unknown> = {
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 256,
+      max_tokens: 2048,
       stream: false,
     };
     if (parsed.model) {
@@ -82,7 +82,11 @@ export async function runBenchmark(
         errors.push(`HTTP ${resp.status} en /v1/chat/completions`);
       } else {
         const data = await resp.json();
-        responseText = data?.choices?.[0]?.message?.content ?? "";
+        console.log('->', JSON.stringify(data, null, 2));
+        const msg = data?.choices?.[0]?.message;
+        const content = msg?.content ?? "";
+        const reasoning = msg?.reasoning_content ?? "";
+        responseText = content || reasoning || "";
       }
     } catch (e) {
       errors.push(`Fallo en request: ${(e as Error).message}`);

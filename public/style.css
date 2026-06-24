@@ -261,6 +261,37 @@ code {
   font-size: 12px;
 }
 
+/* ── Prompt de benchmark ── */
+
+.bench-prompt {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 6px;
+}
+
+/* ── Respuesta del modelo ── */
+
+.response-box {
+  background: #010409;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  max-height: 500px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
 /* Status dot */
 
 .status-bar {

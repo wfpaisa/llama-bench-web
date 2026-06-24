@@ -18,8 +18,10 @@ export interface ParsedMetrics {
   loadTimeSeconds: number | null;
 }
 
-/** Prompt por defecto del benchmark. */
-export const DEFAULT_PROMPT = "Explica qué es Vulkan en 100 palabras";
+/** Prompt por defecto del benchmark — exige razonamiento real del modelo. */
+export const DEFAULT_PROMPT = `Un agricultor tiene 17 ovejas. Todas menos 9 se escapan. ¿Cuántas ovejas le quedan? Explica tu razonamiento paso a paso.
+
+Luego resuelve esto sin calculadora: ¿cuántos números primos hay entre 20 y 40? Lista cada uno y verifica brevemente por qué es primo.`;
 
 /** Sleep tipado. */
 export const sleep = (ms: number): Promise<void> =>

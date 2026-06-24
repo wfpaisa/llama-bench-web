@@ -43,14 +43,26 @@
           Inicia llama-server → espera <code>server is listening</code> → POST <code>/v1/chat/completions</code> → parsea timings de logs → lee GPU → guarda resultado → detiene el
           servidor.
         </p>
-        <label class="full"
-          >Prompt estándar
-          <textarea id="bench-prompt" rows="2">Explica qué es Vulkan en 100 palabras</textarea>
-        </label>
-        <div class="actions">
-          <button id="btn-benchmark" class="primary">⏱ Benchmark</button>
-          <span id="bench-state" class="muted small"></span>
+
+        <label class="full">Prompt de evaluación</label>
+        <textarea id="bench-prompt" rows="4" class="bench-prompt"></textarea>
+        <div class="prompt-actions">
+          <button id="btn-prompt-save-default" class="ghost tiny">Guardar default</button>
+          <button id="btn-prompt-restore-default" class="ghost tiny">Restablecer default</button>
         </div>
+
+        <div class="actions">
+          <div class="buttons">
+            <button id="btn-benchmark" class="primary">⏱ Benchmark</button>
+            <span id="bench-state" class="muted small"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Respuesta del modelo ── -->
+      <section class="card" id="response-card" hidden>
+        <h2>Respuesta del modelo</h2>
+        <pre id="bench-response" class="response-box"></pre>
       </section>
 
       <!-- ── GPUs ── -->

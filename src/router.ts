@@ -20,7 +20,7 @@ import { runBenchmark } from "./benchmark.ts";
 import { DEFAULT_PROMPT } from "./metrics.ts";
 import { clearHistory, deleteResult, ensureDataDir, loadHistory } from "./history.ts";
 import { getLogBuffer, systemLog } from "./logs.ts";
-import { SCRIPT_FILE } from "./config.ts";
+import { SCRIPT_FILE, PROMPT_FILE } from "./config.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -81,6 +81,30 @@ export async function handleRequest(req: Request): Promise<Response> {
       await ensureDataDir();
       await writeFile(SCRIPT_FILE, body.script, "utf8");
       systemLog("script-default guardado.");
+      return json({ ok: true });
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500);
+    }
+  }
+
+  // ── Prompt por defecto (guardar / leer) ──
+  if (path === "/prompt-default" && req.method === "GET") {
+    try {
+      const content = await readFile(PROMPT_FILE, "utf8");
+      return new Response(content, { headers: { "Content-Type": "text/plain", ...CORS } });
+    } catch {
+      return new Response("Not found", { status: 404, headers: CORS });
+    }
+  }
+  if (path === "/prompt-default" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      if (typeof body?.prompt !== "string") {
+        return json({ ok: false, error: "Falta el campo 'prompt'." }, 400);
+      }
+      await ensureDataDir();
+      await writeFile(PROMPT_FILE, body.prompt, "utf8");
+      systemLog("prompt-default guardado.");
       return json({ ok: true });
     } catch (e) {
       return json({ ok: false, error: (e as Error).message }, 500);
