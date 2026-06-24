@@ -401,24 +401,6 @@ $("btn-stop").addEventListener("click", async () => {
     }
 })
 
-// ── Restaurar default (del backend) ──
-$("btn-apply-default").addEventListener("click", async () => {
-    try {
-        const c = await api("/config")
-        writeConfig(c)
-        saveConfig()
-        // Re-habilitar todos los campos.
-        document.querySelectorAll(".cfg-row").forEach((row) => {
-            row.querySelector(".cfg-toggle").checked = true
-            row.classList.remove("disabled")
-        })
-        saveEnabled()
-        toast("Configuración por defecto cargada.")
-    } catch (e) {
-        toast(e.message, true)
-    }
-})
-
 // ── Reset: limpiar localStorage y restaurar default del backend ──
 $("btn-reset-storage").addEventListener("click", async () => {
     if (!confirm("¿Limpiar toda la configuración guardada y restaurar defaults?")) return
