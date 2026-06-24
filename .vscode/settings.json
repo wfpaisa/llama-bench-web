@@ -1,0 +1,20 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[html]": {
+    "prettier.printWidth": 180
+  },
+  "[javascript]": {
+    "prettier.printWidth": 280,
+    "prettier.tabWidth": 4,
+    "prettier.semi": false
+  },
+  "[typescript]": {
+    "prettier.printWidth": 280,
+    "prettier.tabWidth": 4,
+    "prettier.semi": false
+  },
+  "[json]": {
+    "prettier.printWidth": 80,
+    "prettier.tabWidth": 2
+  }
+}
