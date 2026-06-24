@@ -500,6 +500,24 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
+th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+th[data-sort]:hover {
+  color: var(--text);
+}
+th.sort-active {
+  color: var(--accent);
+}
+th.sort-asc::after {
+  content: " ▲";
+  font-size: 9px;
+}
+th.sort-desc::after {
+  content: " ▼";
+  font-size: 9px;
+}
 td.num {
   font-family: var(--mono);
   text-align: right;

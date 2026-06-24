@@ -81,19 +81,19 @@
             <thead>
               <tr>
                 <th title="Select row for comparison"></th>
-                <th title="Benchmark run timestamp">Fecha</th>
+                <th data-sort="date" title="Benchmark run timestamp">Fecha</th>
                 <th title="Model path/name">Modelo</th>
-                <th title="Context window size (tokens)">ctx</th>
+                <th data-sort="ctx" title="Context window size (tokens)">ctx</th>
                 <th title="Batch size / Ubatch size">batch</th>
                 <th title="KV cache quantization type (K / V)">cache</th>
                 <th title="Compute device (e.g. CUDA, Vulkan)">device</th>
                 <th title="Tensor parallel split ratio across GPUs">tsplit</th>
-                <th title="Prompt evaluation tokens per second">prompt T/s</th>
-                <th title="Generation tokens per second">gen T/s</th>
-                <th title="Speculative draft acceptance rate (0-1)">draft acc</th>
-                <th title="Model load time in seconds">load s</th>
+                <th data-sort="promptTps" title="Prompt evaluation tokens per second">prompt T/s</th>
+                <th data-sort="genTps" title="Generation tokens per second">gen T/s</th>
+                <th data-sort="draftAcc" title="Speculative draft acceptance rate (0-1)">draft acc</th>
+                <th data-sort="loadTime" title="Model load time in seconds">load s</th>
                 <th title="VRAM used per GPU (GB)">VRAM</th>
-                <th title="Total VRAM used across all GPUs (GB)">Total VRAM</th>
+                <th data-sort="totalVram" title="Total VRAM used across all GPUs (GB)">Total VRAM</th>
                 <th></th>
               </tr>
             </thead>

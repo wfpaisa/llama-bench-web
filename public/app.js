@@ -509,12 +509,52 @@ function renderLastResult(r) {
 
 // ── Historial ──
 let history = []
+
+// ── Sort state ──
+const STORAGE_SORT_KEY = "llama-bench-sort"
+const savedSort = (() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_SORT_KEY)) } catch { return null }
+})() || { col: "date", dir: "desc" }
+let sortCol = savedSort.col
+let sortDir = savedSort.dir
+
+const sortFns = {
+    date: (r) => new Date(r.timestamp).getTime(),
+    ctx: (r) => r.config.ctxSize,
+    promptTps: (r) => r.promptTokensPerSecond ?? -Infinity,
+    genTps: (r) => r.generationTokensPerSecond ?? -Infinity,
+    draftAcc: (r) => r.draftAcceptance ?? -Infinity,
+    loadTime: (r) => r.loadTimeSeconds ?? Infinity,
+    totalVram: (r) => r.gpus.reduce((s, g) => s + (g.memUsedMiB ?? 0), 0),
+}
+
+function applySort() {
+    const fn = sortFns[sortCol]
+    if (!fn) return
+    history.sort((a, b) => {
+        const x = fn(a), y = fn(b)
+        return sortDir === "asc" ? (x > y ? 1 : x < y ? -1 : 0) : (y > x ? 1 : y < x ? -1 : 0)
+    })
+}
+
+function updateSortUI() {
+    document.querySelectorAll("#history-table th[data-sort]").forEach((th) => {
+        th.classList.remove("sort-asc", "sort-desc")
+        th.classList.toggle("sort-active", th.dataset.sort === sortCol)
+        if (th.dataset.sort === sortCol) th.classList.add("sort-" + sortDir)
+    })
+    localStorage.setItem(STORAGE_SORT_KEY, JSON.stringify({ col: sortCol, dir: sortDir }))
+}
+
+
 const selected = new Set()
 async function loadHistory() {
     try {
         const data = await api("/history")
         history = data.results || []
+        applySort()
         renderHistory()
+        updateSortUI()
     } catch {
         /* ignore */
     }
@@ -680,6 +720,21 @@ async function init() {
     await pollStatus()
     await loadHistory()
     await loadGpus()
+
+    // Sort header click handlers.
+    document.querySelectorAll("#history-table th[data-sort]").forEach((th) => {
+        th.addEventListener("click", () => {
+            if (sortCol === th.dataset.sort) {
+                sortDir = sortDir === "asc" ? "desc" : "asc"
+            } else {
+                sortCol = th.dataset.sort
+                sortDir = "desc"
+            }
+            applySort()
+            renderHistory()
+            updateSortUI()
+        })
+    })
 
     // Polling.
     setInterval(pollStatus, 1500)
