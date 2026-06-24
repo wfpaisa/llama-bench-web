@@ -496,6 +496,23 @@ async function waitForServer(base: string): Promise<void> {
   }
 }
 
+/** Resta la baseline de GPU stats para obtener solo el delta consumido por el benchmark. */
+function subtractGpuBaseline(final: GpuInfo[], baseline: GpuInfo[]): GpuInfo[] {
+  const baselineMap = new Map(baseline.map((g) => [g.index, g]));
+  return final.map((g) => {
+    const base = baselineMap.get(g.index);
+    if (!base) return { ...g };
+    const usedDelta =
+      g.memUsedMiB !== null && base.memUsedMiB !== null
+        ? Math.max(0, g.memUsedMiB - base.memUsedMiB)
+        : g.memUsedMiB;
+    return {
+      ...g,
+      memUsedMiB: usedDelta,
+    };
+  });
+}
+
 // ─── Benchmark real contra la API de llama-server ─────────────────────────────
 const DEFAULT_PROMPT = "Explica qué es Vulkan en 100 palabras";
 
@@ -506,6 +523,9 @@ async function runBenchmark(
   const errors: string[] = [];
   // Marcador: índice del log desde el cual parsear al final.
   const logStartIndex = logBuffer.length;
+
+  // 0) Capturar baseline de GPU antes de iniciar (para restar VRAM ya usada).
+  const gpuBaseline = await readGpuStats();
 
   // 1) Arrancar servidor.
   systemLog("benchmark: iniciando llama-server…");
@@ -559,8 +579,9 @@ async function runBenchmark(
     const relevantLines = logBuffer.slice(logStartIndex);
     const parsed = parseMetricsFromLogs(relevantLines);
 
-    // 4) GPU stats.
-    const gpus = await readGpuStats();
+    // 4) GPU stats finales y restar baseline.
+    const gpusFinal = await readGpuStats();
+    const gpus = subtractGpuBaseline(gpusFinal, gpuBaseline);
 
     const result: BenchmarkResult = {
       id: crypto.randomUUID(),
