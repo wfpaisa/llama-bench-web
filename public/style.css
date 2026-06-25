@@ -195,6 +195,7 @@ textarea {
   flex-direction: column;
   align-items: start;
   margin-top: 1rem;
+  gap: 1rem;
 
   .buttons {
     display: flex;

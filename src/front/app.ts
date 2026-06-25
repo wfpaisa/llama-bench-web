@@ -69,6 +69,49 @@ function setScript(text: string): void {
   })
 }
 
+function formatScript(text: string): string {
+  // Quitar \ de continuación y sus saltos, dejando un solo string plano
+  let clean = ''
+  let skipNewline = false
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (ch === '\\') {
+      skipNewline = true
+      continue
+    }
+    if (skipNewline && ch === '\n') {
+      skipNewline = false
+      continue
+    }
+    clean += ch
+  }
+
+  // Tokenizar por espacios
+  const tokens = clean.split(/\s+/).filter(Boolean)
+
+  // Separar primer token (comando) del resto (flags)
+  const cmd = tokens[0] || ''
+  const flags: string[] = []
+
+  for (let i = 1; i < tokens.length; i++) {
+    const tok = tokens[i]
+    if (tok.startsWith('-')) {
+      const next = tokens[i + 1]
+      if (next && !next.startsWith('-')) {
+        flags.push(`${tok} ${next}`)
+        i++
+      } else {
+        flags.push(tok)
+      }
+    }
+  }
+
+  // Reconstruir: comando en primera línea, cada flag en su línea, alineado a la izquierda
+  const parts: string[] = [cmd]
+  for (const f of flags) parts.push(f)
+  return parts.join(' \\\n')
+}
+
 // ── Persistencia en localStorage ──
 function saveScriptToStorage(): void {
   try {
@@ -261,6 +304,14 @@ async function pollLogs(): Promise<void> {
     /* backend reiniciándose */
   }
 }
+
+// ── Formatear script ──
+$('btn-format').addEventListener('click', () => {
+  const formatted = formatScript(getScript())
+  setScript(formatted)
+  saveScriptToStorage()
+  toast('Script formateado ✓')
+})
 
 // ── Start / Stop ──
 $('btn-start').addEventListener('click', async () => {
