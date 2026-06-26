@@ -12,6 +12,7 @@ import type {
   GpuInfo,
   LogsResponse,
   OkResponse,
+  RamInfo,
   StartResponse,
   StatusResponse,
 } from '../models/types';
@@ -50,9 +51,9 @@ export class LlamaBenchService {
     return this.api.post<OkResponse>('/logs/clear');
   }
 
-  // ── GPU ──
-  getGpus(): Observable<{ gpus: GpuInfo[] }> {
-    return this.api.get<{ gpus: GpuInfo[] }>('/gpu');
+  // ── GPU ── (también trae RAM del sistema)
+  getGpus(): Observable<{ gpus: GpuInfo[]; ram: RamInfo }> {
+    return this.api.get<{ gpus: GpuInfo[]; ram: RamInfo }>('/gpu');
   }
 
   // ── Benchmark ──

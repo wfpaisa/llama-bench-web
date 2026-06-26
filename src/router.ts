@@ -9,6 +9,7 @@ import { managed, benchmarkRunning, setBenchmarkRunning, benchAbortController, s
 import { parseScript } from './script-parser.ts'
 import { startServer, stopServer, urlFor } from './server-manager.ts'
 import { readGpuStats } from './gpu.ts'
+import { readRamStats } from './mem.ts'
 import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
 import { clearHistory, deleteResult, ensureDataDir, loadHistory } from './history.ts'
@@ -130,9 +131,10 @@ export async function handleRequest(req: Request): Promise<Response> {
     return json(body)
   }
 
-  // ── Métricas de GPU en vivo ──
+  // ── Métricas de hardware en vivo (GPU + RAM) ──
   if (path === '/gpu' && req.method === 'GET') {
-    return json({ gpus: await readGpuStats() })
+    const [gpus, ram] = await Promise.all([readGpuStats(), readRamStats()])
+    return json({ gpus, ram })
   }
 
   // ── Benchmark ──

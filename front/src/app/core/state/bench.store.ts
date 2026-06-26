@@ -6,7 +6,7 @@
 // en plantillas.
 
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { BenchmarkResult, GpuInfo, LogEntry, ServerStatus, StatusResponse } from '../models/types';
+import { BenchmarkResult, GpuInfo, LogEntry, RamInfo, ServerStatus, StatusResponse } from '../models/types';
 import { computeBests } from '../utils/format';
 import { StorageService } from '../services/storage.service';
 
@@ -44,6 +44,7 @@ export class BenchStore {
   readonly logs = signal<LogEntry[]>([]);
   readonly logCursor = signal(0);
   readonly gpus = signal<GpuInfo[]>([]);
+  readonly ram = signal<RamInfo | null>(null);
   readonly history = signal<BenchmarkResult[]>([]);
 
   // ── Script + prompt (fuente de verdad editable) ──
@@ -203,6 +204,10 @@ export class BenchStore {
 
   setGpus(gpus: GpuInfo[]): void {
     this.gpus.set(gpus);
+  }
+
+  setRam(ram: RamInfo | null): void {
+    this.ram.set(ram);
   }
 
   // ════════════ Actions: script / prompt ════════════

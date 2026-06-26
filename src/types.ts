@@ -103,6 +103,16 @@ export interface GpuInfo {
   gpuUtilPct: number | null
 }
 
+/** Métricas de RAM del sistema (Linux, /proc/meminfo). null si no disponible. */
+export interface RamInfo {
+  /** RAM total en MiB (MemTotal). */
+  memTotalMiB: number | null
+  /** RAM usada en MiB (MemTotal − MemAvailable). */
+  memUsedMiB: number | null
+  /** RAM disponible en MiB (MemAvailable). */
+  memAvailableMiB: number | null
+}
+
 /** Resultado completo de un benchmark. */
 export interface BenchmarkResult {
   /** ID único. */

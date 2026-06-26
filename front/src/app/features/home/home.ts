@@ -148,8 +148,14 @@ export class Home implements OnDestroy {
 
   private loadGpus(): void {
     this.api.getGpus().subscribe({
-      next: (data) => this.store.setGpus(data.gpus),
-      error: () => this.store.setGpus([]),
+      next: (data) => {
+        this.store.setGpus(data.gpus);
+        this.store.setRam(data.ram ?? null);
+      },
+      error: () => {
+        this.store.setGpus([]);
+        this.store.setRam(null);
+      },
     });
   }
 
@@ -188,8 +194,14 @@ export class Home implements OnDestroy {
         switchMap(() => this.api.getGpus()),
       )
       .subscribe({
-        next: (data) => this.store.setGpus(data.gpus),
-        error: () => this.store.setGpus([]),
+        next: (data) => {
+          this.store.setGpus(data.gpus);
+          this.store.setRam(data.ram ?? null);
+        },
+        error: () => {
+          this.store.setGpus([]);
+          this.store.setRam(null);
+        },
       });
 
     this.subs.push(status$, logs$, gpu$);
