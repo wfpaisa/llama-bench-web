@@ -1,7 +1,23 @@
-/* ScriptEditor: layout del editor de script. */
+/* ScriptEditor: layout de dos columnas (editor + tabla de flags). */
 :host {
   display: block;
 }
+
+/* Layout: dos columnas en desktop, una sola en pantallas estrechas. */
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Columna UNO: editor de script ── */
 
 .script-area {
   width: 100%;
@@ -25,4 +41,156 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
+}
+
+/* ── Columna DOS: tabla de flags ── */
+
+.flags-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.flag-filter {
+  flex: 1 1 220px;
+  min-width: 160px;
+}
+
+.flag-category {
+  flex: 0 0 auto;
+  min-width: 140px;
+}
+
+.flags-toolbar .count {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Contenedor con scroll vertical y header pegajoso. */
+.flags-scroll {
+  max-height: 30rem;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.flags-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.flags-table th,
+.flags-table td {
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.flags-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.flags-table th.th-actions {
+  width: 3rem;
+  text-align: center;
+}
+
+.flags-table tbody tr:hover {
+  background: var(--color-surface);
+}
+
+/* Fila del flag ya presente en el script: borde a la izquierda. */
+.flags-table tbody tr.present td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent, #22c55e);
+}
+
+.cell-name {
+  min-width: 8rem;
+}
+
+.flag-name {
+  font-weight: 600;
+}
+
+.flag-default {
+  font-size: 0.7rem;
+  margin-top: 0.1rem;
+}
+
+.flag-default code {
+  font-family: var(--font-mono);
+}
+
+.flag-cat {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  text-transform: capitalize;
+  opacity: 0.8;
+}
+
+.cell-code code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.cell-actions {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.empty {
+  text-align: center;
+  padding: 1.5rem;
+  opacity: 0.7;
+}
+
+.muted {
+  opacity: 0.65;
+}
+
+/* ── Diálogo de info ── */
+
+.info-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-codes {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.info-codes code {
+  font-family: var(--font-mono);
+}
+
+.info-default {
+  font-size: 0.85rem;
+}
+
+.info-default code {
+  font-family: var(--font-mono);
+}
+
+.info-desc {
+  margin: 0;
+  line-height: 1.55;
+  font-size: 0.9rem;
 }
