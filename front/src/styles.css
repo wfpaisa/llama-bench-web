@@ -160,9 +160,10 @@ a {
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
   transition: opacity 0.15s ease;
-}
-a:hover {
-  opacity: 0.75;
+
+  &:hover {
+    opacity: 0.75;
+  }
 }
 
 /* ---- Listas ---- */
@@ -214,6 +215,8 @@ pre {
 }
 
 /* ---- Scrollbar (Chromium/WebKit) ---- */
+/* Nota: ::-webkit-scrollbar-track/-thumb son pseudo-elementos con sufijo,
+   no se pueden anidar con CSS nativo (la sintaxis &-foo es solo de Sass). */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -255,10 +258,10 @@ pre {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
-}
 
-.card h2 {
-  font-size: 1.15rem;
+  h2 {
+    font-size: 1.15rem;
+  }
 }
 
 .muted {

@@ -38,13 +38,13 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-}
 
-.logs.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
+  &.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+  }
 }
 
 .muted {

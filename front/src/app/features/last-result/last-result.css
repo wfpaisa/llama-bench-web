@@ -11,6 +11,51 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 0.6rem 0.75rem;
+
+  .k {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+  }
+
+  .k-sub {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    opacity: 0.8;
+    margin-top: 0.1rem;
+  }
+
+  .v {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+
+    small {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+      font-weight: 400;
+    }
+
+    &.v-small {
+      font-size: 0.8rem;
+    }
+
+    &.green {
+      color: var(--p-green-500);
+    }
+
+    &.amber {
+      color: var(--p-amber-400);
+    }
+
+    &.v-error {
+      color: var(--p-red-500);
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+    }
+  }
 }
 
 .metric-wide2 {
@@ -18,42 +63,4 @@
 }
 .metric-full {
   grid-column: 1 / -1;
-}
-
-.metric .k {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
-}
-.metric .k-sub {
-  font-size: 0.68rem;
-  color: var(--color-text-muted);
-  opacity: 0.8;
-  margin-top: 0.1rem;
-}
-.metric .v {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-top: 0.25rem;
-  font-family: var(--font-mono);
-}
-.metric .v small {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  font-weight: 400;
-}
-.metric .v.v-small {
-  font-size: 0.8rem;
-}
-.metric .v.green {
-  color: var(--p-green-500);
-}
-.metric .v.amber {
-  color: var(--p-amber-400);
-}
-.metric .v.v-error {
-  color: var(--p-red-500);
-  font-size: 0.75rem;
-  white-space: pre-wrap;
 }

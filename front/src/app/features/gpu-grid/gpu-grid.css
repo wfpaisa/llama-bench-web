@@ -34,20 +34,24 @@
   background: var(--p-neutral-800);
   border-radius: 3px;
   overflow: hidden;
-}
-.bar > span {
-  display: block;
-  height: 100%;
-  transition: width 0.3s ease;
-}
-.bar.green > span {
-  background: var(--p-green-500);
-}
-.bar.yellow > span {
-  background: var(--p-amber-400);
-}
-.bar.red > span {
-  background: var(--p-red-500);
+
+  > span {
+    display: block;
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+
+  &.green > span {
+    background: var(--p-green-500);
+  }
+
+  &.yellow > span {
+    background: var(--p-amber-400);
+  }
+
+  &.red > span {
+    background: var(--p-red-500);
+  }
 }
 
 .row-between {

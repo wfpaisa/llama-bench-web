@@ -65,7 +65,8 @@
 /* Limitar el ancho del inputnumber. */
 :host ::ng-deep .max-tokens {
   width: 8rem;
-}
-:host ::ng-deep .max-tokens .p-inputtext {
-  width: 100%;
+
+  .p-inputtext {
+    width: 100%;
+  }
 }
