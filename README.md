@@ -1,12 +1,17 @@
 # llama-bench-web
 
-Utilidad web **extremadamente liviana** para hacer benchmark de modelos locales con
-**llama.cpp**, controlando `llama-server` desde el navegador.
+Utilidad web para hacer benchmark de modelos locales con **llama.cpp**,
+controlando `llama-server` desde el navegador.
 
-- **Backend:** Bun + TypeScript (solo stdlib, sin frameworks).
-- **Frontend:** HTML + CSS + JavaScript puro. Nada de React/Vue/Angular.
+- **Backend:** Bun + TypeScript (solo stdlib, sin frameworks). Expone la **API
+  JSON** en `:3000` (no sirve frontend).
+- **Frontend:** Angular 22 + PrimeNG 21, app aparte en `front/` servida en
+  `:4200` (dev). Habla con el backend por HTTP (CORS `*`).
 - **Benchmark real** contra `llama-server` (no `llama-bench`), porque refleja
   correctamente MTP, speculative decoding, cache y comportamiento multi-GPU Vulkan.
+
+> El frontend anterior (vanilla TS servido por `Bun.build()` + `public/`) fue
+> migrado a Angular. El backend quedó como API pura.
 
 ## Por qué no `llama-bench`
 
@@ -36,38 +41,51 @@ Por eso esta herramienta hace el benchmark real:
 
 ## Uso
 
+Desde la raíz del repo (orquesta backend + frontend juntos):
+
 ```bash
-bun install
-bun start              # producción (http://localhost:3000)
-bun dev                # desarrollo con --watch
+bun install            # deps de la raíz (incl. concurrently)
+bun run dev            # dev conjunto: backend (:3000) + frontend (:4200)
+```
+
+Abrí **http://localhost:4200**. Ctrl+C detiene ambos procesos a la vez.
+
+Otros scripts:
+
+```bash
+bun run dev:back       # solo backend con --watch
+bun run dev:front      # solo frontend Angular (ng serve)
+bun run start          # producción: solo backend
+bun run build:front    # build de producción del frontend → front/dist/
 ```
 
 Variables de entorno:
 
 | Variable            | Default          | Descripción                                              |
 | ------------------- | ---------------- | -------------------------------------------------------- |
-| `PORT`              | `3000`           | Puerto del backend web (no 8080: es el de llama-server). |
+| `PORT`              | `3000`           | Puerto del backend (no 8080: es el de llama-server).     |
 | `LLAMA_SERVER_PATH` | `./llama-server` | Ruta al binario por defecto en la UI.                    |
-| `DATA_DIR`          | `./data`         | Carpeta donde se guarda `history.json`.                  |
+| `DATA_DIR`          | `./data`         | Carpeta donde se guarda `history.json` y defaults.       |
 
-Apuntá el campo **Binario llama-server** de la UI a tu `llama-server`
-(p. ej. `/home/felipe/llama.cpp/build/bin/llama-server`).
+## Endpoints (backend `:3000`)
 
-## Endpoints
-
-| Método | Ruta            | Descripción                                            |
-| ------ | --------------- | ------------------------------------------------------ |
-| GET    | `/status`       | Estado del proceso (`stopped/starting/running/error`). |
-| POST   | `/start`        | Inicia `llama-server` con la config del body.          |
-| POST   | `/stop`         | SIGTERM (SIGKUL tras 8s si no muere).                  |
-| GET    | `/logs?since=T` | Logs incrementales desde el cursor `T`.                |
-| POST   | `/logs/clear`   | Vacía el buffer de logs.                               |
-| GET    | `/config`       | Configuración por defecto.                             |
-| GET    | `/gpu`          | Métricas en vivo de NVIDIA + AMD.                      |
-| POST   | `/benchmark`    | Ejecuta el benchmark completo.                         |
-| GET    | `/history`      | Lista de resultados guardados.                         |
-| DELETE | `/history`      | Borra todo el historial.                               |
-| DELETE | `/history/:id`  | Borra un resultado.                                    |
+| Método | Ruta                | Descripción                                            |
+| ------ | ------------------- | ------------------------------------------------------ |
+| GET    | `/status`           | Estado del proceso (`stopped/starting/running/error`). |
+| POST   | `/start`            | Inicia `llama-server` con la config del body.          |
+| POST   | `/stop`             | SIGTERM (SIGKILL tras 8s si no muere).                 |
+| GET    | `/logs?since=T`     | Logs incrementales desde el cursor `T`.                |
+| POST   | `/logs/clear`       | Vacía el buffer de logs.                               |
+| GET    | `/gpu`              | Métricas en vivo de NVIDIA + AMD.                      |
+| POST   | `/benchmark`        | Ejecuta el benchmark completo.                         |
+| POST   | `/benchmark/stop`   | Aborta el benchmark en curso.                          |
+| GET    | `/script-default`   | Script por defecto (texto plano).                      |
+| POST   | `/script-default`   | Guarda el script por defecto.                          |
+| GET    | `/prompt-default`   | Prompt por defecto (texto plano).                      |
+| POST   | `/prompt-default`   | Guarda el prompt por defecto.                          |
+| GET    | `/history`          | Lista de resultados guardados.                         |
+| DELETE | `/history`          | Borra todo el historial.                               |
+| DELETE | `/history/:id`      | Borra un resultado.                                    |
 
 ## Métricas almacenadas
 
@@ -95,15 +113,16 @@ Apuntá el campo **Binario llama-server** de la UI a tu `llama-server`
 }
 ```
 
-## UI
+## UI (Angular + PrimeNG)
 
-- Formulario con todos los flags relevantes + preview en vivo del comando.
+- Editor de script (textarea) + **Formatear** + guardar/restablecer default.
 - Botones **Play** / **Stop** para control manual del proceso.
-- Logs en tiempo real (polling cada 1s, auto-scroll).
-- Panel de GPUs en vivo (NVIDIA + AMD).
-- Botón **Benchmark** para el flujo automático completo.
+- Panel de **Benchmark automático** (prompt + max tokens, timer en vivo).
+- Logs en tiempo real (polling cada 1s, auto-scroll, color por stream).
+- Panel de GPUs en vivo (NVIDIA + AMD) con barras de VRAM/util.
+- Tarjeta de **último resultado** con todas las métricas.
 - Tabla de historial con resaltado de mejores valores por columna.
-- Comparación lado a lado entre resultados seleccionados.
+- Comparación lado a lado entre resultados seleccionados (modal).
 
 ## Hardware objetivo
 
@@ -123,12 +142,14 @@ configuración óptima para RTX 5070 Ti + RX 6600.
 
 ```
 .
-├── server.ts          # Backend: spawn, endpoints, benchmark, GPU, historial
-├── types.ts           # Tipos compartidos
-├── public/
-│   ├── index.html     # UI
-│   ├── app.js         # Lógica del frontend
-│   └── style.css      # Tema oscuro
-└── data/
-    └── history.json   # Resultados (gitignored)
+├── src/               # Backend (Bun, API pura): spawn, endpoints, benchmark, GPU, historial
+│   ├── server.ts      # Entry point
+│   ├── router.ts      # Handler HTTP (solo API JSON + CORS)
+│   └── …              # config, state, types, gpu, metrics, history, …
+├── front/             # Frontend Angular 22 + PrimeNG 21
+│   └── src/app/
+│       ├── core/      # services, state (signals), models, utils
+│       └── features/  # componentes standalone (home, status-bar, …)
+└── data/              # Datos locales (gitignored)
+    └── history.json   # Resultados de benchmarks
 ```

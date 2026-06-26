@@ -2,25 +2,35 @@
 
 ## Project Overview
 
-**llama-bench** — a zero-dependency benchmarking tool for `llama-server`. Starts the server, runs inference prompts, parses timing metrics from logs, captures GPU stats, and persists results. Spanish-language UI.
+**llama-bench** — a benchmarking tool for `llama-server`. Starts the server, runs inference prompts, parses timing metrics from logs, captures GPU stats, and persists results. Spanish-language UI.
 
-- **Backend**: `src/server.ts` — Bun HTTP server modular (TypeScript, stdlib only). Código dividido por funcionalidad en `src/`.
-- **Frontend**: `src/front/app.ts` — vanilla TypeScript, no frameworks. Se transpila con `Bun.build()` al arranque y se sirve en `/app.js`.
-- **Static files**: `public/` — solo `index.html` y `style.css`.
+- **Backend**: `src/server.ts` — Bun HTTP server modular (TypeScript, stdlib only). Código dividido por funcionalidad en `src/`. Expone solo la **API JSON** (ya no sirve frontend).
+- **Frontend**: `front/` — Angular 22 + PrimeNG 21 (standalone, signals). App aparte, servida por `ng serve` en dev. Habla con el backend por HTTP (CORS `*`).
 - **Runtime**: Bun, managed via `mise.toml` (`mise install` o `mise up`).
 - **External binary**: `llama-server` (not bundled; must exist on disk).
+
+> La migración eliminó el frontend vanilla anterior (`src/front/app.ts`, `public/`).
+> Ahora el backend es una API pura y el frontend vive en `front/` (Angular).
 
 ---
 
 ## Essential Commands
 
-| Command         | Purpose                                                            |
-| --------------- | ------------------------------------------------------------------ |
-| `mise install`  | Install Bun via mise version manager                               |
-| `bun install`   | Initialize node_modules (zero deps, just creates the dir)          |
-| `bun start`     | Production: `bun run src/server.ts`                                |
-| `bun dev`       | Development with `--watch` (rebundlea el frontend automáticamente) |
-| `bun typecheck` | `tsc --noEmit` (TypeScript checking only)                          |
+Ejecutados desde la **raíz** del repo (que orquesta backend + frontend juntos):
+
+| Command              | Purpose                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `mise install`       | Install Bun via mise version manager                                               |
+| `bun install`        | Instala deps de la raíz (incl. `concurrently`)                                     |
+| `bun run dev`        | **Dev conjunto**: arranca backend (`:3000`) + frontend (`:4200`) con `concurrently` (con `--watch`); Ctrl+C mata ambos |
+| `bun run dev:back`   | Solo backend con `--watch`                                                         |
+| `bun run dev:front`  | Solo frontend Angular (`ng serve`)                                                 |
+| `bun run start`      | Producción: `bun run src/server.ts`                                                |
+| `bun run build:front`| Build de producción del frontend Angular (`ng build`) → `front/dist/`              |
+| `bun typecheck`      | `tsc --noEmit` del backend                                                         |
+
+Dentro de `front/` (directorio del frontend Angular) también aplican los scripts
+`ng` habituales (`start`, `build`, `watch`, `test`) — ver `front/package.json`.
 
 ---
 
@@ -29,39 +39,52 @@
 ### Estructura del proyecto
 
 ```
-src/
-  server.ts            # Entry point: Bun.serve + bootstrap + Bun.build del frontend
-  config.ts            # Constantes de entorno (PORT, DATA_DIR, HISTORY_FILE, …)
-  state.ts             # Estado global mutable (managed, status, logBuffer, …) + setters
-  types.ts             # Interfaces compartidas (BenchmarkResult, GpuInfo, …)
-  logs.ts              # Buffer de logs: pushLog, systemLog
-  script-parser.ts     # Tokenizado y parseo del script de shell (tokenizeScript, parseScript)
-  server-manager.ts    # Gestión del proceso llama-server (startServer, stopServer, urlFor)
-  gpu.ts               # Métricas de GPU NVIDIA (nvidia-smi) + AMD (sysfs)
-  metrics.ts           # Parsing de métricas desde logs + health-check + utilidades
-  benchmark.ts         # Orquestador del benchmark completo (runBenchmark)
-  history.ts           # Persistencia del historial (loadHistory, saveResult, …)
-  router.ts            # HTTP request handler: path matching + CORS + archivos estáticos
-  front/
-    app.ts             # Frontend TypeScript (vanilla, módulo ES)
-    esm-sh.d.ts        # Stubs de tipos para imports de CodeMirror desde esm.sh
-public/
-  index.html           # UI estática
-  style.css            # Tema oscuro, CSS custom properties
-data/
-  history.json         # Resultados de benchmarks (gitignored)
-  script-default.txt   # Script por defecto guardado desde la UI (gitignored)
+src/                        # Backend (Bun, API pura)
+  server.ts                 # Entry point: Bun.serve + bootstrap
+  config.ts                 # Constantes de entorno (PORT, DATA_DIR, HISTORY_FILE, …)
+  state.ts                  # Estado global mutable (managed, status, logBuffer, …) + setters
+  types.ts                  # Interfaces compartidas (BenchmarkResult, GpuInfo, …)
+  logs.ts                   # Buffer de logs: pushLog, systemLog
+  script-parser.ts          # Tokenizado y parseo del script de shell (tokenizeScript, parseScript)
+  server-manager.ts         # Gestión del proceso llama-server (startServer, stopServer, urlFor)
+  gpu.ts                    # Métricas de GPU NVIDIA (nvidia-smi) + AMD (sysfs)
+  metrics.ts                # Parsing de métricas desde logs + health-check + utilidades
+  benchmark.ts              # Orquestador del benchmark completo (runBenchmark)
+  history.ts                # Persistencia del historial (loadHistory, saveResult, …)
+  router.ts                 # HTTP request handler: path matching + CORS (solo API JSON)
+data/                       # Datos locales (gitignored)
+  history.json              # Resultados de benchmarks
+  script-default.txt        # Script por defecto guardado desde la UI
+  prompt-default.txt        # Prompt por defecto guardado desde la UI
+front/                      # Frontend (Angular 22 + PrimeNG 21)
+  src/app/
+    app.config.ts           # Providers: PrimeNG (preset Noir), HttpClient, Router
+    app.routes.ts           # Ruta '' → Home (lazy)
+    app.ts / app.html       # Shell: header + p-toast + p-confirmdialog + router-outlet
+    core/
+      models/types.ts       # Interfaces espejo del backend
+      services/             # api.service (HttpClient), llama-bench.service, storage.service
+      state/bench.store.ts  # Estado global con signals + actions + effects
+      utils/                # format.ts (fn puras), pipes.ts
+    features/               # Componentes standalone (uno por sección):
+      home/, status-bar/, script-editor/, benchmark-panel/,
+      gpu-grid/, logs-viewer/, response-card/, last-result/,
+      history-table/, compare-modal/
 ```
 
 ### Backend (`src/server.ts` + módulos en `src/`)
 
-Servidor HTTP modular sin frameworks. `src/server.ts` es el entry point: transpila el frontend con `Bun.build()`, inicializa el historial, arranca `Bun.serve` con el router. El router (`src/router.ts`) despacha requests a los módulos correspondientes.
+Servidor HTTP modular sin frameworks. `src/server.ts` es el entry point:
+inicializa el historial y arranca `Bun.serve` con el router. El router
+(`src/router.ts`) despacha requests de la **API JSON** a los módulos
+correspondientes. **No sirve archivos estáticos ni bundle de frontend** (eso se
+hizo en la versión anterior con `Bun.build()` + `public/`, ya eliminado).
 
 **Módulos** (por responsabilidad):
 
 1. **config.ts** — constantes de entorno y paths (`PORT`, `DATA_DIR`, `HISTORY_FILE`, `LOG_CAP`, …).
 2. **state.ts** — estado global mutable centralizado (`managed`, `status`, `benchmarkRunning`, `logBuffer`) con setters para reasignación desde otros módulos. Exporta también `emptyParsedScript()` y `ManagedServer` interface.
-3. **types.ts** — interfaces compartidas entre backend y frontend (`BenchmarkResult`, `GpuInfo`, `ParsedScript`, `StatusResponse`, `LogEntry`, `LogsResponse`, `ServerStatus`).
+3. **types.ts** — interfaces del dominio (`BenchmarkResult`, `GpuInfo`, `ParsedScript`, `StatusResponse`, `LogEntry`, `LogsResponse`, `ServerStatus`).
 4. **logs.ts** — operaciones del buffer circular de logs (`pushLog`, `systemLog`, `getLogBuffer`). El buffer vive en `state.ts`.
 5. **script-parser.ts** — tokenizado de scripts de shell y extracción de flags (`tokenizeScript`, `parseScript`, `flagValue`, `toNumOrNull`).
 6. **server-manager.ts** — gestión del proceso llama-server (`startServer`, `stopServer`, `urlFor`). Spawn con grupo de proceso propio, detección de ready, shutdown graceful (SIGTERM → SIGKILL).
@@ -69,35 +92,32 @@ Servidor HTTP modular sin frameworks. `src/server.ts` es el entry point: transpi
 8. **metrics.ts** — parsing regex de métricas desde logs (`parseMetricsFromLogs`), health-check con polling (`waitForServer`), `DEFAULT_PROMPT`, `sleep`.
 9. **benchmark.ts** — orquestador del ciclo completo de benchmark (`runBenchmark`, `finalize`). Importa de server-manager, gpu, metrics, history.
 10. **history.ts** — persistencia JSON del historial (`loadHistory`, `saveResult`, `deleteResult`, `clearHistory`). Cap de 200 entradas.
-11. **router.ts** — `handleRequest` con path matching manual, CORS, y serving de archivos estáticos + bundle del frontend.
+11. **router.ts** — `handleRequest` con path matching manual y CORS. Solo endpoints de la API.
 
-### Frontend (`src/front/app.ts`)
+### Frontend (`front/`)
 
-TypeScript vanilla, módulo ES. Se escribe como `.ts` en `src/front/` y Bun lo transpila a un bundle JS en memoria al arrancar el servidor (vía `Bun.build()`). El bundle se sirve en `/app.js`; `index.html` referencia ese path sin cambios.
+App Angular 22 (standalone, signals, zoneless) con PrimeNG 21 (preset `Noir`,
+modo oscuro vía clase `.dark`). Sigue los mandates de `front/AGENTS.md`:
+`inject()`, `input()/output()/computed()`, control flow nativo (`@if/@for`),
+`class`/`style` bindings (sin `ngClass`/`ngStyle`), archivos sin sufijo
+`.component`, lazy loading de rutas.
 
-- Usa CodeMirror (importado desde `esm.sh` como URL) para el editor de scripts.
-- Tipos compartidos importados de `../types.ts`.
-- `esm-sh.d.ts` provee stubs de tipo para que `tsc --noEmit` no falle con los imports de URL.
-
-### Bundling del frontend
-
-En `src/server.ts` (entry), al bootstrap:
-
-```ts
-const result = await Bun.build({
-  entrypoints: [import.meta.dir + '/front/app.ts'],
-  target: 'browser',
-  format: 'esm',
-  external: ['https://esm.sh/codemirror*', 'https://esm.sh/@codemirror/*'],
-})
-const appJs = await result.outputs[0].text()
-```
-
-El router sirve `appJs` en `/app.js`. Con `bun dev --watch`, Bun re-ejecuta el entry al detectar cambios y rebundlea automáticamente.
+- **`core/services/api.service.ts`** — wrapper sobre `HttpClient` con manejo de
+  errores unificado (lanza `Error(body.error || status)`). Base URL configurable
+  (`API_BASE_URL`, default `http://localhost:3000`).
+- **`core/services/llama-bench.service.ts`** — un Observable por endpoint.
+- **`core/services/storage.service.ts`** — las 4 claves de `localStorage`
+  (script, prompt, sort, modelFilter) con try/catch.
+- **`core/state/bench.store.ts`** — estado central con signals + actions +
+  `effect()` de persistencia; `computed()` para derivados (`visibleHistory`
+  ordenado/filtrado, `bests`, `selectedResults`, `statusLabel`).
+- **`features/*`** — un componente standalone por sección. Cada uno lleva
+  encabezado comentado con su responsabilidad. `home` orquesta el polling RxJS
+  (status 1.5s, logs 1s, gpu 4s) con `takeUntilDestroyed`.
 
 ### Data Flow
 
-1. User configures server options via CodeMirror script editor → saved to `localStorage`
+1. User configures server options via script editor (textarea PrimeNG) → saved to `localStorage`
 2. **Manual mode**: Start server → poll `/status` + `/logs` → see live output → stop
 3. **Benchmark mode**: POST `/benchmark` → backend spawns llama-server → waits for ready → sends inference request → parses logs for metrics → reads GPU stats → saves result → kills server → returns result
 4. Results persisted to `data/history.json` (JSON array, max 200 entries)
@@ -107,9 +127,8 @@ El router sirve `appJs` en `/app.js`. Con `bun dev --watch`, Bun re-ejecuta el e
 
 ## Port Convention
 
-**Backend runs on port 3000, NOT 8080.** This is intentional — `llama-server` defaults to port 8080. Using 3000 avoids conflicts when both processes run simultaneously.
-
-Override with `PORT` env var.
+- **Backend**: port **3000** (NOT 8080). Deliberado — `llama-server` usa 8080 por defecto; 3000 evita el conflicto. Override con `PORT`.
+- **Frontend (dev)**: `ng serve` → port **4200**.
 
 ---
 
@@ -119,7 +138,7 @@ Override with `PORT` env var.
 | ------------------- | ---------------- | ------------------------------------------------------------------- |
 | `PORT`              | `3000`           | Backend HTTP port                                                   |
 | `LLAMA_SERVER_PATH` | `./llama-server` | Path to llama-server binary (referenced in UI, not used by backend) |
-| `DATA_DIR`          | `./data`         | Directory for history.json and script-default.txt                   |
+| `DATA_DIR`          | `./data`         | Directory for history.json and defaults                             |
 
 ---
 
@@ -144,7 +163,7 @@ Two collection paths, both Linux-only (in `src/gpu.ts`):
 1. **NVIDIA**: Runs `nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits` and parses CSV output. Vendor label: `nvidia`.
 2. **AMD**: Reads sysfs files at `/sys/class/drm/card*/device/mem_info_vram_total` and `mem_info_vram_used`. Also attempts `gpu_busy_percent` for utilization (may not be available on all kernels/drivers). Vendor label: `amd`.
 
-GPU index prefixes in history data preserve the vendor tag (e.g., `nvidia0`, `amdgpu-card0`) for disambiguation. The frontend strips these prefixes for display.
+GPU index prefixes in history data preserve the vendor tag (e.g. `nvidia0`, `amdgpu-card0`) for disambiguation. The frontend normaliza el vendor para display.
 
 ---
 
@@ -184,43 +203,6 @@ The benchmark endpoint (`POST /benchmark`) guards against concurrent runs with a
 
 ---
 
-## Frontend Patterns
-
-### Config Persistence
-
-- Config stored in `localStorage` under key `llama-bench-script`
-- On init: `localStorage` takes priority over backend defaults (`/script-default`)
-- "Guardar default" saves to server (`POST /script-default`); "Restablecer default" loads from server
-- "Reset" button clears localStorage
-
-### CodeMirror Editor
-
-- Full CodeMirror 6 editor with shell syntax highlighting (loaded from `esm.sh`)
-- Auto-saves to localStorage on every change
-- Script is the source of truth (not structured form fields)
-
-### Polling
-
-Three independent intervals after `init()`:
-
-- `/status` every 1500ms — updates status dot and text
-- `/logs` every 1000ms — cursor-based incremental log fetching
-- `/gpu` every 4000ms — GPU stats refresh
-
-### History Comparison
-
-Multi-select via checkboxes → "Comparar" button opens modal with side-by-side metric table. Best values in history are highlighted with a `best` CSS class (green text).
-
-### History Sorting
-
-Columns with `data-sort` attribute are clickable. Sort state (column + direction) persisted in localStorage.
-
-### Model Filter
-
-Dropdown populated with unique model base names from history. Filter state persisted in localStorage.
-
----
-
 ## Gotchas
 
 1. **Port 3000, not 8080**: The backend deliberately avoids llama-server's default port. Don't "fix" this to 8080.
@@ -231,10 +213,10 @@ Dropdown populated with unique model base names from history. Filter state persi
 6. **Relative .so files**: The binary's directory is added to `LD_LIBRARY_PATH` and set as CWD because llama-server ships with relative library paths.
 7. **History cap**: `data/history.json` is trimmed to 200 entries on each write. No pagination or lazy loading.
 8. **`.gitignore` ignores `data/*`**: History.json is not tracked in git. Each developer has their own local history.
-9. **No CORS issues in dev**: Backend sets `Access-Control-Allow-Origin: *` on all responses.
-10. **Static file serving**: `index.html` and `style.css` are served from `public/` as static files. `/app.js` is the transpiled frontend bundle served from memory (built by `Bun.build()` at server startup). Path traversal protection checks `filePath.startsWith(staticRoot)`.
+9. **No CORS issues**: Backend sets `Access-Control-Allow-Origin: *` on all responses, so el frontend Angular (dev en `:4200`) llama al backend (`:3000`) sin proxy. No usar `withCredentials` (incompatible con `*`).
+10. **Backend = API pura**: Ya no sirve `index.html`, `/app.js` ni `/style.css`. El frontend se sirve aparte (`ng serve` en dev, o estáticos del `front/dist/` en producción). El code de `Bun.build()`/`public/` fue eliminado en la migración a Angular.
 11. **Spanish UI**: All user-facing text is in Spanish. Code comments are also in Spanish.
-12. **`src/types.ts` is shared**: Both backend modules and frontend (`src/front/app.ts`) import types from `src/types.ts`. Keep it in sync if types change.
-13. **Frontend is TypeScript, not JS**: `src/front/app.ts` is compiled to JS by `Bun.build()` at server startup — it's not served as raw `.ts` to the browser. CodeMirror imports from `esm.sh` are marked as `external` in the build so the browser resolves them.
-14. **ESM live bindings**: State variables in `src/state.ts` (`managed`, `status`, etc.) are `let` exports. ESM modules see the current value on each access (live bindings), so closures in `server-manager.ts` correctly observe state changes.
-15. **State mutations via setters**: Because `let` exports can't be reassigned from another module directly, `state.ts` provides setter functions (`setManaged`, `setStatus`, etc.) used by all other modules.
+12. **`src/types.ts` (backend) y `front/.../core/models/types.ts` son espejos**: El backend ya no comparte tipos con el frontend (viven en proyectos separados). Si una interfaz cambia, actualizar ambos lados.
+13. **ESM live bindings**: State variables in `src/state.ts` (`managed`, `status`, etc.) are `let` exports. ESM modules see the current value on each access (live bindings), so closures in `server-manager.ts` correctly observe state changes.
+14. **State mutations via setters**: Because `let` exports can't be reassigned from another module directly, `state.ts` provides setter functions (`setManaged`, `setStatus`, etc.) used by all other modules.
+15. **Dev conjunto con `concurrently -k`**: `bun run dev` arranca backend + frontend juntos; la flag `-k` hace que al morir uno se mate el otro (Ctrl+C limpia ambos). Para correr uno solo, usar `dev:back` / `dev:front`.

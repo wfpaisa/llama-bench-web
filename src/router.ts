@@ -1,10 +1,9 @@
-// Router HTTP: path matching manual + CORS + archivos estáticos.
-// Sin frameworks: handleRequest() despacha a cada módulo según el path.
+// Router HTTP: path matching manual + CORS. Solo API JSON (el frontend vive en
+// front/, servido aparte). Sin frameworks: handleRequest() despacha a cada
+// módulo según el path.
 
 import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import type { LogsResponse, StatusResponse } from './types.ts'
 import { managed, benchmarkRunning, setBenchmarkRunning, benchAbortController, status, statusError } from './state.ts'
 import { parseScript } from './script-parser.ts'
@@ -20,14 +19,6 @@ const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
-}
-
-/** Bundle del frontend (transpilado por el entry con Bun.build); lo inyecta el server. */
-let appJsBundle = ''
-
-/** El entry llama esto tras construir el bundle para que el router lo sirva. */
-export function setFrontendBundle(js: string): void {
-  appJsBundle = js
 }
 
 /** Despacha una request HTTP a la respuesta correspondiente. */
@@ -203,34 +194,7 @@ export async function handleRequest(req: Request): Promise<Response> {
     return json({ ok: true })
   }
 
-  // ── Frontend (bundle en memoria + estáticos) ──
-  if (path === '/' || path === '/index.html') {
-    return serveStatic('index.html', 'text/html; charset=utf-8')
-  }
-  if (path === '/app.js') {
-    // Bundle transpilado en memoria (src/front/app.ts vía Bun.build).
-    return new Response(appJsBundle, {
-      headers: { 'Content-Type': 'application/javascript; charset=utf-8', ...CORS },
-    })
-  }
-  if (path === '/style.css') {
-    return serveStatic('style.css', 'text/css; charset=utf-8')
-  }
-
   return new Response('Not found', { status: 404, headers: CORS })
-}
-
-/** Sirve un archivo estático desde public/. Protege contra path traversal. */
-async function serveStatic(name: string, contentType: string): Promise<Response> {
-  const staticRoot = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
-  const filePath = join(staticRoot, name)
-  // Protección path traversal: el path final debe seguir dentro de public/.
-  if (!filePath.startsWith(staticRoot)) return new Response('Forbidden', { status: 403 })
-  const file = Bun.file(filePath)
-  if (!(await file.exists())) return new Response('Not found', { status: 404, headers: CORS })
-  return new Response(file, {
-    headers: { 'Content-Type': contentType, ...CORS },
-  })
 }
 
 // existsSync re-export: el entry lo usa en el bootstrap para history.json.
