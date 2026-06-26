@@ -1,6 +1,7 @@
-// StorageService: envuelve las 4 claves de localStorage usadas por la app
-// (script, prompt, orden del historial, filtro de modelo) con try/catch para
-// tolerar cuotas/cookies bloqueadas. Devuelve valores ya parseados.
+// StorageService: envuelve las 3 claves de localStorage usadas por la app
+// (script, prompt, orden del historial) con try/catch para tolerar
+// cuotas/cookies bloqueadas. Devuelve valores ya parseados.
+// El filtrado por modelo lo maneja PrimeNG (p-columnFilter) y no se persiste.
 
 import { Injectable } from '@angular/core';
 
@@ -13,7 +14,6 @@ const KEYS = {
   script: 'llama-bench-script',
   prompt: 'llama-bench-prompt',
   sort: 'llama-bench-sort',
-  modelFilter: 'llama-bench-model-filter',
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -54,18 +54,6 @@ export class StorageService {
   }
   saveSort(value: SortState): void {
     this.set(KEYS.sort, JSON.stringify(value));
-  }
-
-  // ── Filtro de modelo ──
-  loadModelFilter(): string {
-    try {
-      return localStorage.getItem(KEYS.modelFilter) || '';
-    } catch {
-      return '';
-    }
-  }
-  saveModelFilter(value: string): void {
-    this.set(KEYS.modelFilter, value);
   }
 
   // ── Helpers internos ──

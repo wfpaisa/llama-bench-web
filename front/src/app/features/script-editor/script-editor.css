@@ -26,6 +26,8 @@
   line-height: 1.5;
   resize: vertical;
   min-height: 12rem;
+  field-sizing: content;
+  min-height: 32rem; /* altura mínima: 3 líneas */
 }
 
 .actions {

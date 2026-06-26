@@ -67,11 +67,10 @@ export class BenchStore {
   readonly lastResult = signal<BenchmarkResult | null>(null);
   readonly showResponse = signal(false);
 
-  // ── Historial: selección, orden, filtro ──
+  // ── Historial: selección, orden ──
   readonly selected = signal<Set<string>>(new Set());
   readonly sortCol = signal('date');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
-  readonly modelFilter = signal('');
   readonly showCompare = signal(false);
 
   // ── Logs UI ──
@@ -118,23 +117,13 @@ export class BenchStore {
     return [...bases].sort((a, b) => a.localeCompare(b));
   });
 
-  /** Historial ya filtrado por modelo. */
-  private readonly filteredByModel = computed<BenchmarkResult[]>(() => {
-    const filter = this.modelFilter();
-    if (!filter) return this.history();
-    return this.history().filter((r) => {
-      const m = r.config?.model;
-      const noOrg = m ? m.split(':')[0].split('/').pop() : null;
-      return noOrg === filter;
-    });
-  });
-
   /**
-   * Historial filtrado Y ordenado para renderizar en la tabla.
-   * El orden se aplica sobre la lista ya filtrada.
+   * Historial ordenado para renderizar en la tabla.
+   * El filtrado por modelo lo hace PrimeNG nativamente (p-columnFilter),
+   * por eso aquí solo se ordena.
    */
   readonly visibleHistory = computed<BenchmarkResult[]>(() => {
-    const list = [...this.filteredByModel()];
+    const list = [...this.history()];
     const col = this.sortCol();
     const dir = this.sortDir();
     const fn = SORT_FNS[col];
@@ -162,17 +151,17 @@ export class BenchStore {
   // ════════════ Inyección + init ════════════
 
   constructor() {
-    // Persistir script/prompt/sort/filter cuando cambien (effects en injection context).
+    // Persistir script/prompt/sort cuando cambien (effects en injection context).
+    // El filtrado por modelo lo maneja PrimeNG (p-columnFilter), no se persiste.
     effect(() => this.storage.saveScript(this.script()));
     effect(() => this.storage.savePrompt(this.prompt()));
     effect(() => this.storage.saveSort({ col: this.sortCol(), dir: this.sortDir() }));
-    effect(() => this.storage.saveModelFilter(this.modelFilter()));
   }
 
   /**
    * Siembra el estado inicial desde localStorage. Llamar una vez al arrancar la app
-   * (antes de cualquier carga de datos del backend) para que sort/filter persistidos
-   * apliquen desde el primer render.
+   * (antes de cualquier carga de datos del backend) para que el sort persistido
+   * aplique desde el primer render.
    */
   init(): void {
     const sort = this.storage.loadSort();
@@ -180,7 +169,6 @@ export class BenchStore {
       this.sortCol.set(sort.col);
       this.sortDir.set(sort.dir);
     }
-    this.modelFilter.set(this.storage.loadModelFilter());
   }
 
   // ════════════ Actions: status / logs / gpu ════════════
@@ -292,13 +280,6 @@ export class BenchStore {
       if (ids.has(id)) sel.add(id);
     }
     this.selected.set(sel);
-    // Resetear filtro si ya no está en las opciones.
-    if (this.modelFilter()) {
-      const m = this.modelOptions();
-      if (!m.includes(this.modelFilter())) {
-        this.modelFilter.set('');
-      }
-    }
   }
 
   /** Alterna la selección de un id. */
@@ -321,10 +302,6 @@ export class BenchStore {
       this.sortCol.set(col);
       this.sortDir.set('desc');
     }
-  }
-
-  setModelFilter(value: string): void {
-    this.modelFilter.set(value);
   }
 
   // ── Comparación ──

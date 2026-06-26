@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
-import { TableModule, Table } from 'primeng/table';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
@@ -11,9 +11,20 @@ import { BenchmarkResult, ParsedScript } from '../../core/models/types';
 import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/format';
 
 /**
+ * Fila de historial para la tabla: el resultado original + `modelBase`
+ * aplanado para que el p-columnFilter de PrimeNG (matchMode "in") pueda
+ * comparar contra las opciones del multiselect.
+ */
+export interface HistoryRow extends BenchmarkResult {
+  /** Modelo base (sin org/ ni :quant), campo por el que filtra el multiselect. */
+  modelBase: string;
+}
+
+/**
  * HistoryTable: tabla de resultados históricos de benchmarks.
  * - p-table con sort por columna (sortCol/sortDir persistidos en localStorage).
- * - Filtro por modelo base (p-select en el header).
+ * - Filtro por modelo base vía p-columnFilter + p-multiselect (filtrado nativo
+ *   de PrimeNG, matchMode "in" sobre el campo `modelBase`).
  * - Checkbox por fila para selección multi (Set en el store).
  * - Highlights "best" (mejor prompt/gen T/s, draft acc, load/gen time) sobre
  *   TODA la history, calculados en store.bests.
@@ -24,7 +35,7 @@ import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/
 @Component({
   selector: 'app-history-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, SelectModule, TableModule, TooltipModule],
+  imports: [FormsModule, ButtonModule, MultiSelectModule, TableModule, TooltipModule],
   templateUrl: './history-table.html',
   styleUrl: './history-table.css',
 })
@@ -37,6 +48,17 @@ export class HistoryTable {
   protected readonly fmt = fmt;
   protected readonly fmtMs = fmtMs;
   protected readonly modelOptions = this.store.modelOptions;
+
+  /**
+   * Datos para la tabla: historial visible con un campo `modelBase` aplanado
+   * por el que filtra el p-columnFilter (matchMode "in").
+   */
+  protected readonly tableData = computed<HistoryRow[]>(() =>
+    this.store.visibleHistory().map((r) => ({
+      ...r,
+      modelBase: modelBase(r.config?.model) ?? '',
+    })),
+  );
 
   // ── Helpers de celda ──
 

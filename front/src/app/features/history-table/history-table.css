@@ -14,14 +14,9 @@
   align-items: center;
 }
 
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-.filter-row .count {
-  margin-left: auto;
+.count {
+  font-weight: 400;
+  margin-left: 0.5rem;
 }
 
 .muted {
@@ -29,6 +24,14 @@
 }
 .small {
   font-size: 0.78rem;
+}
+
+/* Header de la columna Modelo: etiqueta + disparador de filtro en línea. */
+.th-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 /* Celdas numéricas y "best". */
@@ -81,9 +84,4 @@
 .row-actions {
   display: flex;
   gap: 0.15rem;
-}
-
-:host ::ng-deep .model-filter {
-  width: 14rem;
-  max-width: 40vw;
 }
