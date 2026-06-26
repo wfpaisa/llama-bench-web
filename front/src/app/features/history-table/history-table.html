@@ -1,9 +1,23 @@
-<section class="card">
+<section class="card" [class.is-fullwidth]="fullWidth()" [class.is-maximized]="maximized()">
   <div class="row-between">
     <h2>
       Historial <span class="muted small count">{{ store.history().length }} registros</span>
     </h2>
     <div class="buttons">
+      <p-button
+        [label]="fullWidthLabel()"
+        icon="pi pi-arrows-left-right"
+        severity="secondary"
+        [text]="true"
+        (onClick)="toggleFullWidth()"
+      />
+      <p-button
+        [label]="maximizeLabel()"
+        [icon]="maximizeIcon()"
+        severity="secondary"
+        [text]="true"
+        (onClick)="toggleMaximize()"
+      />
       <p-button
         label="Comparar"
         icon="pi pi-arrows-h"
