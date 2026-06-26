@@ -23,13 +23,13 @@ export function fmtMs(ms: number | null | undefined): string {
 }
 
 /**
- * Duración adaptable en ms: "412 ms" para <1 s, "12.34 s" para ≥1 s.
- * Pensada para tiempos cortos como el prompt eval time (casi siempre sub-segundo
- * o de pocos segundos), donde fmtMs (MM:SS) redondearía a "00:00".
+ * Convierte milisegundos a segundos (2 decimales); `—` si es null/undefined.
+ * Pensada para tiempos como prompt eval time o generation time, mostrándolos
+ * siempre en segundos. El sufijo "s" se añade en el template.
  */
-export function fmtDur(ms: number | null | undefined): string {
+export function fmtSec(ms: number | null | undefined): string {
   if (ms == null) return '—';
-  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
+  return (ms / 1000).toFixed(2);
 }
 
 /**

@@ -27,7 +27,7 @@
   resize: vertical;
   min-height: 12rem;
   field-sizing: content;
-  min-height: 32rem; /* altura mínima: 3 líneas */
+  min-height: 35rem; /* altura mínima: 3 líneas */
 }
 
 .actions {

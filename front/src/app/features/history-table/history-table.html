@@ -81,10 +81,18 @@
         <th class="col-gen" title="Cantidad de tokens generados">
           <div class="column-name">Generated tokens</div>
         </th>
-        <th class="col-gen" [pSortableColumn]="'generationTime'" title="Tiempo de generación (eval time, sin prompt ni startup)">
+        <th
+          class="col-gen"
+          [pSortableColumn]="'generationTime'"
+          title="Tiempo de generación (eval time, sin prompt ni startup)"
+        >
           <div class="column-name">Generation time <p-sortIcon field="generationTime" /></div>
         </th>
-        <th class="col-gen" [pSortableColumn]="'genTps'" title="Velocidad de generación (tokens por segundo)">
+        <th
+          class="col-gen"
+          [pSortableColumn]="'genTps'"
+          title="Velocidad de generación (tokens por segundo)"
+        >
           <div class="column-name">Generation speed <p-sortIcon field="genTps" /></div>
         </th>
         <th class="col-read" title="Cantidad de tokens del prompt">
@@ -93,7 +101,11 @@
         <th class="col-read" title="Tiempo de procesado del prompt (prompt eval time)">
           <div class="column-name">Prompt processing time</div>
         </th>
-        <th class="col-read" [pSortableColumn]="'promptTps'" title="Velocidad de procesado del prompt (tokens por segundo)">
+        <th
+          class="col-read"
+          [pSortableColumn]="'promptTps'"
+          title="Velocidad de procesado del prompt (tokens por segundo)"
+        >
           <div class="column-name">Prompt processing speed <p-sortIcon field="promptTps" /></div>
         </th>
         <th [pSortableColumn]="'draftAcc'" title="Aceptación del draft (speculative / MTP)">
@@ -157,24 +169,32 @@
         <td>{{ r.config?.device ?? '—' }}</td>
         <td>{{ r.config?.tensorSplit ?? '—' }}</td>
         <td class="num col-gen">{{ fmt(r.generationTokenCount, 0) }}</td>
-        <td class="num col-gen" [class.best]="isBestGenTime(r)">{{ fmtMs(r.generationTimeMs) }}</td>
-        <td class="num col-gen" [class.best]="isBestGen(r)">{{ fmt(r.generationTokensPerSecond) }}</td>
+        <td class="num col-gen" [class.best]="isBestGenTime(r)">
+          {{ fmtSec(r.generationTimeMs) }}<small class="stime">s</small>
+        </td>
+        <td class="num col-gen" [class.best]="isBestGen(r)">
+          {{ fmt(r.generationTokensPerSecond) }}<small class="stime">t/s</small>
+        </td>
         <td class="num col-read">{{ fmt(r.promptTokenCount, 0) }}</td>
-        <td class="num col-read">{{ fmtDur(r.promptEvalTimeMs) }}</td>
-        <td class="num col-read" [class.best]="isBestPrompt(r)">{{ fmt(r.promptTokensPerSecond) }}</td>
+        <td class="num col-read">{{ fmtSec(r.promptEvalTimeMs) }}<small class="stime">s</small></td>
+        <td class="num col-read" [class.best]="isBestPrompt(r)">
+          {{ fmt(r.promptTokensPerSecond) }}<small class="stime">t/s</small>
+        </td>
         <td class="num" [class.best]="isBestDraft(r)">{{ fmt(r.draftAcceptance, 3) }}</td>
         <td class="num">{{ fmt(r.genDrafts, 0) }}</td>
         <td class="num">{{ fmt(r.accDrafts, 0) }}</td>
         <td class="num">{{ fmt(r.genTokens, 0) }}</td>
         <td class="num">{{ fmt(r.accTokens, 0) }}</td>
-        <td class="num" [class.best]="isBestLoad(r)">{{ fmt(r.loadTimeSeconds) }}</td>
+        <td class="num" [class.best]="isBestLoad(r)">
+          {{ fmt(r.loadTimeSeconds) }}<small class="stime">s</small>
+        </td>
         <td class="num">{{ gpuTxt(r) }}</td>
         <td class="num">{{ totalVramTxt(r) }}</td>
         <td>
           <div class="row-actions">
             @if (hasScript(r.config)) {
               <p-button
-                icon="pi pi-arrow-up-right"
+                icon="pi pi-arrow-up-left"
                 [text]="true"
                 size="small"
                 (onClick)="apply(r)"

@@ -31,6 +31,13 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+
+  /* Sufijos de unidad (s, t/s, …) pequeños y tenues. */
+  small {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
 }
 :host ::ng-deep .best {
   color: var(--p-green-400);
@@ -126,6 +133,13 @@ th {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+}
+
+td {
+  .stime {
+    margin-left: 0.2rem;
+    opacity: 0.4;
   }
 }
 

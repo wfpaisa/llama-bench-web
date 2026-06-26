@@ -103,6 +103,8 @@
 
         <ng-template #header>
           <tr>
+            <th style="width: 3rem"></th>
+            <th style="width: 3rem"></th>
             <th style="min-width: 14rem">
               <div class="th-filter">
                 Nombre
@@ -139,9 +141,9 @@
                 />
               </div>
             </th>
-            <th style="min-width: 9rem">
+            <th title="Categoría">
               <div class="th-filter">
-                Categoría
+                Cat
                 <p-columnFilter
                   field="category"
                   matchMode="in"
@@ -163,13 +165,32 @@
                 </p-columnFilter>
               </div>
             </th>
-            <th style="width: 3rem"></th>
-            <th style="width: 3rem"></th>
           </tr>
         </ng-template>
 
         <ng-template #body let-f>
           <tr [class.present]="flagPresent().has(f.long)">
+            <td class="cell-actions">
+              <p-button
+                icon="pi pi-arrow-left"
+                size="small"
+                severity="success"
+                pTooltip="Agregar al script"
+                [text]="true"
+                (onClick)="addToScript(f)"
+              />
+            </td>
+
+            <td class="cell-actions">
+              <p-button
+                icon="pi pi-info-circle"
+                [text]="true"
+                size="small"
+                pTooltip="Info"
+                (onClick)="openInfo(f)"
+              />
+            </td>
+
             <td class="cell-name">
               <div class="flag-name">{{ f.name }}</div>
               @if (f.defaultValue) {
@@ -192,24 +213,6 @@
             </td>
             <td>
               <p-tag [value]="f.category" [severity]="getCategorySeverity(f.category)" />
-            </td>
-            <td class="cell-actions">
-              <p-button
-                icon="pi pi-info-circle"
-                [text]="true"
-                size="small"
-                pTooltip="Info"
-                (onClick)="openInfo(f)"
-              />
-            </td>
-            <td class="cell-actions">
-              <p-button
-                icon="pi pi-plus"
-                size="small"
-                severity="success"
-                pTooltip="Agregar al script"
-                (onClick)="addToScript(f)"
-              />
             </td>
           </tr>
         </ng-template>
