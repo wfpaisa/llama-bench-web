@@ -1,0 +1,89 @@
+/* HistoryTable: tabla de historial de benchmarks. */
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.filter-row .count {
+  margin-left: auto;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+.small {
+  font-size: 0.78rem;
+}
+
+/* Celdas numéricas y "best". */
+:host ::ng-deep .num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+:host ::ng-deep .best {
+  color: var(--p-green-400);
+  font-weight: 700;
+}
+
+/* Fila seleccionada. */
+:host ::ng-deep tr.selected td {
+  background: var(--p-primary-900) !important;
+}
+
+/* Celda de modelo con badges. */
+.model-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.model-name {
+  font-size: 0.8rem;
+}
+.badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-full, 9999px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.badge-size {
+  background: var(--p-blue-900);
+  color: var(--p-blue-200);
+}
+.badge-quant {
+  background: var(--p-purple-900);
+  color: var(--p-purple-200);
+}
+.badge-mtp {
+  background: var(--p-amber-900);
+  color: var(--p-amber-200);
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.15rem;
+}
+
+:host ::ng-deep .model-filter {
+  width: 14rem;
+  max-width: 40vw;
+}

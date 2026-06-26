@@ -247,3 +247,23 @@ pre {
 .text-red {
   color: var(--p-red-500);
 }
+
+/* ---- Tarjeta contenedora (usada por todas las secciones) ---- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+}
+
+.card h2 {
+  font-size: 1.15rem;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.small {
+  font-size: 0.78rem;
+}

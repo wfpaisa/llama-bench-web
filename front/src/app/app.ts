@@ -1,19 +1,29 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { ComponentsExamples } from './components-examples/components-examples';
+import { Component, inject, signal } from '@angular/core'
+import { RouterOutlet } from '@angular/router'
+import { ToastModule } from 'primeng/toast'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { ButtonModule } from 'primeng/button'
+import { MessageService } from 'primeng/api'
 
+/**
+ * App (shell raíz).
+ * Aloja los overlays globales (p-toast, p-confirmdialog), el header con el toggle
+ * de modo oscuro, y el <router-outlet> donde se monta la home.
+ * El estado y la lógica viven en BenchStore y los feature components.
+ */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonModule, ComponentsExamples],
+  imports: [RouterOutlet, ButtonModule, ToastModule, ConfirmDialogModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('plane-llama-bench');
+  private readonly messages = inject(MessageService)
+  protected readonly title = signal('llama-bench')
 
-  toggleDarkMode() {
-    const element = document.querySelector('html');
-    if (element) element.classList.toggle('dark');
+  /** Alterna la clase `.dark` en <html> (darkModeSelector del preset PrimeNG). */
+  toggleDarkMode(): void {
+    const el = document.querySelector('html')
+    if (el) el.classList.toggle('dark')
   }
 }

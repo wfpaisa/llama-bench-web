@@ -1,3 +1,16 @@
-<p-button label="Toggle Dark Mode" (onClick)="toggleDarkMode()" />
-<app-components-examples />
+<!-- Shell: overlays globales (toast/confirm) + header + router-outlet -->
+<p-toast position="top-right" />
+<p-confirmdialog />
+
+<header class="app-header">
+  <h1>{{ title() }} <small>Vulkan · multi-GPU</small></h1>
+  <p-button
+    [text]="true"
+    severity="secondary"
+    icon="pi pi-moon"
+    title="Alternar modo oscuro"
+    (onClick)="toggleDarkMode()"
+  />
+</header>
+
 <router-outlet />

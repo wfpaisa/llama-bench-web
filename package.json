@@ -5,13 +5,17 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/server.ts",
+    "dev": "concurrently -k -n back,front -c cyan,magenta \"bun --watch src/server.ts\" \"bun run --cwd front start\"",
+    "dev:back": "bun --watch src/server.ts",
+    "dev:front": "bun run --cwd front start",
     "start": "bun src/server.ts",
+    "build:front": "bun run --cwd front build",
     "typecheck": "tsc --noEmit",
     "fix": "bunx prettier . --write"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "concurrently": "^9.1.0",
     "prettier": "3.8.4",
     "typescript": "^5.6.0"
   },

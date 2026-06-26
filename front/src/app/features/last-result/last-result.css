@@ -1,0 +1,59 @@
+/* LastResult: grid de métricas del último benchmark. */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.metric {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+}
+
+.metric-wide2 {
+  grid-column: span 2;
+}
+.metric-full {
+  grid-column: 1 / -1;
+}
+
+.metric .k {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.metric .k-sub {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  opacity: 0.8;
+  margin-top: 0.1rem;
+}
+.metric .v {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+}
+.metric .v small {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.metric .v.v-small {
+  font-size: 0.8rem;
+}
+.metric .v.green {
+  color: var(--p-green-500);
+}
+.metric .v.amber {
+  color: var(--p-amber-400);
+}
+.metric .v.v-error {
+  color: var(--p-red-500);
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}

@@ -1,0 +1,58 @@
+/* GpuGrid: tarjetas de GPU con barras de VRAM/utilización. */
+.gpu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.gpu {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.gpu-name {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.gpu-line {
+  color: var(--color-text);
+  margin: 0.25rem 0 0.25rem;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* Barras de uso. */
+.bar {
+  height: 6px;
+  background: var(--p-neutral-800);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar > span {
+  display: block;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.bar.green > span {
+  background: var(--p-green-500);
+}
+.bar.yellow > span {
+  background: var(--p-amber-400);
+}
+.bar.red > span {
+  background: var(--p-red-500);
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
