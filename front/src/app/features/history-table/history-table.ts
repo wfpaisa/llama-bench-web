@@ -8,7 +8,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
-import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/format';
+import { fmt, fmtMs, fmtDur, modelBase, parseModel, shortModel } from '../../core/utils/format';
 
 /**
  * Fila de historial para la tabla: el resultado original + `modelBase`
@@ -47,6 +47,7 @@ export class HistoryTable {
 
   protected readonly fmt = fmt;
   protected readonly fmtMs = fmtMs;
+  protected readonly fmtDur = fmtDur;
   protected readonly modelOptions = this.store.modelOptions;
 
   /**

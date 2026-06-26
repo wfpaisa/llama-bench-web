@@ -123,8 +123,14 @@ export interface BenchmarkResult {
   config: ParsedScript
   /** Tokens por segundo en prompt eval (TG inverso). */
   promptTokensPerSecond: number | null
+  /** Cantidad de tokens del prompt (nº tras "/" en "prompt eval time"). */
+  promptTokenCount: number | null
+  /** Tiempo de procesado del prompt en ms ("prompt eval time = X ms"). */
+  promptEvalTimeMs: number | null
   /** Tokens por segundo en generación. */
   generationTokensPerSecond: number | null
+  /** Cantidad de tokens generados (nº tras "/" en "eval time"). */
+  generationTokenCount: number | null
   /** Aceptación del draft (speculative / MTP). */
   draftAcceptance: number | null
   /** draft-mtp: drafts generados (`#gen drafts`). null si no aplica. */

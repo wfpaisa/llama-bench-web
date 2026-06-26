@@ -9,7 +9,13 @@ import { systemLog } from './logs.ts'
 /** Métricas extraídas de los logs de un run. */
 export interface ParsedMetrics {
   promptTokensPerSecond: number | null
+  /** Cantidad de tokens del prompt (nº tras "/" en "prompt eval time"). */
+  promptTokenCount: number | null
+  /** Tiempo de procesado del prompt en ms ("prompt eval time = X ms"). */
+  promptEvalTimeMs: number | null
   generationTokensPerSecond: number | null
+  /** Cantidad de tokens generados (nº tras "/" en "eval time"). */
+  generationTokenCount: number | null
   draftAcceptance: number | null
   genDrafts: number | null
   accDrafts: number | null
@@ -65,7 +71,10 @@ export async function waitForServer(base: string, signal?: AbortSignal): Promise
 export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
   const m: ParsedMetrics = {
     promptTokensPerSecond: null,
+    promptTokenCount: null,
+    promptEvalTimeMs: null,
     generationTokensPerSecond: null,
+    generationTokenCount: null,
     draftAcceptance: null,
     genDrafts: null,
     accDrafts: null,
@@ -81,9 +90,21 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
       const mm = l.match(/prompt eval time.*?(\d+(?:\.\d+)?)\s*tokens per second/i)
       if (mm) m.promptTokensPerSecond = Number(mm[1])
     }
+    if (m.promptEvalTimeMs === null) {
+      const mm = l.match(/prompt eval time\s*=\s*(\d+(?:\.\d+)?)\s*ms/i)
+      if (mm) m.promptEvalTimeMs = Number(mm[1])
+    }
+    if (m.promptTokenCount === null) {
+      const mm = l.match(/prompt eval time.*?\/\s*(\d+)\s*tokens/i)
+      if (mm) m.promptTokenCount = Number(mm[1])
+    }
     if (m.generationTokensPerSecond === null) {
       const mm = l.match(/eval time.*?(\d+(?:\.\d+)?)\s*tokens per second/i)
       if (mm) m.generationTokensPerSecond = Number(mm[1])
+    }
+    if (m.generationTokenCount === null) {
+      const mm = l.match(/(?<!prompt )eval time.*?\/\s*(\d+)\s*tokens/i)
+      if (mm) m.generationTokenCount = Number(mm[1])
     }
     if (m.generationTimeMs === null) {
       const mm = l.match(/(?<!prompt )eval time\s*=\s*(\d+(?:\.\d+)?)\s*ms/i)
@@ -111,7 +132,10 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     }
     if (
       m.promptTokensPerSecond !== null &&
+      m.promptTokenCount !== null &&
+      m.promptEvalTimeMs !== null &&
       m.generationTokensPerSecond !== null &&
+      m.generationTokenCount !== null &&
       m.draftAcceptance !== null &&
       m.genDrafts !== null &&
       m.loadTimeSeconds !== null &&

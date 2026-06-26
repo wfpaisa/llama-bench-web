@@ -78,7 +78,10 @@ export interface BenchmarkResult {
   timestamp: string;
   config: ParsedScript;
   promptTokensPerSecond: number | null;
+  promptTokenCount: number | null;
+  promptEvalTimeMs: number | null;
   generationTokensPerSecond: number | null;
+  generationTokenCount: number | null;
   draftAcceptance: number | null;
   genDrafts: number | null;
   accDrafts: number | null;

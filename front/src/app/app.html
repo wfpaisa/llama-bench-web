@@ -7,15 +7,17 @@
     <h1>{{ title() }} <small>Vulkan · multi-GPU</small></h1>
   </div>
 
-  <app-status-bar class="app-status" />
+  <div class="section-right">
+    <app-status-bar class="app-status" />
 
-  <p-button
-    [text]="true"
-    severity="secondary"
-    icon="pi pi-moon"
-    title="Alternar modo oscuro"
-    (onClick)="toggleDarkMode()"
-  />
+    <p-button
+      [text]="true"
+      severity="secondary"
+      icon="pi pi-moon"
+      title="Alternar modo oscuro"
+      (onClick)="toggleDarkMode()"
+    />
+  </div>
 </header>
 
 <main class="app-body">

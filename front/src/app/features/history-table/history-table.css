@@ -26,14 +26,6 @@
   font-size: 0.78rem;
 }
 
-/* Header de la columna Modelo: etiqueta + disparador de filtro en línea. */
-.th-filter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
 /* Celdas numéricas y "best". */
 :host ::ng-deep .num {
   font-family: var(--font-mono);
@@ -91,9 +83,50 @@
   gap: 0.15rem;
 }
 
+/* Encabezados en mayúsculas. */
+th .column-name {
+  text-transform: uppercase;
+}
+
+/* Grupos de columnas con tinte muy tenue:
+   - Generation (azul): tokens / time / speed de generación.
+   - Reading (morado): tokens / time / speed de procesado del prompt. */
+:host ::ng-deep th.col-gen,
+:host ::ng-deep td.col-gen {
+  background: color-mix(in srgb, var(--p-blue-500, #3b82f6) 7%, transparent);
+}
+:host ::ng-deep th.col-read,
+:host ::ng-deep td.col-read {
+  background: color-mix(in srgb, var(--p-purple-500, #a855f7) 7%, transparent);
+}
+
+/* Layout automático: cada columna toma el ancho de su contenido o de su
+   encabezado (lo que sea más ancho), sin anchos mínimos forzados ni
+   estiramiento al 100% del contenedor. */
+:host ::ng-deep .p-datatable .p-datatable-table {
+  table-layout: auto;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+th,
+td {
+  white-space: nowrap;
+}
+
+/* Anula los min-width/width fijos (también los inline del template) para
+   que ninguna columna quede más ancha que su contenido o encabezado. */
 th {
-  min-width: 6rem;
-  width: fit-content;
+  min-width: 0 !important;
+  width: auto !important;
+  font-size: 0.75rem;
+
+  /* Header de la columna Modelo: etiqueta + disparador de filtro en línea. */
+  .column-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }
 
 .date-cell {

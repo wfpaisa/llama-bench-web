@@ -76,26 +76,28 @@
       >
         <ng-template #caption>
           <div class="flags-toolbar">
-            <p-button
-              label="Limpiar"
-              icon="pi pi-filter-slash"
-              [outlined]="true"
-              size="small"
-              (onClick)="clearFlags()"
-            />
-            <p-iconfield iconPosition="left" class="search-field">
-              <p-inputicon>
-                <i class="pi pi-search"></i>
-              </p-inputicon>
+            <p-inputgroup>
+              <p-inputgroup-addon><i class="pi pi-search"></i></p-inputgroup-addon>
               <input
                 pInputText
-                type="text"
+                placeholder="Vote"
                 placeholder="Buscar flags…"
                 [ngModel]="search()"
                 (ngModelChange)="search.set($event); dt.filterGlobal($event, 'contains')"
               />
-            </p-iconfield>
-            <span class="muted small count">{{ flagsList().length }} flags</span>
+
+              @if (search()) {
+                <p-inputgroup-addon>
+                  <p-button
+                    icon="pi pi-times"
+                    severity="secondary"
+                    (onClick)="clearFlags()"
+                    [text]="true"
+                  />
+                </p-inputgroup-addon>
+              }
+            </p-inputgroup>
+            <span class="muted small count" size="small">{{ flagsList().length }} flags</span>
           </div>
         </ng-template>
 

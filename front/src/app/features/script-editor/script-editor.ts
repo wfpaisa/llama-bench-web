@@ -22,12 +22,9 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { formatScript } from '../../core/utils/format';
-import {
-  addFlagToScript,
-  flagForms,
-  LLAMA_FLAGS,
-  LlamaFlag,
-} from '../../core/data/llama-flags';
+import { addFlagToScript, flagForms, LLAMA_FLAGS, LlamaFlag } from '../../core/data/llama-flags';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 
 /** Severidad de p-tag por categoría de flag (para diferenciarlas visualmente). */
 const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
@@ -62,6 +59,8 @@ const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
     MultiSelectModule,
     TableModule,
     TagModule,
+    InputGroupModule,
+    InputGroupAddonModule,
   ],
   templateUrl: './script-editor.html',
   styleUrl: './script-editor.css',
