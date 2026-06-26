@@ -20,7 +20,7 @@
 
 .bench-params {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
@@ -64,8 +64,6 @@
 
 /* Limitar el ancho del inputnumber. */
 :host ::ng-deep .max-tokens {
-  width: 8rem;
-
   .p-inputtext {
     width: 100%;
   }

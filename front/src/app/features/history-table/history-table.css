@@ -92,9 +92,10 @@
 }
 
 th {
-  min-width: 5rem;
-  background: red;
+  min-width: 6rem;
+  width: fit-content;
 }
+
 .date-cell {
   font-size: 0.75rem;
 }

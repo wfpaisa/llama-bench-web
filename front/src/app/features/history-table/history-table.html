@@ -35,9 +35,9 @@
   >
     <ng-template #header>
       <tr>
-        <th></th>
+        <th style="min-width: 2rem"></th>
         <th [pSortableColumn]="'date'">Fecha <p-sortIcon field="date" /></th>
-        <th style="min-width: 15rem">
+        <th style="min-width: 25rem">
           <div class="th-filter">
             Modelo
             <p-columnFilter
@@ -65,7 +65,7 @@
         <th>batch</th>
         <th>cache</th>
         <th>device</th>
-        <th>tsplit</th>
+        <th style="min-width: 5rem">tsplit</th>
         <th [pSortableColumn]="'promptTps'">prompt T/s <p-sortIcon field="promptTps" /></th>
         <th [pSortableColumn]="'genTps'">gen T/s <p-sortIcon field="genTps" /></th>
         <th [pSortableColumn]="'draftAcc'">draft acc <p-sortIcon field="draftAcc" /></th>
