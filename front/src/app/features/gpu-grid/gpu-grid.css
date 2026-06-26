@@ -1,44 +1,68 @@
-/* GpuGrid: tarjetas de GPU con barras de VRAM/utilización. */
+/* GpuGrid: grupos compactos para el header con chip de marca + barras verticales.
+   El alto se limita al del header (--header-h, 3rem). Sin encabezado ni botón:
+   vive en el top bar y se refresca vía polling del store. */
+
 .gpu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  /* Separación generosa entre grupos (GPU / RAM). */
+  gap: 1.5rem;
+  margin-right: 1rem;
 }
 
 .gpu {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 0.75rem;
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
-.gpu-name {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+/* Chip de marca: cuadrado de 3rem con el icono en color de texto sobre
+   fondo (background) del color de texto, tipo badge. */
+.chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+
+  > svg {
+    width: 1.6rem;
+    height: 1.6rem;
+    /* El icono se invierte sobre el fondo sólido. */
+    fill: var(--color-bg);
+  }
 }
 
-.gpu-line {
-  color: var(--color-text);
-  margin: 0.25rem 0 0.25rem;
+/* Contenedor de barras verticales: ocupa el alto del header. */
+.vbars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  /* Alto reducido un 20% respecto al header (3rem → 2.4rem). */
+  height: 2rem;
+  box-sizing: border-box;
 }
 
-.muted {
-  color: var(--color-text-muted);
-}
-
-/* Barras de uso. */
-.bar {
-  height: 6px;
-  background: var(--p-neutral-800);
-  border-radius: 3px;
+/* Cada barra vertical: track + relleno que crece de abajo a arriba.
+   Doble de gruesa que la versión anterior (5.6px → ~11px). */
+.vbar {
+  position: relative;
+  width: 0.5rem;
+  height: 100%;
+  background: var(--p-neutral-700);
+  border-radius: 4px;
   overflow: hidden;
 
   > span {
-    display: block;
-    height: 100%;
-    transition: width 0.3s ease;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    transition: height 0.3s ease;
   }
 
   &.green > span {
@@ -54,9 +78,7 @@
   }
 }
 
-.row-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+.muted {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
 }

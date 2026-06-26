@@ -5,6 +5,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { StatusBar } from './features/status-bar/status-bar';
+import { GpuGrid } from './features/gpu-grid/gpu-grid';
 
 /**
  * App (shell raíz).
@@ -15,7 +16,7 @@ import { StatusBar } from './features/status-bar/status-bar';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonModule, ToastModule, ConfirmDialogModule, StatusBar],
+  imports: [RouterOutlet, ButtonModule, ToastModule, ConfirmDialogModule, StatusBar, GpuGrid],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

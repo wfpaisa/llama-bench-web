@@ -40,6 +40,13 @@
     align-items: center;
     gap: 1rem;
   }
+
+  /* Cards de métricas: alineadas a la derecha, centradas verticalmente. */
+  .app-metrics {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
 }
 
 /* Cuerpo principal: ocupa el resto del viewport y hace scroll independiente. */

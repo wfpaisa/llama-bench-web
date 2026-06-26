@@ -19,7 +19,6 @@ import { TabsModule } from 'primeng/tabs';
 import { ScriptEditor } from '../script-editor/script-editor';
 import { BenchmarkPanel } from '../benchmark-panel/benchmark-panel';
 import { ResponseCard } from '../response-card/response-card';
-import { GpuGrid } from '../gpu-grid/gpu-grid';
 import { LastResult } from '../last-result/last-result';
 import { HistoryTable } from '../history-table/history-table';
 import { CompareModal } from '../compare-modal/compare-modal';
@@ -40,7 +39,6 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
     ScriptEditor,
     BenchmarkPanel,
     ResponseCard,
-    GpuGrid,
     LastResult,
     HistoryTable,
     CompareModal,

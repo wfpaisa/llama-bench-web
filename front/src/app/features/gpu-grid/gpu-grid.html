@@ -1,42 +1,63 @@
-<section class="card">
-  <div class="row-between">
-    <h2>Métricas</h2>
-    <p-button icon="pi pi-refresh" [text]="true" size="small" (onClick)="refresh()" />
+<!-- Métricas compactas para el header: un grupo por GPU (chip de marca + dos
+     barras verticales: VRAM y Util) y otro para la RAM (chip + una barra). El
+     refresco llega vía polling del store; sin botón ni encabezado. -->
+@if (gpus().length || ram()) {
+  <div class="gpu-grid">
+    @for (g of gpus(); track g.index) {
+      <div class="gpu" [title]="g.index + ' (' + g.vendor + ')'">
+        @switch (g.vendor) {
+          @case ('nvidia') {
+            <span class="chip chip-nvidia">
+              <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+                <path
+                  fill="#fff"
+                  d="M19.043 9.004c-.552 0-1 .449-1 1v2.1q.982-.1 2.002-.1c8.168 0 14.152 4.595 18.717 9.303.356.368.377.946.049 1.34C34 28.396 28.04 33.003 21.043 33.003h-.05a16 16 0 0 1-2.952-.416v-3.096c.919.324 1.919.51 3 .51 4.108 0 9.799-3.32 13-8-2.525-3.237-9.228-7-14-7q-.99.002-1.998.164v-3.062c-6.995.703-12.692 4.982-17.645 9.13-.32.268-.44.709-.3 1.102C2.932 30.36 9.16 37.462 18.039 38.783l.002 2.219c0 .552.448.999 1 1h30.002c.551 0 1-.448 1-1V10.004c0-.551-.449-1-1-1zm-1.004 6.162v2.887c-3.349.33-6.551 2.266-9.586 4.48-.388.283-.52.804-.314 1.237 2.23 4.716 5.438 7.74 9.9 8.818v3.017c-6.518-1.67-12.82-8.228-13.996-12.603 3.852-3.574 9.05-7.054 13.996-7.836m1.002 2.836c4.13 0 7.43 1.066 9.7 3.285l-4.7 3.715c-.579-1.611-2.644-4-5-4-.317 0-.652.04-.998.107v-3.056q.495-.051.998-.051m-1.002 3.11v8.38c-2.783-.983-4.804-3.244-5.996-5.49 1.587-1.075 3.982-2.497 5.996-2.89m22.004 4.892 5.691 3.723c-5.132 4.92-14.7 9.277-24.691 9.277-1.031 0-2.034-.077-3.002-.22v-3.179a12 12 0 0 0 3.002.399c6.899 0 14.487-5.352 19-10"
+                />
+              </svg>
+            </span>
+          }
+          @case ('amd') {
+            <span class="chip chip-amd">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="#fff">
+                <path
+                  fill="#fff"
+                  d="M5 4a1.002 1.002 0 0 0-.707 1.707l10 10A1 1 0 0 0 15 16h19v19c0 .265.105.52.293.707l10 10A1 1 0 0 0 46 45V5a1 1 0 0 0-1-1zm10.094 15.004a1 1 0 0 0-.801.289l-10 10A1 1 0 0 0 4 30v15a1 1 0 0 0 1 1h15c.265 0 .52-.105.707-.293l10-10A1 1 0 0 0 30 34H16V20a1 1 0 0 0-.906-.996"
+                />
+              </svg>
+            </span>
+          }
+        }
+
+        <div class="vbars">
+          <div class="vbar" [class]="alert(vramPct(g))" [title]="'VRAM ' + vramPct(g) + '%'">
+            <span [style.height.%]="barWidth(vramPct(g))"></span>
+          </div>
+          <div class="vbar" [class]="alert(utilValue(g))" [title]="'Util ' + utilPct(g)">
+            <span [style.height.%]="barWidth(utilValue(g))"></span>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (ram(); as r) {
+      <div class="gpu" title="RAM del sistema">
+        <span class="chip chip-ram">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path
+              fill="#fff"
+              d="M15 2H6c-1.103 0-2 .897-2 2v16c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2V7zm-6 8H7V6h2zm3 0h-2V6h2zm3 0h-2V6h2z"
+            />
+          </svg>
+        </span>
+
+        <div class="vbars">
+          <div class="vbar" [class]="alert(ramPct(r))" [title]="'RAM ' + ramPct(r) + '%'">
+            <span [style.height.%]="barWidth(ramPct(r))"></span>
+          </div>
+        </div>
+      </div>
+    }
   </div>
-
-  @if (gpus().length || ram()) {
-    <div class="gpu-grid">
-      @for (g of gpus(); track g.index) {
-        <div class="gpu">
-          <div class="gpu-name">
-            {{ g.index }}
-            <span class="muted">({{ g.vendor }})</span>
-          </div>
-
-          <div class="gpu-line">VRAM: {{ vramUsed(g) }} / {{ vramTotal(g) }} GB</div>
-          <div class="bar" [class]="alert(vramPct(g))">
-            <span [style.width.%]="barWidth(vramPct(g))"></span>
-          </div>
-
-          <div class="gpu-line">Util: {{ utilPct(g) }}</div>
-          <div class="bar" [class]="alert(utilValue(g))">
-            <span [style.width.%]="barWidth(utilValue(g))"></span>
-          </div>
-        </div>
-      }
-
-      @if (ram(); as r) {
-        <div class="gpu">
-          <div class="gpu-name">RAM del sistema</div>
-
-          <div class="gpu-line">RAM: {{ ramUsed(r) }} / {{ ramTotal(r) }} GB</div>
-          <div class="bar" [class]="alert(ramPct(r))">
-            <span [style.width.%]="barWidth(ramPct(r))"></span>
-          </div>
-        </div>
-      }
-    </div>
-  } @else {
-    <p class="muted">—</p>
-  }
-</section>
+} @else {
+  <span class="muted">—</span>
+}

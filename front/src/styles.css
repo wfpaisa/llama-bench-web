@@ -112,9 +112,10 @@ h3,
 h4,
 h5,
 h6 {
-  font-weight: 600;
+  font-weight: 500;
   line-height: var(--leading-tight);
   text-wrap: balance;
+  margin: 0 0 1rem 0;
 }
 
 h1 {
