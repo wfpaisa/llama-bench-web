@@ -11,7 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { BenchStore } from '../../core/state/bench.store';
+import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 
 /**
@@ -21,7 +21,10 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service';
  *   resultado, refresca el historial y avisa con toast.
  * - Botón Detener (visible durante el run): POST /benchmark/stop.
  * - Timer transcurrido (M:SS) actualizado cada 200ms mientras corre.
- * - Guardar/Restablecer default del prompt (con confirmación).
+ * - Guardar/Obener default del prompt (con confirmación).
+ * - Restablecer: llena el textarea con el prompt por defecto built-in (sin
+ *   confirmación, al instante).
+ * - Si el prompt está en blanco al Guardar, se persiste el prompt por defecto.
  */
 @Component({
   selector: 'app-benchmark-panel',
@@ -56,11 +59,18 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service';
             (onClick)="savePromptDefault($event)"
           />
           <p-button
-            label="Restablecer guardado"
+            label="Obtener guardado"
             [text]="true"
             size="small"
             icon="pi pi-refresh"
             (onClick)="restorePromptDefault($event)"
+          />
+          <p-button
+            label="Restablecer"
+            [text]="true"
+            size="small"
+            icon="pi pi-undo"
+            (onClick)="resetPrompt($event)"
           />
         </div>
 
@@ -209,7 +219,9 @@ export class BenchmarkPanel implements OnDestroy {
       message: '¿Guardar el prompt actual como default?',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.api.savePromptDefault(this.store.prompt()).subscribe({
+        // Si el prompt está en blanco, persistir el prompt por defecto.
+        const toSave = this.store.prompt().trim() ? this.store.prompt() : DEFAULT_PROMPT_UI;
+        this.api.savePromptDefault(toSave).subscribe({
           next: () =>
             this.messages.add({
               severity: 'success',
@@ -252,6 +264,16 @@ export class BenchmarkPanel implements OnDestroy {
             }),
         });
       },
+    });
+  }
+
+  /** Restablece el textarea al prompt por defecto built-in (sin confirmación). */
+  resetPrompt(_event: Event): void {
+    this.store.setPrompt(DEFAULT_PROMPT_UI);
+    this.messages.add({
+      severity: 'info',
+      summary: 'Prompt restablecido al default',
+      life: 2200,
     });
   }
 }
