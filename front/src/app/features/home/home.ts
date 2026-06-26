@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnDestroy,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -7,7 +14,8 @@ import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 
-import { StatusBar } from '../status-bar/status-bar';
+import { TabsModule } from 'primeng/tabs';
+
 import { ScriptEditor } from '../script-editor/script-editor';
 import { BenchmarkPanel } from '../benchmark-panel/benchmark-panel';
 import { ResponseCard } from '../response-card/response-card';
@@ -28,7 +36,7 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    StatusBar,
+    TabsModule,
     ScriptEditor,
     BenchmarkPanel,
     ResponseCard,
@@ -44,10 +52,19 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
       .home {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 1rem 1.5rem 3rem;
+        padding: 1rem 1.5rem 1rem;
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        min-height: 0;
+      }
+
+      /* Logs siempre visibles y fijos en la parte inferior de la ventana. */
+      .home-logs {
+        bottom: 0;
+        z-index: 10;
+        background: var(--color-bg);
+        padding-top: 0.5rem;
       }
     `,
   ],
@@ -59,6 +76,9 @@ export class Home implements OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly subs: Subscription[] = [];
+
+  /** Pestaña activa: 0 = Script server, 1 = Benchmark. */
+  protected readonly tab = signal(0);
 
   constructor() {
     // 1) Sembrar estado persistido (sort, filter) antes de cualquier render de datos.

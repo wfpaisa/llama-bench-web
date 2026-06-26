@@ -1,9 +1,14 @@
-<!-- Shell: overlays globales (toast/confirm) + header + router-outlet -->
+<!-- Shell: overlays globales (toast/confirm) + top bar fijo + router-outlet -->
 <p-toast position="top-right" />
 <p-confirmdialog />
 
 <header class="app-header">
-  <h1>{{ title() }} <small>Vulkan · multi-GPU</small></h1>
+  <div class="app-title">
+    <h1>{{ title() }} <small>Vulkan · multi-GPU</small></h1>
+  </div>
+
+  <app-status-bar class="app-status" />
+
   <p-button
     [text]="true"
     severity="secondary"
@@ -13,4 +18,6 @@
   />
 </header>
 
-<router-outlet />
+<main class="app-body">
+  <router-outlet />
+</main>
