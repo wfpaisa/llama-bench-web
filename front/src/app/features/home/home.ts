@@ -47,27 +47,7 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
     LogsViewer,
   ],
   templateUrl: './home.html',
-  styles: [
-    `
-      .home {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 1rem 1.5rem 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        min-height: 0;
-      }
-
-      /* Logs siempre visibles y fijos en la parte inferior de la ventana. */
-      .home-logs {
-        bottom: 0;
-        z-index: 10;
-        background: var(--color-bg);
-        padding-top: 0.5rem;
-      }
-    `,
-  ],
+  styleUrls: ['./home.css'],
 })
 export class Home implements OnDestroy {
   private readonly store = inject(BenchStore);

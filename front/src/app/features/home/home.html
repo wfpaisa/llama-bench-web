@@ -2,11 +2,8 @@
   <!-- Métricas siempre arriba (GPU/RAM en vivo). -->
   <app-gpu-grid />
 
-  <!-- Último resultado: visible cuando existe, debajo de las métricas. -->
-  <app-last-result />
-  <app-response-card />
-
   <!-- Tabs: configuración del servidor vs benchmark/historial. -->
+
   <p-tabs [value]="tab()" (valueChange)="tab.set($any($event))">
     <p-tablist>
       <p-tab [value]="0">Script server</p-tab>
@@ -17,8 +14,14 @@
         <app-script-editor />
       </p-tabpanel>
       <p-tabpanel [value]="1">
-        <app-benchmark-panel />
-        <app-history-table />
+        <div class="sections">
+          <app-benchmark-panel />
+          <!-- Último resultado: visible cuando existe, debajo de las métricas. -->
+          <app-last-result />
+          <app-response-card />
+
+          <app-history-table />
+        </div>
       </p-tabpanel>
     </p-tabpanels>
   </p-tabs>
