@@ -85,3 +85,11 @@
   display: flex;
   gap: 0.15rem;
 }
+
+th {
+  min-width: 5rem;
+  background: red;
+}
+.date-cell {
+  font-size: 0.75rem;
+}

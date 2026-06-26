@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -12,7 +13,11 @@ import { TextareaModule } from 'primeng/textarea';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { Table, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
@@ -22,16 +27,25 @@ import {
   flagForms,
   LLAMA_FLAGS,
   LlamaFlag,
-  FlagCategory,
 } from '../../core/data/llama-flags';
+
+/** Severidad de p-tag por categoría de flag (para diferenciarlas visualmente). */
+const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
+  común: 'info',
+  muestreo: 'success',
+  especulativo: 'warn',
+  servidor: null,
+};
 
 /**
  * ScriptEditor: edición del script de llama-server (fuente de verdad).
  * Layout en dos columnas:
  *  - Columna UNO: textarea con el script + acciones (formatear, default, play/stop).
- *  - Columna DOS: tabla de todas las flags conocidas con filtro (texto y
- *    categoría); cada fila con botón "info" (abre diálogo con descripción) y
- *    "agregar" (inserta el flag en el script).
+ *  - Columna DOS: p-table con todas las flags conocidas, con búsqueda global
+ *    (en el caption) + filtros por columna (multiselect para categoría, texto
+ *    para nombre/flag larga/corta). Cada fila con botón "info" (abre diálogo con
+ *    descripción) y "agregar" (inserta el flag en el script). El filtrado lo
+ *    hace PrimeNG nativamente (p-columnFilter + filterGlobal).
  */
 @Component({
   selector: 'app-script-editor',
@@ -43,7 +57,11 @@ import {
     DialogModule,
     TooltipModule,
     InputTextModule,
-    SelectModule,
+    IconFieldModule,
+    InputIconModule,
+    MultiSelectModule,
+    TableModule,
+    TagModule,
   ],
   templateUrl: './script-editor.html',
   styleUrl: './script-editor.css',
@@ -58,34 +76,20 @@ export class ScriptEditor {
   protected readonly script = signal(this.store.script());
   protected readonly running = this.store.running;
 
+  /** Referencia a la p-table para poder limpiar filtros / buscar globalmente. */
+  protected readonly table = viewChild<Table>('dt');
+
   /** Catálogo completo de flags mostrado en la tabla. */
   protected readonly flagsList = signal<LlamaFlag[]>(LLAMA_FLAGS);
 
-  /** Filtros de la tabla de flags. */
-  protected readonly filterText = signal('');
-  protected readonly filterCategory = signal<FlagCategory | ''>('');
+  /** Texto de la búsqueda global (caption). */
+  protected readonly search = signal('');
 
-  /** Flags ya filtrados por texto + categoría (en una pasada). */
-  protected readonly filteredFlags = computed<LlamaFlag[]>(() => {
-    const q = this.filterText().trim().toLowerCase();
-    const cat = this.filterCategory();
-    return this.flagsList().filter((f) => {
-      if (cat && f.category !== cat) return false;
-      if (!q) return true;
-      // Buscar en nombre, flag larga, corta y aliases.
-      if (f.name.toLowerCase().includes(q)) return true;
-      if (f.long.toLowerCase().includes(q)) return true;
-      if (f.short?.toLowerCase().includes(q)) return true;
-      if (f.aliases?.some((a) => a.toLowerCase().includes(q))) return true;
-      return false;
-    });
-  });
-
-  /** Opciones del filtro por categoría (con conteo). */
-  protected readonly categoryOptions = computed(() => {
-    const counts = new Map<FlagCategory, number>();
-    for (const f of this.flagsList()) counts.set(f.category, (counts.get(f.category) ?? 0) + 1);
-    return [...counts.entries()].map(([value, n]) => ({ label: `${value} (${n})`, value }));
+  /** Categorías únicas para el multiselect de filtro (orden del catálogo). */
+  protected readonly categoryOptions = computed<string[]>(() => {
+    const seen = new Set<string>();
+    for (const f of this.flagsList()) seen.add(f.category);
+    return [...seen];
   });
 
   /**
@@ -137,6 +141,17 @@ export class ScriptEditor {
   }
 
   // ── Catálogo de flags ──
+
+  /** Severidad de p-tag para una categoría de flag. */
+  getCategorySeverity(category: string): 'info' | 'success' | 'warn' | null {
+    return CATEGORY_SEVERITY[category] ?? null;
+  }
+
+  /** Limpia todos los filtros de la tabla (columnas + búsqueda global). */
+  clearFlags(): void {
+    this.search.set('');
+    this.table()?.clear();
+  }
 
   /** Abre el diálogo de info con la descripción del flag. */
   openInfo(f: LlamaFlag): void {

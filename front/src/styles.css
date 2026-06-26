@@ -55,12 +55,13 @@
 }
 
 :root[class='dark'] {
-  --color-bg: var(--p-neutral-950);
-  --color-surface: var(--p-neutral-800);
+  --color-bg: var(--p-surface-950);
+  --color-surface: var(--p-surface-900);
   --color-border: rgba(255, 255, 255, 0.1);
   --color-text: #f0efed;
   --color-text-muted: #9b9b96;
   --color-accent: #007eff;
+  /* --p-content-background: var(--p-surface-800); */
 }
 
 /* ---- Box model universal ---- */

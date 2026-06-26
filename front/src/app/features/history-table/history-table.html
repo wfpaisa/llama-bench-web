@@ -1,6 +1,8 @@
 <section class="card">
   <div class="row-between">
-    <h2>Historial <span class="muted small count">{{ store.history().length }} registros</span></h2>
+    <h2>
+      Historial <span class="muted small count">{{ store.history().length }} registros</span>
+    </h2>
     <div class="buttons">
       <p-button
         label="Comparar"
@@ -27,18 +29,25 @@
     [rowsPerPageOptions]="[25, 50, 100]"
     [paginator]="true"
     [tableStyle]="{ 'min-width': '100%' }"
-    styleClass="p-datatable-sm p-datatable-striped"
     [showGridlines]="true"
     [globalFilterFields]="['modelBase']"
+    size="small"
   >
     <ng-template #header>
       <tr>
-        <th style="width: 3rem"></th>
+        <th></th>
         <th [pSortableColumn]="'date'">Fecha <p-sortIcon field="date" /></th>
         <th style="min-width: 15rem">
           <div class="th-filter">
             Modelo
-            <p-columnFilter field="modelBase" matchMode="in" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+            <p-columnFilter
+              field="modelBase"
+              matchMode="in"
+              display="menu"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+            >
               <ng-template #filter let-value let-filter="filterCallback">
                 <p-multiselect
                   [ngModel]="value"
@@ -82,7 +91,7 @@
             title="Seleccionar para comparar"
           />
         </td>
-        <td>{{ dateStr(r.timestamp) }}</td>
+        <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
         <td>
           <span class="model-cell" [title]="r.config?.model ?? ''">
             <span class="model-name">{{ modelBaseName(r.config?.model) }}</span>
