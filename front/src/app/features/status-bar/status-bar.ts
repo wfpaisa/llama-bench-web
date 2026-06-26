@@ -9,15 +9,7 @@ import { BenchStore } from '../../core/state/bench.store';
 @Component({
   selector: 'app-status-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="status-bar">
-      <span class="dot" [class]="status().status" [title]="status().status"></span>
-      <span class="status-text">{{ label() }}</span>
-      @if (meta()) {
-        <span class="status-meta">{{ meta() }}</span>
-      }
-    </div>
-  `,
+  templateUrl: './status-bar.html',
   styles: [
     `
       .status-bar {

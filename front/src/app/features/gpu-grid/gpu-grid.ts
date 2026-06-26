@@ -16,50 +16,7 @@ import { alertCls } from '../../core/utils/format';
   selector: 'app-gpu-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonModule],
-  template: `
-    <section class="card">
-      <div class="row-between">
-        <h2>Métricas</h2>
-        <p-button icon="pi pi-refresh" [text]="true" size="small" (onClick)="refresh()" />
-      </div>
-
-      @if (gpus().length || ram()) {
-        <div class="gpu-grid">
-          @for (g of gpus(); track g.index) {
-            <div class="gpu">
-              <div class="gpu-name">
-                {{ g.index }}
-                <span class="muted">({{ g.vendor }})</span>
-              </div>
-
-              <div class="gpu-line">VRAM: {{ vramUsed(g) }} / {{ vramTotal(g) }} GB</div>
-              <div class="bar" [class]="alert(vramPct(g))">
-                <span [style.width.%]="barWidth(vramPct(g))"></span>
-              </div>
-
-              <div class="gpu-line">Util: {{ utilPct(g) }}</div>
-              <div class="bar" [class]="alert(utilValue(g))">
-                <span [style.width.%]="barWidth(utilValue(g))"></span>
-              </div>
-            </div>
-          }
-
-          @if (ram(); as r) {
-            <div class="gpu">
-              <div class="gpu-name">RAM del sistema</div>
-
-              <div class="gpu-line">RAM: {{ ramUsed(r) }} / {{ ramTotal(r) }} GB</div>
-              <div class="bar" [class]="alert(ramPct(r))">
-                <span [style.width.%]="barWidth(ramPct(r))"></span>
-              </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <p class="muted">—</p>
-      }
-    </section>
-  `,
+  templateUrl: './gpu-grid.html',
   styleUrl: './gpu-grid.css',
 })
 export class GpuGrid {

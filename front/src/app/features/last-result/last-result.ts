@@ -11,70 +11,7 @@ import { BenchmarkResult } from '../../core/models/types';
 @Component({
   selector: 'app-last-result',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (result(); as r) {
-      <section class="card">
-        <h2>Último resultado</h2>
-        <div class="metrics">
-          <div class="metric">
-            <div class="k">Prompt T/s</div>
-            <div class="k-sub">Reading (prompt processing)</div>
-            <div class="v green">{{ fmt(r.promptTokensPerSecond) }}<small> tok/s</small></div>
-          </div>
-          <div class="metric">
-            <div class="k">Gen T/s</div>
-            <div class="k-sub">Generation (token output)</div>
-            <div class="v green">{{ fmt(r.generationTokensPerSecond) }}<small> tok/s</small></div>
-          </div>
-          <div class="metric">
-            <div class="k">Draft acc</div>
-            <div class="v amber">{{ fmt(r.draftAcceptance, 3) }}</div>
-          </div>
-          <div class="metric">
-            <div class="k">Gen drafts</div>
-            <div class="v">{{ fmt(r.genDrafts, 0) }}</div>
-          </div>
-          <div class="metric">
-            <div class="k">Acc drafts</div>
-            <div class="v">{{ fmt(r.accDrafts, 0) }}</div>
-          </div>
-          <div class="metric">
-            <div class="k">Gen tokens</div>
-            <div class="v">{{ fmt(r.genTokens, 0) }}</div>
-          </div>
-          <div class="metric">
-            <div class="k">Acc tokens</div>
-            <div class="v">{{ fmt(r.accTokens, 0) }}</div>
-          </div>
-          <div class="metric">
-            <div class="k">Load time</div>
-            <div class="v">{{ fmt(r.loadTimeSeconds) }}<small> s</small></div>
-          </div>
-          <div class="metric">
-            <div class="k">Gen time</div>
-            <div class="k-sub">Tiempo de generación (sin prompt ni startup)</div>
-            <div class="v green">{{ fmtMs(r.generationTimeMs) }}</div>
-          </div>
-          <div class="metric">
-            <div class="k">Latencia req</div>
-            <div class="v">{{ fmt(r.requestLatencyMs, 0) }}<small> ms</small></div>
-          </div>
-
-          <div class="metric metric-wide2">
-            <div class="k">VRAM</div>
-            <div class="v v-small">{{ gpuLine(r) }}</div>
-          </div>
-
-          @if (r.errors.length) {
-            <div class="metric metric-full">
-              <div class="k">Errores</div>
-              <div class="v v-error">{{ r.errors.join(' · ') }}</div>
-            </div>
-          }
-        </div>
-      </section>
-    }
-  `,
+  templateUrl: './last-result.html',
   styleUrl: './last-result.css',
 })
 export class LastResult {

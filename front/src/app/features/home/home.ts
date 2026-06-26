@@ -38,20 +38,7 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
     CompareModal,
     LogsViewer,
   ],
-  template: `
-    <main class="home">
-      <app-status-bar />
-
-      <app-script-editor />
-      <app-benchmark-panel />
-      <app-response-card />
-      <app-gpu-grid />
-      <app-last-result />
-      <app-history-table />
-      <app-logs-viewer />
-      <app-compare-modal />
-    </main>
-  `,
+  templateUrl: './home.html',
   styles: [
     `
       .home {

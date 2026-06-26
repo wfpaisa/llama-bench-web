@@ -1,0 +1,182 @@
+<section class="card">
+  <h2>Configuración del servidor</h2>
+
+  <div class="cols">
+    <!-- Columna UNO: editor del script -->
+    <div class="col col-script">
+      <textarea
+        pTextarea
+        [ngModel]="script()"
+        (ngModelChange)="onScriptChange($event)"
+        rows="10"
+        placeholder="./llama-server -hf modelo --ctx-size 8192 ..."
+        spellcheck="false"
+        class="script-area"
+      ></textarea>
+
+      <div class="actions">
+        <div class="buttons">
+          <p-button
+            label="Formatear"
+            icon="pi pi-replay"
+            [text]="true"
+            size="small"
+            (onClick)="format()"
+          />
+          <p-button
+            label="Guardar default"
+            icon="pi pi-save"
+            [text]="true"
+            size="small"
+            (onClick)="saveDefault($event)"
+          />
+          <p-button
+            label="Restablecer default"
+            icon="pi pi-refresh"
+            [text]="true"
+            size="small"
+            (onClick)="restoreDefault($event)"
+          />
+        </div>
+
+        <div class="buttons">
+          <p-button
+            label="Play"
+            icon="pi pi-play"
+            severity="success"
+            [disabled]="running() || store.benchRunning()"
+            (onClick)="start()"
+          />
+          <p-button
+            label="Stop"
+            icon="pi pi-stop"
+            severity="danger"
+            [disabled]="!running()"
+            (onClick)="stop()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna DOS: tabla de flags -->
+    <div class="col col-flags">
+      <div class="flags-toolbar">
+        <input
+          pInputText
+          type="text"
+          class="flag-filter"
+          placeholder="Filtrar flags…"
+          [ngModel]="filterText()"
+          (ngModelChange)="filterText.set($event)"
+        />
+        <p-select
+          class="flag-category"
+          [options]="categoryOptions()"
+          [ngModel]="filterCategory()"
+          (ngModelChange)="filterCategory.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Categoría"
+          [showClear]="true"
+        />
+        <span class="muted count">{{ filteredFlags().length }} / {{ flagsList().length }}</span>
+      </div>
+
+      <div class="flags-scroll">
+        <table class="flags-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Flag larga</th>
+              <th>Flag corta</th>
+              <th class="th-actions">Info</th>
+              <th class="th-actions">Agregar</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of filteredFlags(); track f.long) {
+              <tr [class.present]="flagPresent().has(f.long)">
+                <td class="cell-name">
+                  <div class="flag-name">{{ f.name }}</div>
+                  @if (f.defaultValue) {
+                    <div class="flag-default">
+                      default: <code>{{ f.defaultValue }}</code>
+                    </div>
+                  } @else {
+                    <div class="flag-default muted">switch</div>
+                  }
+                  <div class="flag-cat">{{ f.category }}</div>
+                </td>
+                <td class="cell-code">
+                  <code>{{ f.long }}</code>
+                </td>
+                <td class="cell-code">
+                  @if (f.short) {
+                    <code>{{ f.short }}</code>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="cell-actions">
+                  <p-button
+                    icon="pi pi-info-circle"
+                    [text]="true"
+                    size="small"
+                    pTooltip="Info"
+                    (onClick)="openInfo(f)"
+                  />
+                </td>
+                <td class="cell-actions">
+                  <p-button
+                    icon="pi pi-plus"
+                    size="small"
+                    severity="success"
+                    pTooltip="Agregar al script"
+                    (onClick)="addToScript(f)"
+                  />
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">Ningún flag coincide con el filtro.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Diálogo de descripción de un flag -->
+<p-dialog
+  [header]="infoFlag()?.name ?? ''"
+  [(visible)]="infoVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '90vw', maxWidth: '560px' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  @if (infoFlag(); as f) {
+    <div class="info-body">
+      <div class="info-codes">
+        <code>{{ f.long }}</code>
+        @if (f.short) {
+          <code class="muted">{{ f.short }}</code>
+        }
+        @if (f.aliases?.length) {
+          <span class="muted">{{ f.aliases.join(', ') }}</span>
+        }
+      </div>
+      <div class="info-default">
+        @if (f.defaultValue) {
+          Valor por defecto: <code>{{ f.defaultValue }}</code>
+        } @else {
+          <span class="muted">Switch (sin valor)</span>
+        }
+      </div>
+      <p class="info-desc">{{ f.description }}</p>
+    </div>
+  }
+</p-dialog>

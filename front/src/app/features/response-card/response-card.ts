@@ -8,14 +8,7 @@ import { BenchStore } from '../../core/state/bench.store';
 @Component({
   selector: 'app-response-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (store.showResponse() && response()) {
-      <section class="card">
-        <h2>Respuesta del modelo</h2>
-        <pre class="response-box">{{ response() }}</pre>
-      </section>
-    }
-  `,
+  templateUrl: './response-card.html',
   styles: [
     `
       .response-box {

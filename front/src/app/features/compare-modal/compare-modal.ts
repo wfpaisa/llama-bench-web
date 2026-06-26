@@ -19,41 +19,7 @@ interface CompareRow {
   selector: 'app-compare-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DialogModule],
-  template: `
-    <p-dialog
-      header="Comparación"
-      [(visible)]="visible"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="true"
-      [style]="{ width: '92vw', maxWidth: '920px', height: '86vh' }"
-      [contentStyle]="{ overflow: 'auto' }"
-      [breakpoints]="{ '960px': '95vw' }"
-    >
-      <div class="table-wrap">
-        <table class="compare-table">
-          <thead>
-            <tr>
-              <th>Métrica</th>
-              @for (r of items(); track r.id) {
-                <th>{{ dateStr(r.timestamp) }}</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of rows(); track row.label) {
-              <tr>
-                <td>{{ row.label }}</td>
-                @for (r of items(); track r.id) {
-                  <td class="num">{{ row.value(r) }}</td>
-                }
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </p-dialog>
-  `,
+  templateUrl: './compare-modal.html',
   styles: [
     `
       .table-wrap {
