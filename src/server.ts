@@ -10,10 +10,16 @@ import { PORT, HISTORY_FILE } from './config.ts'
 import { handleRequest, existsSync } from './router.ts'
 import { ensureDataDir } from './history.ts'
 import { systemLog } from './logs.ts'
+import { registerShutdownHandlers } from './shutdown.ts'
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 await ensureDataDir()
 if (existsSync(HISTORY_FILE) === false) await writeFile(HISTORY_FILE, '[]')
+
+// Registrar handlers de cierre antes de arrancar el server, para que cualquier
+// signal (Ctrl+C, kill, cierre de terminal) detenga el llama-server gestionado
+// y no quede huérfano ocupando GPU.
+registerShutdownHandlers()
 
 const server = Bun.serve({
   port: PORT,

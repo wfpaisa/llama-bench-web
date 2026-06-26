@@ -148,8 +148,12 @@ async function drainStream(reader: ReadableStreamDefaultReader<Uint8Array>, stre
   }
 }
 
-/** Detiene el servidor gestionado: SIGTERM al grupo, SIGKILL tras 8s si vive. */
-export async function stopServer(): Promise<void> {
+/**
+ * Detiene el servidor gestionado: SIGTERM al grupo, SIGKILL tras `killTimeoutMs`
+ * si sigue vivo. El timeout es configurable para permitir un cierre rápido en
+ * el shutdown del backend (Ctrl+C) sin esperar los 8s habituales.
+ */
+export async function stopServer(killTimeoutMs: number = 8000): Promise<void> {
   if (!managed) {
     setStatus('stopped')
     return
@@ -166,7 +170,7 @@ export async function stopServer(): Promise<void> {
       /* ignore */
     }
   }
-  // Esperar salida ordenada; si no muere en 8s, SIGKILL.
+  // Esperar salida ordenada; si no muere a tiempo, SIGKILL.
   const exitTimeout = setTimeout(() => {
     try {
       process.kill(-m.pid, 'SIGKILL')
@@ -177,7 +181,7 @@ export async function stopServer(): Promise<void> {
         /* ignore */
       }
     }
-  }, 8000)
+  }, killTimeoutMs)
   try {
     await m.proc.exited
   } finally {
