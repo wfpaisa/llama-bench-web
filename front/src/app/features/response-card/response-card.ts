@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
-import { BenchStore } from '../../core/state/bench.store'
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { BenchStore } from '../../core/state/bench.store';
 
 /**
  * ResponseCard: muestra la respuesta generada por el modelo en el último
@@ -36,6 +36,6 @@ import { BenchStore } from '../../core/state/bench.store'
   ],
 })
 export class ResponseCard {
-  protected readonly store = inject(BenchStore)
-  protected readonly response = computed(() => this.store.lastResult()?.response || '—')
+  protected readonly store = inject(BenchStore);
+  protected readonly response = computed(() => this.store.lastResult()?.response || '—');
 }

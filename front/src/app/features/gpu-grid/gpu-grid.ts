@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
-import { ButtonModule } from 'primeng/button'
-import { BenchStore } from '../../core/state/bench.store'
-import { LlamaBenchService } from '../../core/services/llama-bench.service'
-import { MessageService } from 'primeng/api'
-import { GpuInfo } from '../../core/models/types'
-import { alertCls } from '../../core/utils/format'
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ButtonModule } from 'primeng/button';
+import { BenchStore } from '../../core/state/bench.store';
+import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { MessageService } from 'primeng/api';
+import { GpuInfo } from '../../core/models/types';
+import { alertCls } from '../../core/utils/format';
 
 /**
  * GpuGrid: tarjetas con métricas en vivo de cada GPU (VRAM usada/total y %
@@ -31,9 +31,7 @@ import { alertCls } from '../../core/utils/format'
                 <span class="muted">({{ g.vendor }})</span>
               </div>
 
-              <div class="gpu-line">
-                VRAM: {{ vramUsed(g) }} / {{ vramTotal(g) }} GB
-              </div>
+              <div class="gpu-line">VRAM: {{ vramUsed(g) }} / {{ vramTotal(g) }} GB</div>
               <div class="bar" [class]="alert(vramPct(g))">
                 <span [style.width.%]="barWidth(vramPct(g))"></span>
               </div>
@@ -53,38 +51,38 @@ import { alertCls } from '../../core/utils/format'
   styleUrl: './gpu-grid.css',
 })
 export class GpuGrid {
-  protected readonly store = inject(BenchStore)
-  private readonly api = inject(LlamaBenchService)
-  private readonly messages = inject(MessageService)
+  protected readonly store = inject(BenchStore);
+  private readonly api = inject(LlamaBenchService);
+  private readonly messages = inject(MessageService);
 
-  protected readonly gpus = this.store.gpus
-  protected readonly alert = alertCls
+  protected readonly gpus = this.store.gpus;
+  protected readonly alert = alertCls;
 
   // ── Helpers de cálculo (puros, pero como métodos para usar en template) ──
   protected vramUsed(g: GpuInfo): string {
-    return g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?'
+    return g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?';
   }
   protected vramTotal(g: GpuInfo): string {
-    return g.memTotalMiB != null ? (g.memTotalMiB / 1024).toFixed(1) : '?'
+    return g.memTotalMiB != null ? (g.memTotalMiB / 1024).toFixed(1) : '?';
   }
   protected vramPct(g: GpuInfo): number {
-    if (g.memUsedMiB == null || g.memTotalMiB == null || g.memTotalMiB <= 0) return 0
-    return Math.round((g.memUsedMiB / g.memTotalMiB) * 100)
+    if (g.memUsedMiB == null || g.memTotalMiB == null || g.memTotalMiB <= 0) return 0;
+    return Math.round((g.memUsedMiB / g.memTotalMiB) * 100);
   }
   protected utilValue(g: GpuInfo): number {
-    return g.gpuUtilPct ?? 0
+    return g.gpuUtilPct ?? 0;
   }
   protected utilPct(g: GpuInfo): string {
-    return g.gpuUtilPct != null ? `${g.gpuUtilPct}%` : '?'
+    return g.gpuUtilPct != null ? `${g.gpuUtilPct}%` : '?';
   }
   protected barWidth(pct: number): number {
-    return Math.min(100, pct)
+    return Math.min(100, pct);
   }
 
   refresh(): void {
     this.api.getGpus().subscribe({
       next: (data) => this.store.setGpus(data.gpus),
       error: () => this.store.setGpus([]),
-    })
+    });
   }
 }

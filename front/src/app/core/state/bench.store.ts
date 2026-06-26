@@ -5,27 +5,27 @@
 // Los componentes solo leen signals y llaman actions: nada de manejo de estado
 // en plantillas.
 
-import { computed, effect, inject, Injectable, signal } from '@angular/core'
-import { BenchmarkResult, GpuInfo, LogEntry, ServerStatus, StatusResponse } from '../models/types'
-import { computeBests } from '../utils/format'
-import { StorageService } from '../services/storage.service'
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { BenchmarkResult, GpuInfo, LogEntry, ServerStatus, StatusResponse } from '../models/types';
+import { computeBests } from '../utils/format';
+import { StorageService } from '../services/storage.service';
 
 /** "Mejores" valores para resaltar celdas del historial. */
 export interface Bests {
-  p: number
-  g: number
-  d: number
-  l: number
-  gt: number
+  p: number;
+  g: number;
+  d: number;
+  l: number;
+  gt: number;
 }
 
 /** Tope de líneas de log retenidas en memoria (drop oldest). */
-const LOG_CAP = 4000
+const LOG_CAP = 4000;
 
 /** Prompt por defecto hardcodeado (último recurso si no hay storage ni backend). */
 export const DEFAULT_PROMPT_UI = `Un agricultor tiene 17 ovejas. Todas menos 9 se escapan. ¿Cuántas ovejas le quedan? Explica tu razonamiento paso a paso.
 
-Luego resuelve esto sin calculadora: ¿cuántos números primos hay entre 20 y 40? Lista cada uno y verifica brevemente por qué es primo.`
+Luego resuelve esto sin calculadora: ¿cuántos números primos hay entre 20 y 40? Lista cada uno y verifica brevemente por qué es primo.`;
 
 const EMPTY_STATUS: StatusResponse = {
   status: 'stopped',
@@ -33,49 +33,49 @@ const EMPTY_STATUS: StatusResponse = {
   startedAt: null,
   url: null,
   error: null,
-}
+};
 
 @Injectable({ providedIn: 'root' })
 export class BenchStore {
-  private readonly storage = inject(StorageService)
+  private readonly storage = inject(StorageService);
 
   // ── Estado crudo del backend ──
-  readonly status = signal<StatusResponse>(EMPTY_STATUS)
-  readonly logs = signal<LogEntry[]>([])
-  readonly logCursor = signal(0)
-  readonly gpus = signal<GpuInfo[]>([])
-  readonly history = signal<BenchmarkResult[]>([])
+  readonly status = signal<StatusResponse>(EMPTY_STATUS);
+  readonly logs = signal<LogEntry[]>([]);
+  readonly logCursor = signal(0);
+  readonly gpus = signal<GpuInfo[]>([]);
+  readonly history = signal<BenchmarkResult[]>([]);
 
   // ── Script + prompt (fuente de verdad editable) ──
-  readonly script = signal('')
-  readonly prompt = signal('')
-  readonly maxTokens = signal(2048)
+  readonly script = signal('');
+  readonly prompt = signal('');
+  readonly maxTokens = signal(2048);
 
   // ── Estado del benchmark ──
-  readonly benchRunning = signal(false)
-  readonly benchState = signal('')
-  readonly benchTimer = signal('')
-  readonly benchStartTime = signal(0)
-  readonly lastResult = signal<BenchmarkResult | null>(null)
-  readonly showResponse = signal(false)
+  readonly benchRunning = signal(false);
+  readonly benchState = signal('');
+  readonly benchTimer = signal('');
+  readonly benchStartTime = signal(0);
+  readonly lastResult = signal<BenchmarkResult | null>(null);
+  readonly showResponse = signal(false);
 
   // ── Historial: selección, orden, filtro ──
-  readonly selected = signal<Set<string>>(new Set())
-  readonly sortCol = signal('date')
-  readonly sortDir = signal<'asc' | 'desc'>('desc')
-  readonly modelFilter = signal('')
-  readonly showCompare = signal(false)
+  readonly selected = signal<Set<string>>(new Set());
+  readonly sortCol = signal('date');
+  readonly sortDir = signal<'asc' | 'desc'>('desc');
+  readonly modelFilter = signal('');
+  readonly showCompare = signal(false);
 
   // ── Logs UI ──
-  readonly autoscroll = signal(true)
+  readonly autoscroll = signal(true);
 
   // ════════════ Estado derivado (computed) ════════════
 
   /** ¿El servidor está corriendo o iniciando? */
   readonly running = computed<boolean>(() => {
-    const s = this.status().status
-    return s === 'running' || s === 'starting'
-  })
+    const s = this.status().status;
+    return s === 'running' || s === 'starting';
+  });
 
   /** Label en español del estado actual. */
   readonly statusLabel = computed<string>(() => {
@@ -84,81 +84,81 @@ export class BenchStore {
       starting: 'iniciando…',
       running: 'corriendo',
       error: 'error',
-    }
-    return labels[this.status().status] ?? this.status().status
-  })
+    };
+    return labels[this.status().status] ?? this.status().status;
+  });
 
   /** Texto de meta: "pid X · url · error". */
   readonly statusMeta = computed<string>(() => {
-    const s = this.status()
-    let meta = ''
-    if (s.pid) meta += `pid ${s.pid} · `
-    if (s.url) meta += `${s.url} · `
-    if (s.error) meta += s.error
-    return meta
-  })
+    const s = this.status();
+    let meta = '';
+    if (s.pid) meta += `pid ${s.pid} · `;
+    if (s.url) meta += `${s.url} · `;
+    if (s.error) meta += s.error;
+    return meta;
+  });
 
   /** Lista de modelos base únicos para el filtro, ordenada alfabéticamente. */
   readonly modelOptions = computed<string[]>(() => {
-    const bases = new Set<string>()
+    const bases = new Set<string>();
     for (const r of this.history()) {
-      const m = r.config?.model
-      if (!m) continue
-      const noOrg = m.split(':')[0].split('/').pop()
-      if (noOrg) bases.add(noOrg)
+      const m = r.config?.model;
+      if (!m) continue;
+      const noOrg = m.split(':')[0].split('/').pop();
+      if (noOrg) bases.add(noOrg);
     }
-    return [...bases].sort((a, b) => a.localeCompare(b))
-  })
+    return [...bases].sort((a, b) => a.localeCompare(b));
+  });
 
   /** Historial ya filtrado por modelo. */
   private readonly filteredByModel = computed<BenchmarkResult[]>(() => {
-    const filter = this.modelFilter()
-    if (!filter) return this.history()
+    const filter = this.modelFilter();
+    if (!filter) return this.history();
     return this.history().filter((r) => {
-      const m = r.config?.model
-      const noOrg = m ? m.split(':')[0].split('/').pop() : null
-      return noOrg === filter
-    })
-  })
+      const m = r.config?.model;
+      const noOrg = m ? m.split(':')[0].split('/').pop() : null;
+      return noOrg === filter;
+    });
+  });
 
   /**
    * Historial filtrado Y ordenado para renderizar en la tabla.
    * El orden se aplica sobre la lista ya filtrada.
    */
   readonly visibleHistory = computed<BenchmarkResult[]>(() => {
-    const list = [...this.filteredByModel()]
-    const col = this.sortCol()
-    const dir = this.sortDir()
-    const fn = SORT_FNS[col]
-    if (!fn) return list
+    const list = [...this.filteredByModel()];
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const fn = SORT_FNS[col];
+    if (!fn) return list;
     list.sort((a, b) => {
-      const x = fn(a)
-      const y = fn(b)
-      return dir === 'asc' ? (x > y ? 1 : x < y ? -1 : 0) : y > x ? 1 : y < x ? -1 : 0
-    })
-    return list
-  })
+      const x = fn(a);
+      const y = fn(b);
+      return dir === 'asc' ? (x > y ? 1 : x < y ? -1 : 0) : y > x ? 1 : y < x ? -1 : 0;
+    });
+    return list;
+  });
 
   /** Resultados seleccionados (para comparar). */
   readonly selectedResults = computed<BenchmarkResult[]>(() => {
-    const sel = this.selected()
-    return this.history().filter((h) => sel.has(h.id))
-  })
+    const sel = this.selected();
+    return this.history().filter((h) => sel.has(h.id));
+  });
 
   /** "Mejores" valores sobre TODA la history (no la filtrada). */
-  readonly bests = computed<Bests>(() => computeBests(this.history()))
+  readonly bests = computed<Bests>(() => computeBests(this.history()));
 
   /** Cantidad seleccionada. */
-  readonly selectedCount = computed(() => this.selected().size)
+  readonly selectedCount = computed(() => this.selected().size);
 
   // ════════════ Inyección + init ════════════
 
   constructor() {
     // Persistir script/prompt/sort/filter cuando cambien (effects en injection context).
-    effect(() => this.storage.saveScript(this.script()))
-    effect(() => this.storage.savePrompt(this.prompt()))
-    effect(() => this.storage.saveSort({ col: this.sortCol(), dir: this.sortDir() }))
-    effect(() => this.storage.saveModelFilter(this.modelFilter()))
+    effect(() => this.storage.saveScript(this.script()));
+    effect(() => this.storage.savePrompt(this.prompt()));
+    effect(() => this.storage.saveSort({ col: this.sortCol(), dir: this.sortDir() }));
+    effect(() => this.storage.saveModelFilter(this.modelFilter()));
   }
 
   /**
@@ -167,162 +167,162 @@ export class BenchStore {
    * apliquen desde el primer render.
    */
   init(): void {
-    const sort = this.storage.loadSort()
+    const sort = this.storage.loadSort();
     if (sort) {
-      this.sortCol.set(sort.col)
-      this.sortDir.set(sort.dir)
+      this.sortCol.set(sort.col);
+      this.sortDir.set(sort.dir);
     }
-    this.modelFilter.set(this.storage.loadModelFilter())
+    this.modelFilter.set(this.storage.loadModelFilter());
   }
 
   // ════════════ Actions: status / logs / gpu ════════════
 
   setStatus(s: StatusResponse): void {
-    this.status.set(s)
+    this.status.set(s);
   }
 
   /** Añade entradas de log nuevas y avanza el cursor. Respeta el cap (drop oldest). */
   appendLogs(entries: LogEntry[], cursor: number): void {
     if (!entries.length) {
       // Aun sin entradas, mantener el cursor sincronizado.
-      if (cursor !== this.logCursor()) this.logCursor.set(cursor)
-      return
+      if (cursor !== this.logCursor()) this.logCursor.set(cursor);
+      return;
     }
-    const next = [...this.logs(), ...entries]
+    const next = [...this.logs(), ...entries];
     // Drop oldest si excede el cap.
-    const overflow = next.length - LOG_CAP
-    const trimmed = overflow > 0 ? next.slice(overflow) : next
-    this.logs.set(trimmed)
-    this.logCursor.set(cursor)
+    const overflow = next.length - LOG_CAP;
+    const trimmed = overflow > 0 ? next.slice(overflow) : next;
+    this.logs.set(trimmed);
+    this.logCursor.set(cursor);
   }
 
   clearLogs(): void {
-    this.logs.set([])
-    this.logCursor.set(0)
+    this.logs.set([]);
+    this.logCursor.set(0);
   }
 
   setGpus(gpus: GpuInfo[]): void {
-    this.gpus.set(gpus)
+    this.gpus.set(gpus);
   }
 
   // ════════════ Actions: script / prompt ════════════
 
   setScript(text: string): void {
-    this.script.set(text)
+    this.script.set(text);
   }
 
   /** Aplica el formateo sobre el script actual. */
   formatCurrentScript(formatted: string): void {
-    this.script.set(formatted)
+    this.script.set(formatted);
   }
 
   setPrompt(text: string): void {
-    this.prompt.set(text)
+    this.prompt.set(text);
   }
 
   setMaxTokens(n: number): void {
-    this.maxTokens.set(n)
+    this.maxTokens.set(n);
   }
 
   setAutoscroll(v: boolean): void {
-    this.autoscroll.set(v)
+    this.autoscroll.set(v);
   }
 
   // ════════════ Actions: benchmark ════════════
 
   startBenchmark(): void {
-    this.benchRunning.set(true)
-    this.benchState.set('iniciando servidor y midiendo… (puede tardar)')
-    this.benchStartTime.set(Date.now())
-    this.benchTimer.set('0:00')
-    this.showResponse.set(false)
+    this.benchRunning.set(true);
+    this.benchState.set('iniciando servidor y midiendo… (puede tardar)');
+    this.benchStartTime.set(Date.now());
+    this.benchTimer.set('0:00');
+    this.showResponse.set(false);
   }
 
   /** Refresca el texto del timer transcurrido. */
   tickBenchTimer(): void {
-    if (!this.benchRunning()) return
-    const elapsed = Date.now() - this.benchStartTime()
-    const totalSec = Math.floor(elapsed / 1000)
-    const min = Math.floor(totalSec / 60)
-    const sec = totalSec % 60
-    this.benchTimer.set(`${min}:${sec.toString().padStart(2, '0')}`)
+    if (!this.benchRunning()) return;
+    const elapsed = Date.now() - this.benchStartTime();
+    const totalSec = Math.floor(elapsed / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    this.benchTimer.set(`${min}:${sec.toString().padStart(2, '0')}`);
   }
 
   /** Marca el benchmark como deteniéndose (clic en Detener). */
   markBenchStopping(): void {
-    this.benchState.set('deteniendo…')
+    this.benchState.set('deteniendo…');
   }
 
   finishBenchmark(result: BenchmarkResult | null): void {
     if (result) {
-      this.lastResult.set(result)
-      this.showResponse.set(true)
+      this.lastResult.set(result);
+      this.showResponse.set(true);
     }
-    this.benchRunning.set(false)
-    this.benchState.set('')
-    this.benchTimer.set('')
+    this.benchRunning.set(false);
+    this.benchState.set('');
+    this.benchTimer.set('');
   }
 
   failBenchmark(): void {
-    this.benchRunning.set(false)
-    this.benchState.set('')
-    this.benchTimer.set('')
+    this.benchRunning.set(false);
+    this.benchState.set('');
+    this.benchTimer.set('');
   }
 
   // ════════════ Actions: historial ════════════
 
   setHistory(results: BenchmarkResult[]): void {
-    this.history.set(results)
+    this.history.set(results);
     // Limpiar selección de ids que ya no existen.
-    const ids = new Set(results.map((r) => r.id))
-    const sel = new Set<string>()
+    const ids = new Set(results.map((r) => r.id));
+    const sel = new Set<string>();
     for (const id of this.selected()) {
-      if (ids.has(id)) sel.add(id)
+      if (ids.has(id)) sel.add(id);
     }
-    this.selected.set(sel)
+    this.selected.set(sel);
     // Resetear filtro si ya no está en las opciones.
     if (this.modelFilter()) {
-      const m = this.modelOptions()
+      const m = this.modelOptions();
       if (!m.includes(this.modelFilter())) {
-        this.modelFilter.set('')
+        this.modelFilter.set('');
       }
     }
   }
 
   /** Alterna la selección de un id. */
   toggleSelected(id: string, checked: boolean): void {
-    const next = new Set(this.selected())
-    if (checked) next.add(id)
-    else next.delete(id)
-    this.selected.set(next)
+    const next = new Set(this.selected());
+    if (checked) next.add(id);
+    else next.delete(id);
+    this.selected.set(next);
   }
 
   isSelected(id: string): boolean {
-    return this.selected().has(id)
+    return this.selected().has(id);
   }
 
   /** Reordena por columna: alterna dirección si es la misma, si no, desc. */
   sortBy(col: string): void {
     if (this.sortCol() === col) {
-      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc')
+      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
     } else {
-      this.sortCol.set(col)
-      this.sortDir.set('desc')
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
     }
   }
 
   setModelFilter(value: string): void {
-    this.modelFilter.set(value)
+    this.modelFilter.set(value);
   }
 
   // ── Comparación ──
   openCompare(): boolean {
-    if (this.selectedResults().length < 2) return false
-    this.showCompare.set(true)
-    return true
+    if (this.selectedResults().length < 2) return false;
+    this.showCompare.set(true);
+    return true;
   }
   closeCompare(): void {
-    this.showCompare.set(false)
+    this.showCompare.set(false);
   }
 }
 
@@ -336,4 +336,4 @@ const SORT_FNS: Record<string, (r: BenchmarkResult) => number> = {
   loadTime: (r) => r.loadTimeSeconds ?? Infinity,
   generationTime: (r) => r.generationTimeMs ?? Infinity,
   totalVram: (r) => r.gpus.reduce((s, g) => s + (g.memUsedMiB ?? 0), 0),
-}
+};

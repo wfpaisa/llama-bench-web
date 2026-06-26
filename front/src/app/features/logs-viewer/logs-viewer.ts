@@ -1,10 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, viewChild } from '@angular/core'
-import { FormsModule } from '@angular/forms'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { BenchStore } from '../../core/state/bench.store'
-import { LlamaBenchService } from '../../core/services/llama-bench.service'
-import { MessageService } from 'primeng/api'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { BenchStore } from '../../core/state/bench.store';
+import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { MessageService } from 'primeng/api';
 
 /**
  * LogsViewer: salida de logs en tiempo real del servidor.
@@ -23,10 +31,20 @@ import { MessageService } from 'primeng/api'
         <h2>Logs en tiempo real</h2>
         <div class="logs-controls">
           <div class="autoscroll">
-            <p-checkbox [(ngModel)]="autoscrollModel" [binary]="true" (ngModelChange)="store.setAutoscroll($event)" />
+            <p-checkbox
+              [(ngModel)]="autoscrollModel"
+              [binary]="true"
+              (ngModelChange)="store.setAutoscroll($event)"
+            />
             <label for="autoscroll">auto-scroll</label>
           </div>
-          <p-button label="Limpiar" icon="pi pi-trash" [text]="true" size="small" (onClick)="clear()" />
+          <p-button
+            label="Limpiar"
+            icon="pi pi-trash"
+            [text]="true"
+            size="small"
+            (onClick)="clear()"
+          />
         </div>
       </div>
 
@@ -45,35 +63,36 @@ import { MessageService } from 'primeng/api'
   styleUrl: './logs-viewer.css',
 })
 export class LogsViewer {
-  protected readonly store = inject(BenchStore)
-  private readonly api = inject(LlamaBenchService)
-  private readonly messages = inject(MessageService)
+  protected readonly store = inject(BenchStore);
+  private readonly api = inject(LlamaBenchService);
+  private readonly messages = inject(MessageService);
 
-  private readonly logsEl = viewChild<ElementRef<HTMLDivElement>>('logsEl')
+  private readonly logsEl = viewChild<ElementRef<HTMLDivElement>>('logsEl');
 
-  protected readonly logs = this.store.logs
+  protected readonly logs = this.store.logs;
   /** Modelo del checkbox (sembrado del store). */
-  protected autoscrollModel = this.store.autoscroll()
+  protected autoscrollModel = this.store.autoscroll();
 
   constructor() {
     // Auto-scroll al pie cuando llegan logs nuevos y está activado.
     effect(() => {
       // Tocar logs() para reaccionar a cambios.
-      this.logs()
-      const el = this.logsEl()?.nativeElement
+      this.logs();
+      const el = this.logsEl()?.nativeElement;
       if (el && this.store.autoscroll()) {
         // Defer al siguiente tick para que el DOM se haya renderizado.
         queueMicrotask(() => {
-          el.scrollTop = el.scrollHeight
-        })
+          el.scrollTop = el.scrollHeight;
+        });
       }
-    })
+    });
   }
 
   clear(): void {
     this.api.clearLogs().subscribe({
       next: () => this.store.clearLogs(),
-      error: (e: Error) => this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
-    })
+      error: (e: Error) =>
+        this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
+    });
   }
 }

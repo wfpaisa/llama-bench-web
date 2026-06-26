@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router'
+import { Routes } from '@angular/router';
 
 // Rutas de la app. Por ahora solo la home (carga perezosa del componente).
 export const routes: Routes = [
@@ -8,4 +8,4 @@ export const routes: Routes = [
     title: 'llama-bench · benchmark real con llama-server',
   },
   { path: '**', redirectTo: '' },
-]
+];

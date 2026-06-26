@@ -1,12 +1,12 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core'
-import { provideRouter } from '@angular/router'
-import { provideHttpClient, withFetch } from '@angular/common/http'
-import { providePrimeNG } from 'primeng/config'
-import { MessageService } from 'primeng/api'
-import { ConfirmationService } from 'primeng/api'
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { providePrimeNG } from 'primeng/config';
+import { MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 
-import { routes } from './app.routes'
-import Noir from './theme'
+import { routes } from './app.routes';
+import Noir from './theme';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,4 +27,4 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     ConfirmationService,
   ],
-}
+};

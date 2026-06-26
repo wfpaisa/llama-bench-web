@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
-import { BenchStore } from '../../core/state/bench.store'
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { BenchStore } from '../../core/state/bench.store';
 
 /**
  * StatusBar: indicador visual del estado del servidor llama-server.
@@ -66,8 +66,8 @@ import { BenchStore } from '../../core/state/bench.store'
   ],
 })
 export class StatusBar {
-  protected readonly store = inject(BenchStore)
-  protected readonly status = this.store.status
-  protected readonly label = this.store.statusLabel
-  protected readonly meta = this.store.statusMeta
+  protected readonly store = inject(BenchStore);
+  protected readonly status = this.store.status;
+  protected readonly label = this.store.statusLabel;
+  protected readonly meta = this.store.statusMeta;
 }

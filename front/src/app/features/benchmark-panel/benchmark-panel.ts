@@ -1,11 +1,18 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject, signal } from '@angular/core'
-import { FormsModule } from '@angular/forms'
-import { ButtonModule } from 'primeng/button'
-import { TextareaModule } from 'primeng/textarea'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { ConfirmationService, MessageService } from 'primeng/api'
-import { BenchStore } from '../../core/state/bench.store'
-import { LlamaBenchService } from '../../core/services/llama-bench.service'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { TextareaModule } from 'primeng/textarea';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { BenchStore } from '../../core/state/bench.store';
+import { LlamaBenchService } from '../../core/services/llama-bench.service';
 
 /**
  * BenchmarkPanel: orquesta la ejecución de un benchmark automático.
@@ -24,8 +31,9 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service'
     <section class="card">
       <h2>Benchmark automático</h2>
       <p class="muted small desc">
-        Inicia llama-server → espera <code>server is listening</code> → POST <code>/v1/chat/completions</code> → parsea
-        timings de logs → lee GPU → guarda resultado → detiene el servidor.
+        Inicia llama-server → espera <code>server is listening</code> → POST
+        <code>/v1/chat/completions</code> → parsea timings de logs → lee GPU → guarda resultado →
+        detiene el servidor.
       </p>
 
       <label class="full">Prompt de evaluación</label>
@@ -41,14 +49,14 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service'
       <div class="bench-params">
         <div class="prompt-actions">
           <p-button
-            label="Guardar default"
+            label="Guardar"
             [text]="true"
             size="small"
             icon="pi pi-save"
             (onClick)="savePromptDefault($event)"
           />
           <p-button
-            label="Restablecer default"
+            label="Restablecer guardado"
             [text]="true"
             size="small"
             icon="pi pi-refresh"
@@ -57,7 +65,11 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service'
         </div>
 
         <div class="bench-row">
-          <label for="bench-max-tokens" class="muted small" title="Tokens máximos a generar (-1 = ilimitado)">
+          <label
+            for="bench-max-tokens"
+            class="muted small"
+            title="Tokens máximos a generar (-1 = ilimitado)"
+          >
             Max Tokens
           </label>
           <p-inputnumber
@@ -96,43 +108,43 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service'
   styleUrl: './benchmark-panel.css',
 })
 export class BenchmarkPanel implements OnDestroy {
-  protected readonly store = inject(BenchStore)
-  private readonly api = inject(LlamaBenchService)
-  private readonly messages = inject(MessageService)
-  private readonly confirm = inject(ConfirmationService)
+  protected readonly store = inject(BenchStore);
+  private readonly api = inject(LlamaBenchService);
+  private readonly messages = inject(MessageService);
+  private readonly confirm = inject(ConfirmationService);
 
   /** Modelo del prompt, sincronizado con store.prompt. */
-  protected readonly prompt = signal(this.store.prompt())
-  protected readonly maxTokens = this.store.maxTokens
-  protected readonly running = this.store.running
+  protected readonly prompt = signal(this.store.prompt());
+  protected readonly maxTokens = this.store.maxTokens;
+  protected readonly running = this.store.running;
 
   /** Timer interval (200ms) que refresca el elapsed mientras el benchmark corre. */
-  private readonly timerHandle: ReturnType<typeof setInterval>
+  private readonly timerHandle: ReturnType<typeof setInterval>;
 
   constructor() {
     // Reflejar cambios externos del prompt en el textarea.
     effect(() => {
-      const p = this.store.prompt()
-      if (p !== this.prompt()) this.prompt.set(p)
-    })
+      const p = this.store.prompt();
+      if (p !== this.prompt()) this.prompt.set(p);
+    });
 
-    this.timerHandle = setInterval(() => this.store.tickBenchTimer(), 200)
+    this.timerHandle = setInterval(() => this.store.tickBenchTimer(), 200);
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.timerHandle)
+    clearInterval(this.timerHandle);
   }
 
   onPromptChange(value: string): void {
-    this.prompt.set(value)
-    this.store.setPrompt(value)
+    this.prompt.set(value);
+    this.store.setPrompt(value);
   }
 
   // ── Ejecutar / detener benchmark ──
 
   run(): void {
-    if (this.store.benchRunning()) return
-    this.store.startBenchmark()
+    if (this.store.benchRunning()) return;
+    this.store.startBenchmark();
     this.api
       .runBenchmark({
         script: this.store.script(),
@@ -142,47 +154,51 @@ export class BenchmarkPanel implements OnDestroy {
       .subscribe({
         next: (data) => {
           if (data.ok && data.result) {
-            const r = data.result
-            this.store.finishBenchmark(r)
+            const r = data.result;
+            this.store.finishBenchmark(r);
             // Refrescar historial tras guardar.
             this.api.getHistory().subscribe({
               next: (h) => this.store.setHistory(h.results || []),
-            })
+            });
             if (r.errors.length) {
               this.messages.add({
                 severity: 'warn',
                 summary: 'Benchmark con errores',
                 detail: r.errors.join('; '),
                 life: 5000,
-              })
+              });
             } else {
-              this.messages.add({ severity: 'success', summary: 'Benchmark completado', life: 2600 })
+              this.messages.add({
+                severity: 'success',
+                summary: 'Benchmark completado',
+                life: 2600,
+              });
             }
           } else {
-            this.store.failBenchmark()
+            this.store.failBenchmark();
             this.messages.add({
               severity: 'error',
               summary: 'Benchmark falló',
               detail: data.error || 'Error desconocido',
               life: 5000,
-            })
+            });
           }
         },
         error: (e: Error) => {
-          this.store.failBenchmark()
-          this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 })
+          this.store.failBenchmark();
+          this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 });
         },
-      })
+      });
   }
 
   stop(): void {
-    if (!this.store.benchRunning()) return
+    if (!this.store.benchRunning()) return;
     this.api.stopBenchmark().subscribe({
       next: () => this.store.markBenchStopping(),
       error: () => {
         /* el benchmark puede haber terminado ya */
       },
-    })
+    });
   }
 
   // ── Defaults del prompt ──
@@ -194,12 +210,22 @@ export class BenchmarkPanel implements OnDestroy {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.api.savePromptDefault(this.store.prompt()).subscribe({
-          next: () => this.messages.add({ severity: 'success', summary: 'Prompt default guardado', life: 2600 }),
+          next: () =>
+            this.messages.add({
+              severity: 'success',
+              summary: 'Prompt default guardado',
+              life: 2600,
+            }),
           error: (e: Error) =>
-            this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
-        })
+            this.messages.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: e.message,
+              life: 4000,
+            }),
+        });
       },
-    })
+    });
   }
 
   restorePromptDefault(event: Event): void {
@@ -210,8 +236,12 @@ export class BenchmarkPanel implements OnDestroy {
       accept: () => {
         this.api.getPromptDefault().subscribe({
           next: (text) => {
-            this.store.setPrompt(text)
-            this.messages.add({ severity: 'success', summary: 'Prompt default restablecido', life: 2600 })
+            this.store.setPrompt(text);
+            this.messages.add({
+              severity: 'success',
+              summary: 'Prompt default restablecido',
+              life: 2600,
+            });
           },
           error: (e: Error) =>
             this.messages.add({
@@ -220,8 +250,8 @@ export class BenchmarkPanel implements OnDestroy {
               detail: e.message,
               life: 4000,
             }),
-        })
+        });
       },
-    })
+    });
   }
 }

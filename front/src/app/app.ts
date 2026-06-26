@@ -1,9 +1,9 @@
-import { Component, inject, signal } from '@angular/core'
-import { RouterOutlet } from '@angular/router'
-import { ToastModule } from 'primeng/toast'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { ButtonModule } from 'primeng/button'
-import { MessageService } from 'primeng/api'
+import { Component, inject, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ButtonModule } from 'primeng/button';
+import { MessageService } from 'primeng/api';
 
 /**
  * App (shell raíz).
@@ -18,12 +18,12 @@ import { MessageService } from 'primeng/api'
   styleUrl: './app.css',
 })
 export class App {
-  private readonly messages = inject(MessageService)
-  protected readonly title = signal('llama-bench')
+  private readonly messages = inject(MessageService);
+  protected readonly title = signal('llama-bench');
 
   /** Alterna la clase `.dark` en <html> (darkModeSelector del preset PrimeNG). */
   toggleDarkMode(): void {
-    const el = document.querySelector('html')
-    if (el) el.classList.toggle('dark')
+    const el = document.querySelector('html');
+    if (el) el.classList.toggle('dark');
   }
 }

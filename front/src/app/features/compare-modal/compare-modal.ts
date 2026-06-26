@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
-import { DialogModule } from 'primeng/dialog'
-import { BenchStore } from '../../core/state/bench.store'
-import { BenchmarkResult } from '../../core/models/types'
-import { fmt, fmtMs, shortModel } from '../../core/utils/format'
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { DialogModule } from 'primeng/dialog';
+import { BenchStore } from '../../core/state/bench.store';
+import { BenchmarkResult } from '../../core/models/types';
+import { fmt, fmtMs, shortModel } from '../../core/utils/format';
 
 /** Cada fila de la tabla transpuesta: etiqueta + extractor de valor por resultado. */
 interface CompareRow {
-  label: string
-  value: (r: BenchmarkResult) => string
+  label: string;
+  value: (r: BenchmarkResult) => string;
 }
 
 /**
@@ -87,10 +87,10 @@ interface CompareRow {
   ],
 })
 export class CompareModal {
-  protected readonly store = inject(BenchStore)
+  protected readonly store = inject(BenchStore);
 
   /** Resultados seleccionados para comparar. */
-  protected readonly items = computed<BenchmarkResult[]>(() => this.store.selectedResults())
+  protected readonly items = computed<BenchmarkResult[]>(() => this.store.selectedResults());
 
   /** Filas de la tabla transpuesta (label + extractor). */
   protected readonly rows = computed<CompareRow[]>(() => [
@@ -119,19 +119,21 @@ export class CompareModal {
     {
       label: 'VRAM (GB)',
       value: (r) =>
-        r.gpus.map((g) => (g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?')).join(' + ') || '—',
+        r.gpus
+          .map((g) => (g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?'))
+          .join(' + ') || '—',
     },
-  ])
+  ]);
 
   /** Two-way binding del visible: sincroniza con store.showCompare. */
   protected get visible(): boolean {
-    return this.store.showCompare()
+    return this.store.showCompare();
   }
   protected set visible(v: boolean) {
-    if (!v) this.store.closeCompare()
+    if (!v) this.store.closeCompare();
   }
 
   protected dateStr(iso: string): string {
-    return new Date(iso).toLocaleString()
+    return new Date(iso).toLocaleString();
   }
 }

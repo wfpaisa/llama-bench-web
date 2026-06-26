@@ -1,14 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
-import { FormsModule } from '@angular/forms'
-import { ButtonModule } from 'primeng/button'
-import { SelectModule } from 'primeng/select'
-import { TableModule, Table } from 'primeng/table'
-import { TooltipModule } from 'primeng/tooltip'
-import { ConfirmationService, MessageService } from 'primeng/api'
-import { BenchStore } from '../../core/state/bench.store'
-import { LlamaBenchService } from '../../core/services/llama-bench.service'
-import { BenchmarkResult, ParsedScript } from '../../core/models/types'
-import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/format'
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
+import { TableModule, Table } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { BenchStore } from '../../core/state/bench.store';
+import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { BenchmarkResult, ParsedScript } from '../../core/models/types';
+import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/format';
 
 /**
  * HistoryTable: tabla de resultados históricos de benchmarks.
@@ -37,7 +37,13 @@ import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/
             [disabled]="store.selectedCount() < 2"
             (onClick)="compare()"
           />
-          <p-button label="Limpiar todo" icon="pi pi-trash" severity="danger" [text]="true" (onClick)="clearAll($event)" />
+          <p-button
+            label="Limpiar todo"
+            icon="pi pi-trash"
+            severity="danger"
+            [text]="true"
+            (onClick)="clearAll($event)"
+          />
         </div>
       </div>
 
@@ -70,9 +76,7 @@ import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/
         <ng-template #header>
           <tr>
             <th style="width: 3rem"></th>
-            <th [pSortableColumn]="'date'">
-              Fecha <p-sortIcon field="date" />
-            </th>
+            <th [pSortableColumn]="'date'">Fecha <p-sortIcon field="date" /></th>
             <th>Modelo</th>
             <th [pSortableColumn]="'ctx'">ctx <p-sortIcon field="ctx" /></th>
             <th>batch</th>
@@ -140,9 +144,21 @@ import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/
             <td>
               <div class="row-actions">
                 @if (hasScript(r.config)) {
-                  <p-button icon="pi pi-arrow-up-right" [text]="true" size="small" (onClick)="apply(r)" pTooltip="Cargar script en editor" />
+                  <p-button
+                    icon="pi pi-arrow-up-right"
+                    [text]="true"
+                    size="small"
+                    (onClick)="apply(r)"
+                    pTooltip="Cargar script en editor"
+                  />
                 }
-                <p-button icon="pi pi-times" [text]="true" severity="danger" size="small" (onClick)="remove($event, r)" />
+                <p-button
+                  icon="pi pi-times"
+                  [text]="true"
+                  severity="danger"
+                  size="small"
+                  (onClick)="remove($event, r)"
+                />
               </div>
             </td>
           </tr>
@@ -159,86 +175,88 @@ import { fmt, fmtMs, modelBase, parseModel, shortModel } from '../../core/utils/
   styleUrl: './history-table.css',
 })
 export class HistoryTable {
-  protected readonly store = inject(BenchStore)
-  private readonly api = inject(LlamaBenchService)
-  private readonly messages = inject(MessageService)
-  private readonly confirm = inject(ConfirmationService)
+  protected readonly store = inject(BenchStore);
+  private readonly api = inject(LlamaBenchService);
+  private readonly messages = inject(MessageService);
+  private readonly confirm = inject(ConfirmationService);
 
-  protected readonly fmt = fmt
-  protected readonly fmtMs = fmtMs
-  protected readonly modelOptions = this.store.modelOptions
+  protected readonly fmt = fmt;
+  protected readonly fmtMs = fmtMs;
+  protected readonly modelOptions = this.store.modelOptions;
 
   // ── Helpers de celda ──
 
   protected dateStr(iso: string): string {
-    return new Date(iso).toLocaleString()
+    return new Date(iso).toLocaleString();
   }
   protected modelBaseName(m: string | null | undefined): string {
-    return modelBase(m) ?? '—'
+    return modelBase(m) ?? '—';
   }
   protected parsed(m: string | null | undefined) {
-    return parseModel(m)
+    return parseModel(m);
   }
   protected hasScript(c: ParsedScript | undefined): boolean {
-    return !!c && typeof c.script === 'string' && c.script.length > 0
+    return !!c && typeof c.script === 'string' && c.script.length > 0;
   }
   protected gpuTxt(r: BenchmarkResult): string {
     return (
       r.gpus
         .map((g) => {
-          const vendor = (g.vendor || 'gpu').replace(/^amdgpu/i, 'AmdGPU')
-          const val = g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?'
-          return `${vendor}:${val}`
+          const vendor = (g.vendor || 'gpu').replace(/^amdgpu/i, 'AmdGPU');
+          const val = g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?';
+          return `${vendor}:${val}`;
         })
         .join(', ') || '—'
-    )
+    );
   }
   protected totalVramTxt(r: BenchmarkResult): string {
-    const total = r.gpus.reduce((sum, g) => sum + (g.memUsedMiB ?? 0), 0) / 1024
-    return total > 0 ? `${total.toFixed(1)} GB` : '—'
+    const total = r.gpus.reduce((sum, g) => sum + (g.memUsedMiB ?? 0), 0) / 1024;
+    return total > 0 ? `${total.toFixed(1)} GB` : '—';
   }
 
   // ── Highlights "best" (sobre TODA la history) ──
   protected isBestPrompt(r: BenchmarkResult): boolean {
-    const b = this.store.bests()
-    return r.promptTokensPerSecond != null && r.promptTokensPerSecond === b.p && b.p > -Infinity
+    const b = this.store.bests();
+    return r.promptTokensPerSecond != null && r.promptTokensPerSecond === b.p && b.p > -Infinity;
   }
   protected isBestGen(r: BenchmarkResult): boolean {
-    const b = this.store.bests()
-    return r.generationTokensPerSecond != null && r.generationTokensPerSecond === b.g && b.g > -Infinity
+    const b = this.store.bests();
+    return (
+      r.generationTokensPerSecond != null && r.generationTokensPerSecond === b.g && b.g > -Infinity
+    );
   }
   protected isBestDraft(r: BenchmarkResult): boolean {
-    const b = this.store.bests()
-    return r.draftAcceptance != null && r.draftAcceptance === b.d && b.d > -Infinity
+    const b = this.store.bests();
+    return r.draftAcceptance != null && r.draftAcceptance === b.d && b.d > -Infinity;
   }
   protected isBestLoad(r: BenchmarkResult): boolean {
-    const b = this.store.bests()
-    return r.loadTimeSeconds != null && r.loadTimeSeconds === b.l && b.l < Infinity
+    const b = this.store.bests();
+    return r.loadTimeSeconds != null && r.loadTimeSeconds === b.l && b.l < Infinity;
   }
   protected isBestGenTime(r: BenchmarkResult): boolean {
-    const b = this.store.bests()
-    return r.generationTimeMs != null && r.generationTimeMs === b.gt && b.gt < Infinity
+    const b = this.store.bests();
+    return r.generationTimeMs != null && r.generationTimeMs === b.gt && b.gt < Infinity;
   }
 
   // ── Selección ──
   protected isSelected(id: string): boolean {
-    return this.store.isSelected(id)
+    return this.store.isSelected(id);
   }
   protected onToggle(ev: Event, id: string): void {
-    const checked = (ev.target as HTMLInputElement).checked
-    this.store.toggleSelected(id, checked)
+    const checked = (ev.target as HTMLInputElement).checked;
+    this.store.toggleSelected(id, checked);
   }
 
   // ── Acciones de fila ──
   protected apply(r: BenchmarkResult): void {
-    const script = r.config?.script
+    const script = r.config?.script;
     if (script) {
-      this.store.setScript(script)
+      this.store.setScript(script);
       this.messages.add({
         severity: 'info',
         summary: `Script de ${shortModel(r.config?.model)} cargado.`,
         life: 2600,
-      })
+      });
     }
   }
 
@@ -252,26 +270,35 @@ export class HistoryTable {
       accept: () => {
         this.api.deleteResult(r.id).subscribe({
           next: () => {
-            this.store.toggleSelected(r.id, false)
+            this.store.toggleSelected(r.id, false);
             this.api.getHistory().subscribe({
               next: (h) => this.store.setHistory(h.results || []),
-            })
-            this.messages.add({ severity: 'success', summary: 'Resultado eliminado.', life: 2600 })
+            });
+            this.messages.add({ severity: 'success', summary: 'Resultado eliminado.', life: 2600 });
           },
           error: (e: Error) =>
-            this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
-        })
+            this.messages.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: e.message,
+              life: 4000,
+            }),
+        });
       },
-    })
+    });
   }
 
   // ── Acciones de cabecera ──
   protected compare(): void {
     if (this.store.selectedCount() < 2) {
-      this.messages.add({ severity: 'warn', summary: 'Selecciona 2 o más resultados.', life: 3000 })
-      return
+      this.messages.add({
+        severity: 'warn',
+        summary: 'Selecciona 2 o más resultados.',
+        life: 3000,
+      });
+      return;
     }
-    this.store.openCompare()
+    this.store.openCompare();
   }
 
   protected clearAll(event: Event): void {
@@ -285,13 +312,18 @@ export class HistoryTable {
       accept: () => {
         this.api.clearHistory().subscribe({
           next: () => {
-            this.store.setHistory([])
-            this.messages.add({ severity: 'success', summary: 'Historial limpiado.', life: 2600 })
+            this.store.setHistory([]);
+            this.messages.add({ severity: 'success', summary: 'Historial limpiado.', life: 2600 });
           },
           error: (e: Error) =>
-            this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
-        })
+            this.messages.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: e.message,
+              life: 4000,
+            }),
+        });
       },
-    })
+    });
   }
 }

@@ -6,24 +6,24 @@
 // mejora y qué efecto tiene sobre el servidor / el rendimiento.
 
 /** Categorías de flags (para el filtro por grupo). */
-export type FlagCategory = 'común' | 'muestreo' | 'especulativo' | 'servidor'
+export type FlagCategory = 'común' | 'muestreo' | 'especulativo' | 'servidor';
 
 /** Una entrada del catálogo de flags. */
 export interface LlamaFlag {
   /** Nombre legible (etiqueta mostrada en la lista). */
-  name: string
+  name: string;
   /** Flag larga canónica, p.ej. `--ctx-size`. */
-  long: string
+  long: string;
   /** Flag corta, p.ej. `-c`. `null` si no existe forma corta. */
-  short: string | null
+  short: string | null;
   /** Formas adicionales aceptadas (largas o cortas) para detección de duplicados. */
-  aliases?: string[]
+  aliases?: string[];
   /** Valor por defecto mostrado (string para uniformidad). `null` si es un switch. */
-  defaultValue: string | null
+  defaultValue: string | null;
   /** Descripción larga en español: para qué sirve, qué mejora, qué efecto tiene. */
-  description: string
+  description: string;
   /** Categoría para el filtro. */
-  category: FlagCategory
+  category: FlagCategory;
 }
 
 /**
@@ -166,7 +166,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     category: 'común',
-    description: 'Número de threads dedicados a procesar las peticiones HTTP entrantes (-1 = automático).',
+    description:
+      'Número de threads dedicados a procesar las peticiones HTTP entrantes (-1 = automático).',
   },
   {
     name: 'Flash Attention',
@@ -240,7 +241,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-dt',
     defaultValue: null,
     category: 'común',
-    description: '[DEPRECATED] Umbral de defragmentación de la cache KV. Mantenido por compatibilidad.',
+    description:
+      '[DEPRECATED] Umbral de defragmentación de la cache KV. Mantenido por compatibilidad.',
   },
   {
     name: 'RoPE scaling',
@@ -265,7 +267,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     category: 'común',
-    description: 'Frecuencia base de RoPE, usada por el escalado NTK-aware. Por defecto se lee del modelo.',
+    description:
+      'Frecuencia base de RoPE, usada por el escalado NTK-aware. Por defecto se lee del modelo.',
   },
   {
     name: 'Factor de escala RoPE',
@@ -365,7 +368,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ot',
     defaultValue: null,
     category: 'común',
-    description: 'Sobreescribe el tipo de buffer de un tensor por patrón (formato patron=buffer,...).',
+    description:
+      'Sobreescribe el tipo de buffer de un tensor por patrón (formato patron=buffer,...).',
   },
   {
     name: 'Ajustar a memoria (fit)',
@@ -501,7 +505,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-C',
     defaultValue: '""',
     category: 'común',
-    description: 'Máscara de afinidad de CPU en hex (arbitrariamente larga). Complementa --cpu-range.',
+    description:
+      'Máscara de afinidad de CPU en hex (arbitrariamente larga). Complementa --cpu-range.',
   },
   {
     name: 'Rango de CPU',
@@ -525,7 +530,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     category: 'común',
-    description: 'Prioridad del proceso/thread: low(-1), normal(0), medium(1), high(2), realtime(3).',
+    description:
+      'Prioridad del proceso/thread: low(-1), normal(0), medium(1), high(2), realtime(3).',
   },
   {
     name: 'Polling',
@@ -708,7 +714,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.05',
     category: 'muestreo',
-    description: 'Descarta tokens con probabilidad menor a min-p · (prob del token más probable) (0.0 = off).',
+    description:
+      'Descarta tokens con probabilidad menor a min-p · (prob del token más probable) (0.0 = off).',
   },
   {
     name: 'top-n-sigma',
@@ -717,7 +724,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--top-nsigma'],
     defaultValue: '-1.00',
     category: 'muestreo',
-    description: 'Muestreo top-n-sigma: corta los tokens por debajo de n desviaciones estándar (-1 = off).',
+    description:
+      'Muestreo top-n-sigma: corta los tokens por debajo de n desviaciones estándar (-1 = off).',
   },
   {
     name: 'Typical-p',
@@ -734,7 +742,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     category: 'muestreo',
-    description: 'Probabilidad de XTC (eXclude Top Choices), que descarta el token más probable (0.0 = off).',
+    description:
+      'Probabilidad de XTC (eXclude Top Choices), que descarta el token más probable (0.0 = off).',
   },
   {
     name: 'XTC umbral',
@@ -742,7 +751,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.10',
     category: 'muestreo',
-    description: 'Umbral de XTC: solo aplica XTC si el token top supera esta probabilidad (1.0 = off).',
+    description:
+      'Umbral de XTC: solo aplica XTC si el token top supera esta probabilidad (1.0 = off).',
   },
   {
     name: 'Semilla (seed)',
@@ -750,7 +760,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-s',
     defaultValue: '-1',
     category: 'muestreo',
-    description: 'Semilla del generador aleatorio. -1 = semilla aleatoria. Fijar la semilla hace la salida reproducible.',
+    description:
+      'Semilla del generador aleatorio. -1 = semilla aleatoria. Fijar la semilla hace la salida reproducible.',
   },
   {
     name: 'Secuencia de samplers',
@@ -784,7 +795,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '64',
     category: 'muestreo',
-    description: 'Últimos N tokens considerados para penalizar repeticiones (0 = off, -1 = ctx completo).',
+    description:
+      'Últimos N tokens considerados para penalizar repeticiones (0 = off, -1 = ctx completo).',
   },
   {
     name: 'Presence penalty',
@@ -792,7 +804,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     category: 'muestreo',
-    description: 'Penalización de presencia (alpha): fomenta hablar de temas nuevos. 0.0 = deshabilitado.',
+    description:
+      'Penalización de presencia (alpha): fomenta hablar de temas nuevos. 0.0 = deshabilitado.',
   },
   {
     name: 'Frequency penalty',
@@ -800,7 +813,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     category: 'muestreo',
-    description: 'Penalización de frecuencia (alpha): fomenta no repetir las mismas palabras. 0.0 = deshabilitado.',
+    description:
+      'Penalización de frecuencia (alpha): fomenta no repetir las mismas palabras. 0.0 = deshabilitado.',
   },
   {
     name: 'DRY multiplicador',
@@ -849,7 +863,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1.00',
     category: 'muestreo',
-    description: 'adaptive-p: selecciona tokens cercanos a esta probabilidad (negativo = deshabilitado).',
+    description:
+      'adaptive-p: selecciona tokens cercanos a esta probabilidad (negativo = deshabilitado).',
   },
   {
     name: 'adaptive-p decaimiento',
@@ -881,7 +896,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     category: 'muestreo',
-    description: 'Muestreo Mirostat (0 = off, 1 = Mirostat, 2 = Mirostat 2.0). Ignora top-k/top-p/typical.',
+    description:
+      'Muestreo Mirostat (0 = off, 1 = Mirostat, 2 = Mirostat 2.0). Ignora top-k/top-p/typical.',
   },
   {
     name: 'Mirostat lr',
@@ -938,7 +954,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-j',
     defaultValue: null,
     category: 'muestreo',
-    description: 'JSON Schema que constriñe la generación a JSON válido (p.ej. {} para cualquier objeto).',
+    description:
+      'JSON Schema que constriñe la generación a JSON válido (p.ej. {} para cualquier objeto).',
   },
   {
     name: 'Archivo JSON Schema',
@@ -955,7 +972,6 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     defaultValue: 'disabled',
     category: 'muestreo',
     description: 'Habilita el sampling en el backend (experimental).',
-
   },
 
   // ════════════════════ PARÁMETROS ESPECULATIVOS ════════════════════
@@ -1095,7 +1111,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-override-tensor'],
     defaultValue: null,
     category: 'especulativo',
-    description: 'Sobreescribe el tipo de buffer de tensores del modelo borrador (patron=buffer,...).',
+    description:
+      'Sobreescribe el tipo de buffer de tensores del modelo borrador (patron=buffer,...).',
   },
   {
     name: 'Backend sampling draft',
@@ -1277,7 +1294,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-cache-idle-slots'],
     defaultValue: 'enabled',
     category: 'servidor',
-    description: 'Guarda los slots inactivos en la prompt cache al recibir una nueva tarea (requiere cache-ram).',
+    description:
+      'Guarda los slots inactivos en la prompt cache al recibir una nueva tarea (requiere cache-ram).',
   },
   {
     name: 'Checkpoints de ctx',
@@ -1337,7 +1355,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-rea',
     defaultValue: 'auto',
     category: 'servidor',
-    description: 'Controla el razonamiento/thinking en el chat (on/off/auto, default auto = detectar de la plantilla).',
+    description:
+      'Controla el razonamiento/thinking en el chat (on/off/auto, default auto = detectar de la plantilla).',
   },
   {
     name: 'Formato de reasoning',
@@ -1354,7 +1373,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     category: 'servidor',
-    description: 'Presupuesto de tokens para pensar: -1 sin límite, 0 fin inmediato, N>0 presupuesto.',
+    description:
+      'Presupuesto de tokens para pensar: -1 sin límite, 0 fin inmediato, N>0 presupuesto.',
   },
   {
     name: 'Mensaje fin reasoning',
@@ -1362,7 +1382,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     category: 'servidor',
-    description: 'Mensaje inyectado antes del tag de fin de pensamiento cuando se agota el presupuesto.',
+    description:
+      'Mensaje inyectado antes del tag de fin de pensamiento cuando se agota el presupuesto.',
   },
   {
     name: 'Skip chat parsing',
@@ -1371,7 +1392,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-skip-chat-parsing'],
     defaultValue: 'disabled',
     category: 'servidor',
-    description: 'Fuerza un parser de contenido puro: el modelo saca todo en content (reasoning + tools).',
+    description:
+      'Fuerza un parser de contenido puro: el modelo saca todo en content (reasoning + tools).',
   },
   {
     name: 'Prefill assistant',
@@ -1407,7 +1429,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-mmproj', '--no-mmproj-auto'],
     defaultValue: 'enabled',
     category: 'servidor',
-    description: 'Si se usa el proyector multimodal cuando está disponible (útil con -hf). --no-mmproj lo desactiva.',
+    description:
+      'Si se usa el proyector multimodal cuando está disponible (útil con -hf). --no-mmproj lo desactiva.',
   },
   {
     name: 'Offload del mmproj',
@@ -1424,7 +1447,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     category: 'servidor',
-    description: 'Número mínimo de tokens que ocupa cada imagen (modelos de visión con resolución dinámica).',
+    description:
+      'Número mínimo de tokens que ocupa cada imagen (modelos de visión con resolución dinámica).',
   },
   {
     name: 'Tokens máx. imagen',
@@ -1432,7 +1456,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     category: 'servidor',
-    description: 'Número máximo de tokens que ocupa cada imagen (modelos de visión con resolución dinámica).',
+    description:
+      'Número máximo de tokens que ocupa cada imagen (modelos de visión con resolución dinámica).',
   },
   {
     name: 'Embeddings',
@@ -1441,7 +1466,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--embedding'],
     defaultValue: 'disabled',
     category: 'servidor',
-    description: 'Restringe el servidor a solo soportar el caso de uso de embeddings (modelos dedicados).',
+    description:
+      'Restringe el servidor a solo soportar el caso de uso de embeddings (modelos dedicados).',
   },
   {
     name: 'Reranking',
@@ -1458,7 +1484,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     category: 'servidor',
-    description: 'Tipo de pooling para embeddings: none, mean, cls, last o rank. Si no se indica, el del modelo.',
+    description:
+      'Tipo de pooling para embeddings: none, mean, cls, last o rank. Si no se indica, el del modelo.',
   },
   {
     name: 'Normalización embeddings',
@@ -1541,7 +1568,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-ui-mcp-proxy', '--webui-mcp-proxy', '--no-webui-mcp-proxy'],
     defaultValue: 'disabled',
     category: 'servidor',
-    description: 'Experimental: habilita el proxy CORS de MCP (no activar en entornos no confiables).',
+    description:
+      'Experimental: habilita el proxy CORS de MCP (no activar en entornos no confiables).',
   },
   {
     name: 'Tools (agentes)',
@@ -1591,7 +1619,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     category: 'servidor',
-    description: 'Directorio para cargar archivos multimedia locales (accesibles vía file:// relativo).',
+    description:
+      'Directorio para cargar archivos multimedia locales (accesibles vía file:// relativo).',
   },
   {
     name: 'Alias del modelo',
@@ -1631,7 +1660,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '4',
     category: 'servidor',
-    description: 'Para el router server, número máximo de modelos cargados a la vez (0 = ilimitado).',
+    description:
+      'Para el router server, número máximo de modelos cargados a la vez (0 = ilimitado).',
   },
   {
     name: 'Autoload modelos (router)',
@@ -1681,7 +1711,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-sps',
     defaultValue: '0.10',
     category: 'servidor',
-    description: 'Cuánto debe coincidir el prompt de un request con el de un slot para reutilizarlo (0.0 = off).',
+    description:
+      'Cuánto debe coincidir el prompt de un request con el de un slot para reutilizarlo (0.0 = off).',
   },
   {
     name: 'LoRA init sin aplicar',
@@ -1689,7 +1720,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'disabled',
     category: 'servidor',
-    description: 'Carga los adaptadores LoRA sin aplicarlos (se aplican luego vía POST /lora-adapters).',
+    description:
+      'Carga los adaptadores LoRA sin aplicarlos (se aplican luego vía POST /lora-adapters).',
   },
   {
     name: 'Sleep si idle',
@@ -1697,7 +1729,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     category: 'servidor',
-    description: 'Segundos de inactividad tras los que el servidor entra en sleep (-1 = deshabilitado).',
+    description:
+      'Segundos de inactividad tras los que el servidor entra en sleep (-1 = deshabilitado).',
   },
   {
     name: 'Dir log de prompts',
@@ -1739,7 +1772,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     category: 'servidor',
     description: 'Ruta a la cache de lookup dinámica (se actualiza al generar).',
   },
-]
+];
 
 /**
  * Agrupa los tokens de un script ya "aplanado" (sin `\` de continuación) en
@@ -1751,35 +1784,38 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
  * El primer token (comando) se trata aparte.
  */
 function tokenizeIntoPieces(script: string): string[] {
-  const tokens = script.split(/\s+/).filter(Boolean)
-  if (!tokens.length) return ['./llama-server']
-  const pieces: string[] = [tokens[0]]
+  const tokens = script.split(/\s+/).filter(Boolean);
+  if (!tokens.length) return ['./llama-server'];
+  const pieces: string[] = [tokens[0]];
   for (let i = 1; i < tokens.length; i++) {
-    const tok = tokens[i]
+    const tok = tokens[i];
     if (tok.startsWith('-')) {
-      const next = tokens[i + 1]
+      const next = tokens[i + 1];
       if (next && !next.startsWith('-')) {
-        pieces.push(`${tok} ${next}`)
-        i++
+        pieces.push(`${tok} ${next}`);
+        i++;
       } else {
-        pieces.push(tok)
+        pieces.push(tok);
       }
     } else {
       // Valor suelto sin flag previo (raro): lo dejamos como pieza propia.
-      pieces.push(tok)
+      pieces.push(tok);
     }
   }
-  return pieces
+  return pieces;
 }
 
 /** Aplana un script: quita `\` de continuación de línea, deja todo en una línea. */
 function flattenScript(script: string): string {
-  return script.replace(/\\\r?\n/g, ' ').replace(/\\/g, '').trim()
+  return script
+    .replace(/\\\r?\n/g, ' ')
+    .replace(/\\/g, '')
+    .trim();
 }
 
 /** Todas las formas reconocidas de un flag (larga + corta + aliases). */
 export function flagForms(flag: LlamaFlag): string[] {
-  return [flag.long, flag.short, ...(flag.aliases ?? [])].filter(Boolean) as string[]
+  return [flag.long, flag.short, ...(flag.aliases ?? [])].filter(Boolean) as string[];
 }
 
 /**
@@ -1795,24 +1831,24 @@ export function addFlagToScript(
   script: string,
   flag: LlamaFlag,
 ): { script: string; added: boolean } {
-  const pieces = tokenizeIntoPieces(flattenScript(script))
-  const cmd = pieces[0]
-  const rest = pieces.slice(1)
+  const pieces = tokenizeIntoPieces(flattenScript(script));
+  const cmd = pieces[0];
+  const rest = pieces.slice(1);
 
-  const forms = flagForms(flag)
+  const forms = flagForms(flag);
   // ¿Ya está presente el flag (en cualquier pieza, como primer token)?
-  const exists = rest.some((p) => forms.includes(p.split(/\s+/)[0]))
+  const exists = rest.some((p) => forms.includes(p.split(/\s+/)[0]));
   if (exists) {
-    return { script: joinPieces(cmd, rest), added: false }
+    return { script: joinPieces(cmd, rest), added: false };
   }
 
-  const value = flag.defaultValue
-  const piece = value && value !== '' ? `${flag.long} ${value}` : flag.long
-  rest.push(piece)
-  return { script: joinPieces(cmd, rest), added: true }
+  const value = flag.defaultValue;
+  const piece = value && value !== '' ? `${flag.long} ${value}` : flag.long;
+  rest.push(piece);
+  return { script: joinPieces(cmd, rest), added: true };
 }
 
 /** Reconstruye el script con `\` de continuación, una pieza por línea. */
 function joinPieces(cmd: string, pieces: string[]): string {
-  return [cmd, ...pieces].join(' \\\n')
+  return [cmd, ...pieces].join(' \\\n');
 }

@@ -72,12 +72,14 @@ export async function handleRequest(req: Request): Promise<Response> {
   }
 
   // ── Prompt por defecto (guardar / leer) ──
+  // Si no hay prompt guardado en disco, se devuelve DEFAULT_PROMPT (default
+  // built-in) en lugar de 404: así "Restablecer default" siempre tiene un texto.
   if (path === '/prompt-default' && req.method === 'GET') {
     try {
       const content = await readFile(PROMPT_FILE, 'utf8')
       return new Response(content, { headers: { 'Content-Type': 'text/plain', ...CORS } })
     } catch {
-      return new Response('Not found', { status: 404, headers: CORS })
+      return new Response(DEFAULT_PROMPT, { headers: { 'Content-Type': 'text/plain', ...CORS } })
     }
   }
   if (path === '/prompt-default' && req.method === 'POST') {

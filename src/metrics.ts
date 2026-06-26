@@ -109,7 +109,14 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
       const mm = l.match(/model loaded.*?([0-9.]+)\s*ms/i)
       if (mm) m.loadTimeSeconds = Number(mm[1]) / 1000
     }
-    if (m.promptTokensPerSecond !== null && m.generationTokensPerSecond !== null && m.draftAcceptance !== null && m.genDrafts !== null && m.loadTimeSeconds !== null && m.generationTimeMs !== null) {
+    if (
+      m.promptTokensPerSecond !== null &&
+      m.generationTokensPerSecond !== null &&
+      m.draftAcceptance !== null &&
+      m.genDrafts !== null &&
+      m.loadTimeSeconds !== null &&
+      m.generationTimeMs !== null
+    ) {
       break
     }
   }

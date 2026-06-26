@@ -1,27 +1,21 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  OnDestroy,
-  inject,
-} from '@angular/core'
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { interval, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval, Subscription } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
-import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store'
-import { LlamaBenchService } from '../../core/services/llama-bench.service'
-import { StorageService } from '../../core/services/storage.service'
+import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
+import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { StorageService } from '../../core/services/storage.service';
 
-import { StatusBar } from '../status-bar/status-bar'
-import { ScriptEditor } from '../script-editor/script-editor'
-import { BenchmarkPanel } from '../benchmark-panel/benchmark-panel'
-import { ResponseCard } from '../response-card/response-card'
-import { GpuGrid } from '../gpu-grid/gpu-grid'
-import { LastResult } from '../last-result/last-result'
-import { HistoryTable } from '../history-table/history-table'
-import { CompareModal } from '../compare-modal/compare-modal'
-import { LogsViewer } from '../logs-viewer/logs-viewer'
+import { StatusBar } from '../status-bar/status-bar';
+import { ScriptEditor } from '../script-editor/script-editor';
+import { BenchmarkPanel } from '../benchmark-panel/benchmark-panel';
+import { ResponseCard } from '../response-card/response-card';
+import { GpuGrid } from '../gpu-grid/gpu-grid';
+import { LastResult } from '../last-result/last-result';
+import { HistoryTable } from '../history-table/history-table';
+import { CompareModal } from '../compare-modal/compare-modal';
+import { LogsViewer } from '../logs-viewer/logs-viewer';
 
 /**
  * Home: orquestador de la página principal.
@@ -72,65 +66,65 @@ import { LogsViewer } from '../logs-viewer/logs-viewer'
   ],
 })
 export class Home implements OnDestroy {
-  private readonly store = inject(BenchStore)
-  private readonly api = inject(LlamaBenchService)
-  private readonly storage = inject(StorageService)
-  private readonly destroyRef = inject(DestroyRef)
+  private readonly store = inject(BenchStore);
+  private readonly api = inject(LlamaBenchService);
+  private readonly storage = inject(StorageService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private readonly subs: Subscription[] = []
+  private readonly subs: Subscription[] = [];
 
   constructor() {
     // 1) Sembrar estado persistido (sort, filter) antes de cualquier render de datos.
-    this.store.init()
+    this.store.init();
 
     // 2) Carga inicial de script/prompt (3-tier: localStorage > backend default > fallback).
-    this.loadInitialScript()
-    this.loadInitialPrompt()
+    this.loadInitialScript();
+    this.loadInitialPrompt();
 
     // 3) Cargas iniciales puntuales.
-    this.pollStatus()
-    this.loadHistory()
-    this.loadGpus()
+    this.pollStatus();
+    this.loadHistory();
+    this.loadGpus();
 
     // 4) Polling periódico.
-    this.startPolling()
+    this.startPolling();
   }
 
   ngOnDestroy(): void {
-    this.subs.forEach((s) => s.unsubscribe())
+    this.subs.forEach((s) => s.unsubscribe());
   }
 
   // ── Carga inicial de script ──
   private loadInitialScript(): void {
-    const stored = this.storage.loadScript()
+    const stored = this.storage.loadScript();
     if (stored !== null) {
-      this.store.setScript(stored)
-      return
+      this.store.setScript(stored);
+      return;
     }
     this.api.getScriptDefault().subscribe({
       next: (text) => {
-        if (text && text.length) this.store.setScript(text)
+        if (text && text.length) this.store.setScript(text);
       },
       error: () => {
         /* 404 o sin backend → editor vacío */
       },
-    })
+    });
   }
 
   // ── Carga inicial de prompt ──
   private loadInitialPrompt(): void {
-    const stored = this.storage.loadPrompt()
+    const stored = this.storage.loadPrompt();
     if (stored !== null) {
-      this.store.setPrompt(stored)
-      return
+      this.store.setPrompt(stored);
+      return;
     }
     this.api.getPromptDefault().subscribe({
       next: (text) => {
-        if (text && text.length) this.store.setPrompt(text)
-        else this.store.setPrompt(DEFAULT_PROMPT_UI)
+        if (text && text.length) this.store.setPrompt(text);
+        else this.store.setPrompt(DEFAULT_PROMPT_UI);
       },
       error: () => this.store.setPrompt(DEFAULT_PROMPT_UI),
-    })
+    });
   }
 
   // ── Cargas puntuales ──
@@ -140,7 +134,7 @@ export class Home implements OnDestroy {
       error: () => {
         /* backend reiniciándose */
       },
-    })
+    });
   }
 
   private loadHistory(): void {
@@ -149,14 +143,14 @@ export class Home implements OnDestroy {
       error: () => {
         /* ignore */
       },
-    })
+    });
   }
 
   private loadGpus(): void {
     this.api.getGpus().subscribe({
       next: (data) => this.store.setGpus(data.gpus),
       error: () => this.store.setGpus([]),
-    })
+    });
   }
 
   // ── Polling ──
@@ -172,7 +166,7 @@ export class Home implements OnDestroy {
         error: () => {
           /* ignore */
         },
-      })
+      });
 
     // Logs cada 1s (incremental vía cursor).
     const logs$ = interval(1000)
@@ -185,7 +179,7 @@ export class Home implements OnDestroy {
         error: () => {
           /* backend reiniciándose */
         },
-      })
+      });
 
     // GPU cada 4s.
     const gpu$ = interval(4000)
@@ -196,8 +190,8 @@ export class Home implements OnDestroy {
       .subscribe({
         next: (data) => this.store.setGpus(data.gpus),
         error: () => this.store.setGpus([]),
-      })
+      });
 
-    this.subs.push(status$, logs$, gpu$)
+    this.subs.push(status$, logs$, gpu$);
   }
 }
