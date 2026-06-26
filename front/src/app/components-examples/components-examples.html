@@ -1,0 +1,205 @@
+<!-- Icons -->
+<div class="list">
+  <i class="pi pi-check"></i>
+  <i class="pi pi-times"></i>
+</div>
+
+<!-- Buttons -->
+<div class="list">
+  <p-button label="Primary" />
+
+  <p-button label="Success" severity="success" />
+  <p-button label="Info" severity="info" />
+  <p-button label="Warn" severity="warn" />
+  <p-button label="Help" severity="help" />
+  <p-button label="Danger" severity="danger" />
+
+  <p-button label="Secondary" variant="outlined" severity="secondary" />
+  <p-button label="Success" variant="outlined" severity="success" />
+  <p-button label="Info" variant="outlined" severity="info" />
+  <p-button label="Warn" variant="outlined" severity="warn" />
+  <p-button label="Help" variant="outlined" severity="help" />
+  <p-button label="Danger" variant="outlined" severity="danger" />
+</div>
+
+<div class="list">
+  <p-select
+    [options]="selectCities"
+    [(ngModel)]="selectedCity"
+    optionLabel="name"
+    placeholder="Select a City"
+    class="w-full md:w-56"
+    [filter]="true"
+    filterBy="name"
+    [showClear]="true"
+  />
+</div>
+
+<div class="list">
+  <input type="text" pInputText [(ngModel)]="inputText" />
+</div>
+
+<div class="list">
+  <p-checkbox [(ngModel)]="checkboxValue" [binary]="true" />
+</div>
+
+<div class="list">
+  <p-table
+    #dt2
+    [value]="customers"
+    dataKey="id"
+    [rows]="10"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    [loading]="loading"
+    [paginator]="true"
+    [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"
+    [tableStyle]="{ 'min-width': '75rem' }"
+    sortMode="multiple"
+  >
+    <!-- top -->
+    <ng-template #caption>
+      <div class="flex">
+        <p-iconfield iconPosition="left" class="ml-auto">
+          <p-inputicon>
+            <i class="pi pi-search"></i>
+          </p-inputicon>
+          <input
+            pInputText
+            type="text"
+            (input)="dt2.filterGlobal($event.target.value, 'contains')"
+            placeholder="Search keyword"
+          />
+        </p-iconfield>
+      </div>
+    </ng-template>
+
+    <!-- headers -->
+    <ng-template #header>
+      <tr>
+        <th pSortableColumn="date">
+          Date
+          <p-columnFilter type="date" field="date" display="menu"></p-columnFilter>
+          <p-sortIcon field="date" />
+        </th>
+
+        <th pSortableColumn="name">
+          Name
+          <p-columnFilter type="text" field="name" display="menu" />
+          <p-sortIcon field="name" />
+        </th>
+
+        <th>
+          Country
+          <p-columnFilter type="text" field="country.name" display="menu" />
+        </th>
+        <th>
+          Agent
+          <p-columnFilter
+            field="representative"
+            matchMode="in"
+            display="menu"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+          >
+            <ng-template #filter let-value let-filter="filterCallback">
+              <p-multiselect
+                [ngModel]="value"
+                [options]="representatives"
+                placeholder="Any"
+                (onChange)="filter($event.value)"
+                optionLabel="name"
+                style="min-width: 14rem"
+                [panelStyle]="{ minWidth: '16rem' }"
+              >
+                <ng-template let-option #item>
+                  <div class="flex items-center gap-2">
+                    <img
+                      [alt]="option.label"
+                      src="https://primefaces.org/cdn/primeng/images/demo/avatar/{{ option.image }}"
+                      style="width: 32px"
+                    />
+                    <span>{{ option.name }}</span>
+                  </div>
+                </ng-template>
+              </p-multiselect>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th>
+          Status
+          <p-columnFilter field="status" matchMode="equals" display="menu">
+            <ng-template #filter let-value let-filter="filterCallback">
+              <p-select
+                [ngModel]="value"
+                [options]="statuses"
+                (onChange)="filter($event.value)"
+                placeholder="Select One"
+                class="w-full"
+              >
+                <ng-template let-option #item>
+                  <p-tag [value]="option.value" [severity]="getSeverity(option.value)"></p-tag>
+                </ng-template>
+              </p-select>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th style="width: 12%">
+          Verified
+          <p-columnFilter type="boolean" field="verified" display="menu" />
+        </th>
+      </tr>
+    </ng-template>
+    <!-- Body Template -->
+    <ng-template #body let-customer>
+      <tr>
+        <td>{{ customer.date }}</td>
+        <td>
+          {{ customer.name }}
+        </td>
+        <td>
+          <div class="flex items-center gap-2">
+            <span>{{ customer.country.name }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="flex items-center gap-2">
+            <img
+              [alt]="customer.representative.name"
+              src="https://primefaces.org/cdn/primeng/images/demo/avatar/{{
+                customer.representative.image
+              }}"
+              width="32"
+              style="vertical-align: middle"
+            />
+            <span>{{ customer.representative.name }}</span>
+          </div>
+        </td>
+        <td>
+          <p-tag [value]="customer.status" [severity]="getSeverity(customer.status)" />
+        </td>
+        <td>
+          <i
+            class="pi"
+            [ngClass]="{
+              'text-green pi-check-circle': customer.verified,
+              'text-red pi-times-circle': !customer.verified,
+            }"
+          ></i>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5">No customers found.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<div class="list">
+  <p-toast />
+  <p-confirmdialog />
+  <p-button (click)="confirm1($event)" label="Save" [outlined]="true" />
+  <p-button (click)="confirm2($event)" label="Delete" severity="danger" [outlined]="true" />
+</div>

@@ -1,0 +1,249 @@
+/* You can add global styles to this file, and also import other style files */
+@import 'primeicons/primeicons.css';
+
+:root {
+  /* Fuentes */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+
+  /* Escala tipográfica (rem base = 16px) */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 2rem; /* 32px */
+  --text-4xl: 2.5rem; /* 40px */
+
+  /* Line heights */
+  --leading-tight: 1.2;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* Letter spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.04em;
+  --tracking-widest: 0.08em;
+
+  /* Espaciado */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radio de borde */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Colores (light mode por defecto) */
+  --color-bg: var(--p-neutral-50);
+  --color-surface: var(--p-neutral-100);
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-text: #1a1a18;
+  --color-text-muted: #6b6b67;
+  --color-accent: #2563eb;
+}
+
+:root[class='dark'] {
+  --color-bg: var(--p-neutral-950);
+  --color-surface: var(--p-neutral-800);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-text: #f0efed;
+  --color-text-muted: #9b9b96;
+  --color-accent: #007eff;
+}
+
+/* ---- Box model universal ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- Root ---- */
+html {
+  font-size: 14px; /* base para rem */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  tab-size: 2;
+}
+
+/* ---- Body ---- */
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: var(--leading-relaxed);
+  font-optical-sizing: auto; /* Inter variable ajusta métricas por tamaño */
+  font-feature-settings:
+    'kern' 1,
+    'liga' 1,
+    'calt' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  min-height: 100dvh;
+}
+
+/* ---- Headings ---- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-3xl);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--text-2xl);
+  letter-spacing: var(--tracking-tight);
+}
+h3 {
+  font-size: var(--text-xl);
+}
+h4 {
+  font-size: var(--text-lg);
+}
+h5 {
+  font-size: var(--text-base);
+}
+h6 {
+  font-size: var(--text-sm);
+}
+
+/* ---- Párrafos y texto ---- */
+p {
+  text-wrap: pretty; /* evita líneas huérfanas */
+  max-width: 70ch; /* longitud óptima de lectura */
+}
+
+strong,
+b {
+  font-weight: 600;
+}
+em,
+i {
+  font-style: italic;
+}
+small {
+  font-size: var(--text-sm);
+}
+
+/* ---- Links ---- */
+a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: opacity 0.15s ease;
+}
+a:hover {
+  opacity: 0.75;
+}
+
+/* ---- Listas ---- */
+ul,
+ol {
+  list-style: none;
+}
+
+/* ---- Medios ---- */
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block;
+  max-width: 100%;
+}
+img,
+video {
+  height: auto;
+}
+
+/* ---- Código ---- */
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+pre {
+  overflow-x: auto;
+  tab-size: 2;
+}
+
+/* ---- Focus visible (accesibilidad) ---- */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Selección ---- */
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+/* ---- Scrollbar (Chromium/WebKit) ---- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* General */
+.flex {
+  display: flex;
+}
+.ml-auto {
+  margin-left: auto;
+}
+.items-center {
+  align-items: center;
+}
+.gap-2 {
+  gap: var(--space-2);
+}
+.text-green {
+  color: var(--p-green-500);
+}
+.text-red {
+  color: var(--p-red-500);
+}
