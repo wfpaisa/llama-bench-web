@@ -6,7 +6,7 @@ controlando `llama-server` desde el navegador.
 - **Backend:** Bun + TypeScript (solo stdlib, sin frameworks). Expone la **API
   JSON** en `:3000` (no sirve frontend).
 - **Frontend:** Angular 22 + PrimeNG 21, app aparte en `front/` servida en
-  `:4200` (dev). Habla con el backend por HTTP (CORS `*`).
+  `:4242` (dev). Habla con el backend por HTTP (CORS `*`).
 - **Benchmark real** contra `llama-server` (no `llama-bench`), porque refleja
   correctamente MTP, speculative decoding, cache y comportamiento multi-GPU Vulkan.
 
@@ -45,10 +45,10 @@ Desde la raíz del repo (orquesta backend + frontend juntos):
 
 ```bash
 bun install            # deps de la raíz (incl. concurrently)
-bun run dev            # dev conjunto: backend (:3000) + frontend (:4200)
+bun run dev            # dev conjunto: backend (:3000) + frontend (:4242)
 ```
 
-Abrí **http://localhost:4200**. Ctrl+C detiene ambos procesos a la vez.
+Abrí **http://localhost:4242**. Ctrl+C detiene ambos procesos a la vez.
 
 Otros scripts:
 
@@ -61,31 +61,31 @@ bun run build:front    # build de producción del frontend → front/dist/
 
 Variables de entorno:
 
-| Variable            | Default          | Descripción                                              |
-| ------------------- | ---------------- | -------------------------------------------------------- |
-| `PORT`              | `3000`           | Puerto del backend (no 8080: es el de llama-server).     |
-| `LLAMA_SERVER_PATH` | `./llama-server` | Ruta al binario por defecto en la UI.                    |
-| `DATA_DIR`          | `./data`         | Carpeta donde se guarda `history.json` y defaults.       |
+| Variable            | Default          | Descripción                                          |
+| ------------------- | ---------------- | ---------------------------------------------------- |
+| `PORT`              | `3000`           | Puerto del backend (no 8080: es el de llama-server). |
+| `LLAMA_SERVER_PATH` | `./llama-server` | Ruta al binario por defecto en la UI.                |
+| `DATA_DIR`          | `./data`         | Carpeta donde se guarda `history.json` y defaults.   |
 
 ## Endpoints (backend `:3000`)
 
-| Método | Ruta                | Descripción                                            |
-| ------ | ------------------- | ------------------------------------------------------ |
-| GET    | `/status`           | Estado del proceso (`stopped/starting/running/error`). |
-| POST   | `/start`            | Inicia `llama-server` con la config del body.          |
-| POST   | `/stop`             | SIGTERM (SIGKILL tras 8s si no muere).                 |
-| GET    | `/logs?since=T`     | Logs incrementales desde el cursor `T`.                |
-| POST   | `/logs/clear`       | Vacía el buffer de logs.                               |
-| GET    | `/gpu`              | Métricas en vivo de NVIDIA + AMD.                      |
-| POST   | `/benchmark`        | Ejecuta el benchmark completo.                         |
-| POST   | `/benchmark/stop`   | Aborta el benchmark en curso.                          |
-| GET    | `/script-default`   | Script por defecto (texto plano).                      |
-| POST   | `/script-default`   | Guarda el script por defecto.                          |
-| GET    | `/prompt-default`   | Prompt por defecto (texto plano).                      |
-| POST   | `/prompt-default`   | Guarda el prompt por defecto.                          |
-| GET    | `/history`          | Lista de resultados guardados.                         |
-| DELETE | `/history`          | Borra todo el historial.                               |
-| DELETE | `/history/:id`      | Borra un resultado.                                    |
+| Método | Ruta              | Descripción                                            |
+| ------ | ----------------- | ------------------------------------------------------ |
+| GET    | `/status`         | Estado del proceso (`stopped/starting/running/error`). |
+| POST   | `/start`          | Inicia `llama-server` con la config del body.          |
+| POST   | `/stop`           | SIGTERM (SIGKILL tras 8s si no muere).                 |
+| GET    | `/logs?since=T`   | Logs incrementales desde el cursor `T`.                |
+| POST   | `/logs/clear`     | Vacía el buffer de logs.                               |
+| GET    | `/gpu`            | Métricas en vivo de NVIDIA + AMD.                      |
+| POST   | `/benchmark`      | Ejecuta el benchmark completo.                         |
+| POST   | `/benchmark/stop` | Aborta el benchmark en curso.                          |
+| GET    | `/script-default` | Script por defecto (texto plano).                      |
+| POST   | `/script-default` | Guarda el script por defecto.                          |
+| GET    | `/prompt-default` | Prompt por defecto (texto plano).                      |
+| POST   | `/prompt-default` | Guarda el prompt por defecto.                          |
+| GET    | `/history`        | Lista de resultados guardados.                         |
+| DELETE | `/history`        | Borra todo el historial.                               |
+| DELETE | `/history/:id`    | Borra un resultado.                                    |
 
 ## Métricas almacenadas
 

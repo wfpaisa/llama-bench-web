@@ -18,16 +18,16 @@
 
 Ejecutados desde la **raíz** del repo (que orquesta backend + frontend juntos):
 
-| Command              | Purpose                                                                            |
-| -------------------- | ---------------------------------------------------------------------------------- |
-| `mise install`       | Install Bun via mise version manager                                               |
-| `bun install`        | Instala deps de la raíz (incl. `concurrently`)                                     |
-| `bun run dev`        | **Dev conjunto**: arranca backend (`:3000`) + frontend (`:4200`) con `concurrently` (con `--watch`); Ctrl+C mata ambos |
-| `bun run dev:back`   | Solo backend con `--watch`                                                         |
-| `bun run dev:front`  | Solo frontend Angular (`ng serve`)                                                 |
-| `bun run start`      | Producción: `bun run src/server.ts`                                                |
-| `bun run build:front`| Build de producción del frontend Angular (`ng build`) → `front/dist/`              |
-| `bun typecheck`      | `tsc --noEmit` del backend                                                         |
+| Command               | Purpose                                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `mise install`        | Install Bun via mise version manager                                                                                   |
+| `bun install`         | Instala deps de la raíz (incl. `concurrently`)                                                                         |
+| `bun run dev`         | **Dev conjunto**: arranca backend (`:3000`) + frontend (`:4242`) con `concurrently` (con `--watch`); Ctrl+C mata ambos |
+| `bun run dev:back`    | Solo backend con `--watch`                                                                                             |
+| `bun run dev:front`   | Solo frontend Angular (`ng serve`)                                                                                     |
+| `bun run start`       | Producción: `bun run src/server.ts`                                                                                    |
+| `bun run build:front` | Build de producción del frontend Angular (`ng build`) → `front/dist/`                                                  |
+| `bun typecheck`       | `tsc --noEmit` del backend                                                                                             |
 
 Dentro de `front/` (directorio del frontend Angular) también aplican los scripts
 `ng` habituales (`start`, `build`, `watch`, `test`) — ver `front/package.json`.
@@ -128,7 +128,7 @@ modo oscuro vía clase `.dark`). Sigue los mandates de `front/AGENTS.md`:
 ## Port Convention
 
 - **Backend**: port **3000** (NOT 8080). Deliberado — `llama-server` usa 8080 por defecto; 3000 evita el conflicto. Override con `PORT`.
-- **Frontend (dev)**: `ng serve` → port **4200**.
+- **Frontend (dev)**: `ng serve` → port **4242**.
 
 ---
 
@@ -213,7 +213,7 @@ The benchmark endpoint (`POST /benchmark`) guards against concurrent runs with a
 6. **Relative .so files**: The binary's directory is added to `LD_LIBRARY_PATH` and set as CWD because llama-server ships with relative library paths.
 7. **History cap**: `data/history.json` is trimmed to 200 entries on each write. No pagination or lazy loading.
 8. **`.gitignore` ignores `data/*`**: History.json is not tracked in git. Each developer has their own local history.
-9. **No CORS issues**: Backend sets `Access-Control-Allow-Origin: *` on all responses, so el frontend Angular (dev en `:4200`) llama al backend (`:3000`) sin proxy. No usar `withCredentials` (incompatible con `*`).
+9. **No CORS issues**: Backend sets `Access-Control-Allow-Origin: *` on all responses, so el frontend Angular (dev en `:4242`) llama al backend (`:3000`) sin proxy. No usar `withCredentials` (incompatible con `*`).
 10. **Backend = API pura**: Ya no sirve `index.html`, `/app.js` ni `/style.css`. El frontend se sirve aparte (`ng serve` en dev, o estáticos del `front/dist/` en producción). El code de `Bun.build()`/`public/` fue eliminado en la migración a Angular.
 11. **Spanish UI**: All user-facing text is in Spanish. Code comments are also in Spanish.
 12. **`src/types.ts` (backend) y `front/.../core/models/types.ts` son espejos**: El backend ya no comparte tipos con el frontend (viven en proyectos separados). Si una interfaz cambia, actualizar ambos lados.

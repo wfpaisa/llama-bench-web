@@ -24,9 +24,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ]
+            "styles": ["src/styles.css"]
           },
           "configurations": {
             "production": {
@@ -59,7 +57,8 @@
               "buildTarget": "plane-llama-bench:build:production"
             },
             "development": {
-              "buildTarget": "plane-llama-bench:build:development"
+              "buildTarget": "plane-llama-bench:build:development",
+              "port": 4242
             }
           },
           "defaultConfiguration": "development"
