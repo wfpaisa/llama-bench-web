@@ -6,7 +6,14 @@
 // en plantillas.
 
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { BenchmarkResult, GpuInfo, LogEntry, RamInfo, ServerStatus, StatusResponse } from '../models/types';
+import {
+  BenchmarkResult,
+  GpuInfo,
+  LogEntry,
+  RamInfo,
+  ServerStatus,
+  StatusResponse,
+} from '../models/types';
 import { computeBests } from '../utils/format';
 import { StorageService } from '../services/storage.service';
 
