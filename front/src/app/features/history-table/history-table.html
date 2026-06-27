@@ -67,7 +67,15 @@
 
     <ng-template #header>
       <tr>
-        <th style="min-width: 2rem"></th>
+        <th style="min-width: 2rem" title="Seleccionar todo">
+          <input
+            type="checkbox"
+            [checked]="selectAllState().checked"
+            [indeterminate]="selectAllState().indeterminate"
+            (change)="onToggleAll($event, dt.value)"
+          />
+        </th>
+        <th style="min-width: 2.5rem" title="Número de fila">#</th>
         @if (colVisible('date')) {
           <th [pSortableColumn]="'date'" title="Fecha y hora del benchmark">
             <div class="column-name">Fecha <p-sortIcon field="date" /></div>
@@ -220,7 +228,7 @@
       </tr>
     </ng-template>
 
-    <ng-template #body let-r>
+    <ng-template #body let-r let-i="rowIndex">
       <tr [class.selected]="isSelected(r.id)">
         <td>
           <input
@@ -230,6 +238,7 @@
             title="Seleccionar para comparar"
           />
         </td>
+        <td class="num">{{ i + 1 }}</td>
         @if (colVisible('date')) {
           <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
         }
@@ -365,7 +374,7 @@
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="24" class="muted">Sin resultados todavía. Ejecuta un benchmark.</td>
+        <td colspan="25" class="muted">Sin resultados todavía. Ejecuta un benchmark.</td>
       </tr>
     </ng-template>
   </p-table>

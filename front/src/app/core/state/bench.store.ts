@@ -310,6 +310,19 @@ export class BenchStore {
     this.selected.set(next);
   }
 
+  /**
+   * Marca/desmarca varios ids a la vez (acción "seleccionar todos").
+   * Solo afecta a los ids pasados (las filas visibles tras filtro/paginación);
+   * el resto de la selección se conserva.
+   */
+  selectMany(ids: string[], checked: boolean): void {
+    if (!ids.length) return;
+    const next = new Set(this.selected());
+    if (checked) for (const id of ids) next.add(id);
+    else for (const id of ids) next.delete(id);
+    this.selected.set(next);
+  }
+
   isSelected(id: string): boolean {
     return this.selected().has(id);
   }

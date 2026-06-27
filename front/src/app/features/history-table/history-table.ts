@@ -263,6 +263,41 @@ export class HistoryTable {
     this.store.toggleSelected(id, checked);
   }
 
+  /**
+   * Estado del checkbox "seleccionar todos" del header.
+   * - checked: todas las filas visibles están seleccionadas.
+   * - indeterminate: algunas (pero no todas) lo están.
+   * Se basa en los datos completos de la tabla (tableData) ya que PrimeNG
+   * filtra internamente; el toggle aplica sobre las filas que recibe.
+   */
+  protected readonly selectAllState = computed<{ checked: boolean; indeterminate: boolean }>(() => {
+    const rows = this.tableData();
+    const sel = this.store.selected();
+    let total = 0;
+    let marked = 0;
+    for (const r of rows) {
+      total++;
+      if (sel.has(r.id)) marked++;
+    }
+    return {
+      checked: total > 0 && marked === total,
+      indeterminate: marked > 0 && marked < total,
+    };
+  });
+
+  /**
+   * Handler del checkbox del header: marca/desmarca todas las filas visibles.
+   * Recibe el array de filas actualmente renderizadas (respetando filtro y
+   * paginación si se pasa el valor de la tabla).
+   */
+  protected onToggleAll(ev: Event, rows: HistoryRow[]): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    this.store.selectMany(
+      rows.map((r) => r.id),
+      checked,
+    );
+  }
+
   // ── Acciones de fila ──
   protected apply(r: BenchmarkResult): void {
     const script = r.config?.script;
