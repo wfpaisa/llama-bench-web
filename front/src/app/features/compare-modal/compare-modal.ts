@@ -2,7 +2,14 @@ import { Component, computed, inject } from '@angular/core';
 import { DialogModule } from 'primeng/dialog';
 import { BenchStore } from '../../core/state/bench.store';
 import { BenchmarkResult } from '../../core/models/types';
-import { fmt, fmtGB, fmtMs, backendLabel, deviceVramLine, shortModel } from '../../core/utils/format';
+import {
+  fmt,
+  fmtGB,
+  fmtMs,
+  backendLabel,
+  deviceVramLine,
+  shortModel,
+} from '../../core/utils/format';
 
 /** Cada fila de la tabla transpuesta: etiqueta + extractor de valor por resultado. */
 interface CompareRow {

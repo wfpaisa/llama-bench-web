@@ -239,13 +239,13 @@
               <span class="model-name">{{ modelBaseName(r.config?.model) }}</span>
               @if (parsed(r.config?.model); as p) {
                 @if (p.size) {
-                  <span class="badge badge-size">{{ p.size }}</span>
+                  <p-tag [value]="p.size" severity="info" />
                 }
                 @if (p.quant) {
-                  <span class="badge badge-quant">{{ p.quant }}</span>
+                  <p-tag [value]="p.quant" severity="secondary" />
                 }
                 @if (p.mtp) {
-                  <span class="badge badge-mtp">MTP</span>
+                  <p-tag value="MTP" severity="warn" />
                 }
               }
             </span>
@@ -265,7 +265,7 @@
         @if (colVisible('device')) {
           <td class="device-cell">
             @if (backend(r); as b) {
-              <span class="badge badge-backend" [title]="'Backend del binario: ' + b">{{ b }}</span>
+              <p-tag [value]="b" severity="success" [title]="'Backend del binario: ' + b" />
             }
             <span>{{ r.config?.device ?? '—' }}</span>
           </td>

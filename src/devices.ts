@@ -127,21 +127,21 @@ export function vendorFromName(name: string): 'nvidia' | 'amd' | 'intel' | 'unkn
  *                   devuelve todos los devices; si está, solo esos (en el orden
  *                   en que aparecen en `final`).
  */
-export function computeDeviceVram(
-  baseline: LlamaDevice[],
-  final: LlamaDevice[],
-  filterIds: string | null,
-): DeviceVram[] {
+export function computeDeviceVram(baseline: LlamaDevice[], final: LlamaDevice[], filterIds: string | null): DeviceVram[] {
   const baselineMap = new Map(baseline.map((d) => [d.id, d]))
-  const allow = filterIds ? new Set(filterIds.split(',').map((s) => s.trim()).filter(Boolean)) : null
+  const allow = filterIds
+    ? new Set(
+        filterIds
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    : null
   return final
     .filter((d) => allow === null || allow.has(d.id))
     .map((d) => {
       const base = baselineMap.get(d.id)
-      const usedMiB =
-        base && Number.isFinite(base.freeMiB) && Number.isFinite(d.freeMiB)
-          ? Math.max(0, base.freeMiB - d.freeMiB)
-          : null
+      const usedMiB = base && Number.isFinite(base.freeMiB) && Number.isFinite(d.freeMiB) ? Math.max(0, base.freeMiB - d.freeMiB) : null
       return { device: d, usedMiB }
     })
 }

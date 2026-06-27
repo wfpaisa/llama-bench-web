@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
@@ -105,6 +106,7 @@ const COLUMN_DEFS: HistoryColumn[] = [
     ButtonModule,
     MultiSelectModule,
     TableModule,
+    TagModule,
     TooltipModule,
     FmtNumPipe,
     FmtSecPipe,

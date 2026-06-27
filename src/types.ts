@@ -104,15 +104,7 @@ export interface GpuInfo {
 }
 
 /** Backend de cómputo del binario de llama-server (deducido de --list-devices). */
-export type GpuBackend =
-  | 'cuda'
-  | 'vulkan'
-  | 'sycl'
-  | 'metal'
-  | 'opencl'
-  | 'cann'
-  | 'cpu'
-  | 'unknown'
+export type GpuBackend = 'cuda' | 'vulkan' | 'sycl' | 'metal' | 'opencl' | 'cann' | 'cpu' | 'unknown'
 
 /**
  * Device reportado por `llama-server --list-devices`: el id del BACKEND

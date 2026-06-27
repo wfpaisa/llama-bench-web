@@ -2,7 +2,13 @@
 // (src/front/app.ts). Sin estado ni dependencias, fáciles de testear y reutilizar
 // desde pipes y plantillas.
 
-import type { BenchmarkResult, DeviceVram, GpuBackend, GpuInfo, LlamaDevice } from '../models/types';
+import type {
+  BenchmarkResult,
+  DeviceVram,
+  GpuBackend,
+  GpuInfo,
+  LlamaDevice,
+} from '../models/types';
 
 /** Vista por device del backend para render multi-fila en el historial. */
 export interface DeviceVramRow {
@@ -171,7 +177,9 @@ export function deviceVramLine(r: BenchmarkResult, compact = false): string {
 export function deviceNamesLine(r: BenchmarkResult): string {
   const dv = r.deviceVram;
   if (!dv || dv.length === 0) return '';
-  return dv.map((d) => `${d.device.id}: ${d.device.name} (${fmtGB(d.device.totalMiB, 1)} GB)`).join(' · ');
+  return dv
+    .map((d) => `${d.device.id}: ${d.device.name} (${fmtGB(d.device.totalMiB, 1)} GB)`)
+    .join(' · ');
 }
 
 /** Marca en mayúsculas y legible (AMD/NVIDIA/INTEL), o '—' si es desconocida. */

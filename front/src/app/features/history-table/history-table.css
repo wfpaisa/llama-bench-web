@@ -56,7 +56,7 @@
   background: var(--p-primary-900) !important;
 }
 
-/* Celda de modelo con badges. */
+/* Celda de modelo con tags. */
 .model-cell {
   display: inline-flex;
   align-items: center;
@@ -64,31 +64,13 @@
   flex-wrap: wrap;
 
   .model-name {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 
-  .badge {
-    display: inline-block;
-    font-size: 0.65rem;
-    padding: 0.05rem 0.35rem;
-    border-radius: var(--radius-full, 9999px);
-    font-weight: 600;
-    line-height: 1.4;
-  }
-
-  .badge-size {
-    background: var(--p-blue-900);
-    color: var(--p-blue-200);
-  }
-
-  .badge-quant {
-    background: var(--p-purple-900);
-    color: var(--p-purple-200);
-  }
-
-  .badge-mtp {
-    background: var(--p-amber-900);
-    color: var(--p-amber-200);
+  p-tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    font-weight: 400;
   }
 }
 
@@ -97,17 +79,6 @@
   align-items: center;
   gap: 0.25rem;
   flex-wrap: wrap;
-
-  .badge-backend {
-    display: inline-block;
-    font-size: 0.65rem;
-    padding: 0.05rem 0.35rem;
-    border-radius: var(--radius-full, 9999px);
-    font-weight: 600;
-    line-height: 1.4;
-    background: var(--p-green-900);
-    color: var(--p-green-200);
-  }
 }
 
 .row-actions {

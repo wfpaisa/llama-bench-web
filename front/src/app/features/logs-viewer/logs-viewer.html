@@ -17,7 +17,7 @@
   <div #logsEl class="logs" [class.empty]="!logs().length">
     @for (e of logs(); track $index) {
       <div [class]="'ln-' + e.stream">
-        <span class="ts">+{{ e.t / 1000 | fmtNum:1 }}s</span>
+        <span class="ts">+{{ e.t / 1000 | fmtNum: 1 }}s</span>
         <span class="msg">{{ e.msg }}</span>
       </div>
     } @empty {
