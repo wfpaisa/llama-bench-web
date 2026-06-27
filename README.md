@@ -3,6 +3,16 @@
 Utilidad web para hacer benchmark de modelos locales con **llama.cpp**,
 controlando `llama-server` desde el navegador.
 
+<details>
+<summary>Click to toggle screenshots</summary>
+
+![img1](screen-shot/b1.png)
+![img1](screen-shot/b2.png)
+
+</details>
+
+---
+
 - **Backend:** Bun + TypeScript (solo stdlib, sin frameworks). Expone la **API
   JSON** en `:3000` (no sirve frontend).
 - **Frontend:** Angular 22 + PrimeNG 21, app aparte en `front/` servida en
@@ -134,8 +144,8 @@ Todas las respuestas llevan CORS `Access-Control-Allow-Origin: *` (no usar
 ```jsonc
 {
   "script": "./llama-server -m modelo.gguf --ctx-size 8192 ...",
-  "prompt": "Texto del prompt",      // opcional, default built-in
-  "max_tokens": 2048                 // number > 0, o null = sin límite (hasta EOS)
+  "prompt": "Texto del prompt", // opcional, default built-in
+  "max_tokens": 2048, // number > 0, o null = sin límite (hasta EOS)
 }
 ```
 
@@ -147,35 +157,35 @@ Cada benchmark produce un `BenchmarkResult` con:
 
 **Rendimiento del modelo**
 
-| Campo                       | Descripción                                            |
-| --------------------------- | ------------------------------------------------------ |
-| `promptTokensPerSecond`     | Tokens/s en prompt eval (TTFT inverso).                |
-| `promptTokenCount`          | Cantidad de tokens del prompt.                         |
-| `promptEvalTimeMs`          | Tiempo de procesado del prompt (ms).                   |
-| `generationTokensPerSecond` | Tokens/s en generación.                                |
-| `generationTokenCount`      | Tokens generados.                                      |
-| `generationTimeMs`          | Tiempo de generación (ms), sin prompt ni startup.      |
-| `loadTimeSeconds`           | Tiempo de carga del modelo (s).                        |
-| `requestLatencyMs`          | Latencia total del request HTTP al servidor.           |
+| Campo                       | Descripción                                       |
+| --------------------------- | ------------------------------------------------- |
+| `promptTokensPerSecond`     | Tokens/s en prompt eval (TTFT inverso).           |
+| `promptTokenCount`          | Cantidad de tokens del prompt.                    |
+| `promptEvalTimeMs`          | Tiempo de procesado del prompt (ms).              |
+| `generationTokensPerSecond` | Tokens/s en generación.                           |
+| `generationTokenCount`      | Tokens generados.                                 |
+| `generationTimeMs`          | Tiempo de generación (ms), sin prompt ni startup. |
+| `loadTimeSeconds`           | Tiempo de carga del modelo (s).                   |
+| `requestLatencyMs`          | Latencia total del request HTTP al servidor.      |
 
 **Speculative decoding / draft-mtp**
 
-| Campo            | Descripción                                            |
-| ---------------- | ------------------------------------------------------ |
-| `draftAcceptance`| Aceptación del draft (fracción 0–1).                   |
-| `genDrafts`      | drafts generados (`#gen drafts`).                      |
-| `accDrafts`      | drafts aceptados (`#acc drafts`).                      |
-| `genTokens`      | tokens generados vía draft (`#gen tokens`).            |
-| `accTokens`      | tokens aceptados vía draft (`#acc tokens`).            |
+| Campo             | Descripción                                 |
+| ----------------- | ------------------------------------------- |
+| `draftAcceptance` | Aceptación del draft (fracción 0–1).        |
+| `genDrafts`       | drafts generados (`#gen drafts`).           |
+| `accDrafts`       | drafts aceptados (`#acc drafts`).           |
+| `genTokens`       | tokens generados vía draft (`#gen tokens`). |
+| `accTokens`       | tokens aceptados vía draft (`#acc tokens`). |
 
 **Hardware**
 
-| Campo        | Descripción                                                                          |
-| ------------ | ----------------------------------------------------------------------- |
-| `gpus`       | Delta de VRAM usada + % util por GPU (NVIDIA vía `nvidia-smi`, AMD vía sysfs). |
-| `backend`    | Backend de cómputo deducido de `--list-devices`: `cuda`/`vulkan`/`sycl`/… |
+| Campo        | Descripción                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `gpus`       | Delta de VRAM usada + % util por GPU (NVIDIA vía `nvidia-smi`, AMD vía sysfs).                                     |
+| `backend`    | Backend de cómputo deducido de `--list-devices`: `cuda`/`vulkan`/`sycl`/…                                          |
 | `deviceVram` | Delta de VRAM libre por **device del backend** (CUDA0, Vulkan0…), filtrado por `--device`. Cubre Intel vía Vulkan. |
-| `ramUsedMiB` | Delta de RAM del sistema usada durante el run (Linux `/proc/meminfo`).              |
+| `ramUsedMiB` | Delta de RAM del sistema usada durante el run (Linux `/proc/meminfo`).                                             |
 
 > Hay dos sistemas paralelos de VRAM: `deviceVram` (delta de VRAM libre
 > reportado por el propio binario vía `--list-devices`) es el preferido; si está
@@ -316,23 +326,23 @@ modelo. Colores adaptados al tema (lee variables CSS en runtime).
 Servidor HTTP modular sin frameworks. `server.ts` es el entry point; el router
 despacha la API JSON a los módulos. **No sirve archivos estáticos**.
 
-| Módulo              | Responsabilidad                                                                  |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `server.ts`         | Entry point: bootstrap, `Bun.serve`, shutdown handlers.                          |
-| `config.ts`         | Constantes de entorno y paths (`PORT`, `DATA_DIR`, `HISTORY_FILE`, caps).        |
-| `state.ts`          | Estado global mutable (`managed`, `status`, `logBuffer`, …) + setters.           |
-| `types.ts`          | Interfaces del dominio (`BenchmarkResult`, `GpuInfo`, `ParsedScript`, …).        |
-| `logs.ts`           | Buffer circular de logs (`pushLog`, `systemLog`).                                |
-| `script-parser.ts`  | Tokenizado/parseo del script (`tokenizeScript`, `parseScript`, `flagValue`).     |
-| `server-manager.ts` | Gestión del proceso (`startServer`, `stopServer`, `urlFor`, ready/exit).         |
-| `gpu.ts`            | Métricas GPU NVIDIA (`nvidia-smi`) + AMD (sysfs) + `subtractGpuBaseline`.        |
-| `mem.ts`            | Métricas RAM (`/proc/meminfo`) + `subtractRamBaseline`.                          |
-| `devices.ts`        | Enumeración de devices del backend (`--list-devices`), detección de backend/VRAM.|
-| `metrics.ts`        | Parsing de métricas desde logs + health-check (`waitForServer`).                 |
-| `benchmark.ts`      | Orquestador del ciclo completo (`runBenchmark`, `finalize`).                     |
-| `history.ts`        | Persistencia JSON (`loadHistory`, `saveResult`, `deleteResult`, cap 200).        |
-| `router.ts`         | HTTP handler: path matching manual + CORS (solo API).                            |
-| `shutdown.ts`       | Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP) → mata el hijo.             |
+| Módulo              | Responsabilidad                                                                   |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `server.ts`         | Entry point: bootstrap, `Bun.serve`, shutdown handlers.                           |
+| `config.ts`         | Constantes de entorno y paths (`PORT`, `DATA_DIR`, `HISTORY_FILE`, caps).         |
+| `state.ts`          | Estado global mutable (`managed`, `status`, `logBuffer`, …) + setters.            |
+| `types.ts`          | Interfaces del dominio (`BenchmarkResult`, `GpuInfo`, `ParsedScript`, …).         |
+| `logs.ts`           | Buffer circular de logs (`pushLog`, `systemLog`).                                 |
+| `script-parser.ts`  | Tokenizado/parseo del script (`tokenizeScript`, `parseScript`, `flagValue`).      |
+| `server-manager.ts` | Gestión del proceso (`startServer`, `stopServer`, `urlFor`, ready/exit).          |
+| `gpu.ts`            | Métricas GPU NVIDIA (`nvidia-smi`) + AMD (sysfs) + `subtractGpuBaseline`.         |
+| `mem.ts`            | Métricas RAM (`/proc/meminfo`) + `subtractRamBaseline`.                           |
+| `devices.ts`        | Enumeración de devices del backend (`--list-devices`), detección de backend/VRAM. |
+| `metrics.ts`        | Parsing de métricas desde logs + health-check (`waitForServer`).                  |
+| `benchmark.ts`      | Orquestador del ciclo completo (`runBenchmark`, `finalize`).                      |
+| `history.ts`        | Persistencia JSON (`loadHistory`, `saveResult`, `deleteResult`, cap 200).         |
+| `router.ts`         | HTTP handler: path matching manual + CORS (solo API).                             |
+| `shutdown.ts`       | Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP) → mata el hijo.              |
 
 ### Frontend (`front/`)
 
@@ -340,23 +350,23 @@ Angular 22 standalone (signals, zoneless, `OnPush`) + PrimeNG 21 (preset
 Noir). Mandates: `inject()`, `input()/output()/computed()`, control flow
 nativo (`@if/@for`), lazy loading de rutas.
 
-| Ruta / componente      | Responsabilidad                                                  |
-| ---------------------- | ---------------------------------------------------------------- |
-| `core/services/api`    | Wrapper `HttpClient` + manejo de errores unificado (lanza Error).|
-| `core/services/llama-bench` | Un Observable por endpoint del backend.                     |
-| `core/services/storage`| 4 claves de `localStorage` (script, prompt, sort, modelFilter).  |
-| `core/state/bench.store`| Estado central con signals + actions + effects de persistencia. |
-| `features/home`        | Orquestador: polling (status 1.5s, logs 1s, gpu 4s) + carga.     |
-| `features/script-editor`| Editor de script + catálogo de flags.                           |
-| `features/benchmark-panel`| Ejecución del benchmark + prompt + max tokens.                |
-| `features/status-bar`  | Indicador visual del estado del servidor.                        |
-| `features/gpu-grid`    | Métricas GPU + RAM en vivo (cards con barras).                   |
-| `features/logs-viewer` | Salida de logs en tiempo real.                                   |
-| `features/response-card`| Respuesta generada por el modelo.                               |
-| `features/last-result` | Tarjeta de métricas del último benchmark.                        |
-| `features/history-table`| Tabla de historial (selección, orden, filtros, columnas).      |
-| `features/compare-modal`| Comparación lado a lado.                                        |
-| `features/chart-modal` | Gráfico de barras comparativo.                                   |
+| Ruta / componente           | Responsabilidad                                                   |
+| --------------------------- | ----------------------------------------------------------------- |
+| `core/services/api`         | Wrapper `HttpClient` + manejo de errores unificado (lanza Error). |
+| `core/services/llama-bench` | Un Observable por endpoint del backend.                           |
+| `core/services/storage`     | 4 claves de `localStorage` (script, prompt, sort, modelFilter).   |
+| `core/state/bench.store`    | Estado central con signals + actions + effects de persistencia.   |
+| `features/home`             | Orquestador: polling (status 1.5s, logs 1s, gpu 4s) + carga.      |
+| `features/script-editor`    | Editor de script + catálogo de flags.                             |
+| `features/benchmark-panel`  | Ejecución del benchmark + prompt + max tokens.                    |
+| `features/status-bar`       | Indicador visual del estado del servidor.                         |
+| `features/gpu-grid`         | Métricas GPU + RAM en vivo (cards con barras).                    |
+| `features/logs-viewer`      | Salida de logs en tiempo real.                                    |
+| `features/response-card`    | Respuesta generada por el modelo.                                 |
+| `features/last-result`      | Tarjeta de métricas del último benchmark.                         |
+| `features/history-table`    | Tabla de historial (selección, orden, filtros, columnas).         |
+| `features/compare-modal`    | Comparación lado a lado.                                          |
+| `features/chart-modal`      | Gráfico de barras comparativo.                                    |
 
 ### Data flow
 
