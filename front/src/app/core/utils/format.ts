@@ -103,6 +103,18 @@ export function modelBase(m: string | null | undefined): string | null {
   return noOrg;
 }
 
+/**
+ * Nombre del modelo para DISPLAY en la tabla de historial: el `base` que
+ * calcula `parseModel` (sin tamaño, MoE, quant, MTP ni GGUF), p.ej.
+ * "Qwen3.6-35B-A3B-MTP-GGUF" → "Qwen3.6". Esos detalles van como badges.
+ * No afecta a `modelBase` (usado para agrupar/filtrar), solo al texto visible.
+ */
+export function modelDisplayName(m: string | null | undefined): string | null {
+  const parsed = parseModel(m);
+  if (!parsed) return modelBase(m);
+  return parsed.base;
+}
+
 /** Clase de alerta por porcentaje de uso (>90 red, >70 yellow, else green). */
 export function alertCls(p: number): 'red' | 'yellow' | 'green' {
   return p > 90 ? 'red' : p > 70 ? 'yellow' : 'green';

@@ -15,6 +15,7 @@ import {
   deviceVramRows,
   fmt,
   modelBase,
+  modelDisplayName,
   parseModel,
   shortModel,
   totalDeviceVramTxt,
@@ -198,7 +199,7 @@ export class HistoryTable {
     return new Date(iso).toLocaleString();
   }
   protected modelBaseName(m: string | null | undefined): string {
-    return modelBase(m) ?? '—';
+    return modelDisplayName(m) ?? '—';
   }
   protected parsed(m: string | null | undefined) {
     return parseModel(m);
