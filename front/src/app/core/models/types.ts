@@ -93,6 +93,8 @@ export interface BenchmarkResult {
   prompt: string;
   response: string;
   gpus: GpuInfo[];
+  /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
+  ramUsedMiB: number | null;
   errors: string[];
 }
 

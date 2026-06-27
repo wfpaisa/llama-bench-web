@@ -2,13 +2,42 @@
 // (src/front/app.ts). Sin estado ni dependencias, fáciles de testear y reutilizar
 // desde pipes y plantillas.
 
-import type { BenchmarkResult } from '../models/types';
+import type { BenchmarkResult, GpuInfo } from '../models/types';
+
+// ── Formateo numérico con locale es-CO (separador de miles "." y decimal ",") ──
+// Cache de Intl.NumberFormat por nº de decimales: crear formatters es caro y se
+// reutilizan muchísimas veces (una por celda de la tabla de historial).
+// useGrouping:true fuerza el agrupamiento de miles SIEMPRE (con el valor por
+// defecto 'auto' algunos runtimes no agrupan, p.ej. es-ES, por eso se veía
+// "1234" sin separador en Generated tokens).
+const numFmtCache = new Map<number, Intl.NumberFormat>();
+function numFmt(decimals: number): Intl.NumberFormat {
+  let f = numFmtCache.get(decimals);
+  if (!f) {
+    f = new Intl.NumberFormat('es-CO', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: true,
+    });
+    numFmtCache.set(decimals, f);
+  }
+  return f;
+}
 
 /**
- * Formatea un número con N decimales; `—` si es null/undefined.
+ * Formatea un número con N decimales y separador de miles es-CO (1.000,00);
+ * `—` si es null/undefined.
  */
 export function fmt(n: number | null | undefined, d = 2): string {
-  return n == null ? '—' : Number(n).toFixed(d);
+  return n == null ? '—' : numFmt(d).format(Number(n));
+}
+
+/**
+ * Convierte MiB → GB con N decimales y separador de miles; `—` si null.
+ * Pensada para VRAM/RAM que vienen en MiB desde el backend.
+ */
+export function fmtGB(mib: number | null | undefined, d = 2): string {
+  return mib == null ? '—' : numFmt(d).format(mib / 1024);
 }
 
 /**
@@ -29,7 +58,7 @@ export function fmtMs(ms: number | null | undefined): string {
  */
 export function fmtSec(ms: number | null | undefined): string {
   if (ms == null) return '—';
-  return (ms / 1000).toFixed(2);
+  return numFmt(2).format(ms / 1000);
 }
 
 /**
@@ -183,6 +212,46 @@ export function parseModel(m: string | null | undefined): ParsedModel | null {
     }
   }
   return { base, size, quant, mtp: hasMtp };
+}
+
+/**
+ * Etiqueta legible del dispositivo GPU: el índice crudo que reporta el SO
+ * (p.ej. "nvidia0", "amdgpu-card0"), normalizado a minúsculas y recortado.
+ * Unifica el label entre Último resultado e Historial.
+ */
+export function gpuLabel(g: GpuInfo): string {
+  return (g.index || g.vendor || 'gpu').trim();
+}
+
+/**
+ * Línea de VRAM por GPU para un resultado, con índice del SO legible.
+ *   gpuVramLine(r)              → "nvidia0: 1.234,5 GB · nvidia1: 987,6 GB"
+ *   gpuVramLine(r, true)        → "nvidia0:1.234,5, nvidia1:987,6"  (compacto, sin unidad)
+ * El modo NO compacto incluye "GB" por GPU (para la card de Último resultado,
+ * donde se muestran varias GPUs en una sola línea pequeña). El compacto
+ * (Historial) omite la unidad porque va como <small> estilado en la celda.
+ * Devuelve '—' si no hay GPUs.
+ */
+export function gpuVramLine(r: BenchmarkResult, compact = false): string {
+  if (!r.gpus || r.gpus.length === 0) return '—';
+  return (
+    r.gpus
+      .map((g) => {
+        const gb = g.memUsedMiB != null ? fmtGB(g.memUsedMiB, 1) : '?';
+        return compact ? `${gpuLabel(g)}:${gb}` : `${gpuLabel(g)}: ${gb} GB`;
+      })
+      .join(compact ? ', ' : ' · ') || '—'
+  );
+}
+
+/**
+ * VRAM total usada (suma de GPUs) en GB con separador de miles; '—' si no hay.
+ * Devuelve SOLO el valor (sin unidad "GB"); la unidad se añade como `<small>`
+ * estilado en la plantilla.
+ */
+export function totalVramTxt(r: BenchmarkResult): string {
+  const totalMiB = (r.gpus || []).reduce((sum, g) => sum + (g.memUsedMiB ?? 0), 0);
+  return totalMiB > 0 ? fmtGB(totalMiB, 1) : '—';
 }
 
 /**

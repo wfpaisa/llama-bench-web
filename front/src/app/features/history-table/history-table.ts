@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -8,7 +8,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
-import { fmt, fmtSec, modelBase, parseModel, shortModel } from '../../core/utils/format';
+import { fmt, gpuVramLine, modelBase, parseModel, shortModel, totalVramTxt } from '../../core/utils/format';
+import { FmtGbPipe, FmtNumPipe, FmtSecPipe } from '../../core/utils/pipes';
 
 /**
  * Fila de historial para la tabla: el resultado original + `modelBase`
@@ -34,8 +35,7 @@ export interface HistoryRow extends BenchmarkResult {
  */
 @Component({
   selector: 'app-history-table',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, MultiSelectModule, TableModule, TooltipModule],
+  imports: [FormsModule, ButtonModule, MultiSelectModule, TableModule, TooltipModule, FmtNumPipe, FmtSecPipe, FmtGbPipe],
   templateUrl: './history-table.html',
   styleUrl: './history-table.css',
 })
@@ -46,7 +46,6 @@ export class HistoryTable {
   private readonly confirm = inject(ConfirmationService);
 
   protected readonly fmt = fmt;
-  protected readonly fmtSec = fmtSec;
   protected readonly modelOptions = this.store.modelOptions;
 
   // ── Modos de visualización de la card (estado efímero, no persistido) ──
@@ -98,20 +97,13 @@ export class HistoryTable {
   protected hasScript(c: ParsedScript | undefined): boolean {
     return !!c && typeof c.script === 'string' && c.script.length > 0;
   }
+  /** VRAM por GPU: índice del SO legible (mismo helper que Último resultado). */
   protected gpuTxt(r: BenchmarkResult): string {
-    return (
-      r.gpus
-        .map((g) => {
-          const vendor = (g.vendor || 'gpu').replace(/^amdgpu/i, 'AmdGPU');
-          const val = g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?';
-          return `${vendor}:${val}`;
-        })
-        .join(', ') || '—'
-    );
+    return gpuVramLine(r, true);
   }
+  /** VRAM total usada (suma de GPUs). */
   protected totalVramTxt(r: BenchmarkResult): string {
-    const total = r.gpus.reduce((sum, g) => sum + (g.memUsedMiB ?? 0), 0) / 1024;
-    return total > 0 ? `${total.toFixed(1)} GB` : '—';
+    return totalVramTxt(r);
   }
 
   // ── Highlights "best" (sobre TODA la history) ──

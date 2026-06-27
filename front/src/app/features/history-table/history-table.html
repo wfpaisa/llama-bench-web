@@ -140,11 +140,14 @@
         <th [pSortableColumn]="'loadTime'" title="Tiempo de carga del modelo en segundos">
           <div class="column-name">load s <p-sortIcon field="loadTime" /></div>
         </th>
-        <th title="VRAM usada por GPU">
+        <th title="VRAM usada por GPU (índice del SO)">
           <div class="column-name">VRAM</div>
         </th>
         <th [pSortableColumn]="'totalVram'" title="VRAM total usada (suma de GPUs)">
           <div class="column-name">Total VRAM <p-sortIcon field="totalVram" /></div>
+        </th>
+        <th [pSortableColumn]="'ramUsed'" title="RAM usada por el benchmark (delta durante el run)">
+          <div class="column-name">RAM <p-sortIcon field="ramUsed" /></div>
         </th>
         <th style="width: 5rem"></th>
       </tr>
@@ -177,33 +180,34 @@
             }
           </span>
         </td>
-        <td class="num">{{ fmt(r.config?.ctxSize) }}</td>
-        <td class="num">{{ fmt(r.config?.batchSize) }}/{{ fmt(r.config?.ubatchSize) }}</td>
+        <td class="num">{{ r.config?.ctxSize | fmtNum:0 }}</td>
+        <td class="num">{{ r.config?.batchSize | fmtNum:0 }}/{{ r.config?.ubatchSize | fmtNum:0 }}</td>
         <td>{{ r.config?.cacheTypeK ?? '—' }}/{{ r.config?.cacheTypeV ?? '—' }}</td>
         <td>{{ r.config?.device ?? '—' }}</td>
         <td>{{ r.config?.tensorSplit ?? '—' }}</td>
-        <td class="num col-gen">{{ fmt(r.generationTokenCount, 0) }}</td>
+        <td class="num col-gen">{{ r.generationTokenCount | fmtNum:0 }}</td>
         <td class="num col-gen" [class.best]="isBestGenTime(r)">
-          {{ fmtSec(r.generationTimeMs) }}<small class="stime">s</small>
+          {{ r.generationTimeMs | fmtSec }}<small class="stime">s</small>
         </td>
         <td class="num col-gen" [class.best]="isBestGen(r)">
-          {{ fmt(r.generationTokensPerSecond) }}<small class="stime">t/s</small>
+          {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
         </td>
-        <td class="num col-read">{{ fmt(r.promptTokenCount, 0) }}</td>
-        <td class="num col-read">{{ fmtSec(r.promptEvalTimeMs) }}<small class="stime">s</small></td>
+        <td class="num col-read">{{ r.promptTokenCount | fmtNum:0 }}</td>
+        <td class="num col-read">{{ r.promptEvalTimeMs | fmtSec }}<small class="stime">s</small></td>
         <td class="num col-read" [class.best]="isBestPrompt(r)">
-          {{ fmt(r.promptTokensPerSecond) }}<small class="stime">t/s</small>
+          {{ r.promptTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
         </td>
-        <td class="num" [class.best]="isBestDraft(r)">{{ fmt(r.draftAcceptance, 3) }}</td>
-        <td class="num">{{ fmt(r.genDrafts, 0) }}</td>
-        <td class="num">{{ fmt(r.accDrafts, 0) }}</td>
-        <td class="num">{{ fmt(r.genTokens, 0) }}</td>
-        <td class="num">{{ fmt(r.accTokens, 0) }}</td>
+        <td class="num" [class.best]="isBestDraft(r)">{{ r.draftAcceptance | fmtNum:3 }}</td>
+        <td class="num">{{ r.genDrafts | fmtNum:0 }}</td>
+        <td class="num">{{ r.accDrafts | fmtNum:0 }}</td>
+        <td class="num">{{ r.genTokens | fmtNum:0 }}</td>
+        <td class="num">{{ r.accTokens | fmtNum:0 }}</td>
         <td class="num" [class.best]="isBestLoad(r)">
-          {{ fmt(r.loadTimeSeconds) }}<small class="stime">s</small>
+          {{ r.loadTimeSeconds | fmtNum }}<small class="stime">s</small>
         </td>
         <td class="num">{{ gpuTxt(r) }}</td>
-        <td class="num">{{ totalVramTxt(r) }}</td>
+        <td class="num">{{ totalVramTxt(r) }}<small class="stime">GB</small></td>
+        <td class="num">{{ r.ramUsedMiB | fmtGb:2 }}<small class="stime">GB</small></td>
         <td>
           <div class="row-actions">
             @if (hasScript(r.config)) {
@@ -229,7 +233,7 @@
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="23" class="muted">Sin resultados todavía. Ejecuta un benchmark.</td>
+        <td colspan="24" class="muted">Sin resultados todavía. Ejecuta un benchmark.</td>
       </tr>
     </ng-template>
   </p-table>

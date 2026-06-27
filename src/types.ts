@@ -153,6 +153,8 @@ export interface BenchmarkResult {
   response: string
   /** Métricas de GPUs. */
   gpus: GpuInfo[]
+  /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
+  ramUsedMiB: number | null
   /** Errores encontrados durante el run. */
   errors: string[]
 }

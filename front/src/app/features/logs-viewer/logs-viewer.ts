@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -13,6 +12,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { MessageService } from 'primeng/api';
+import { FmtNumPipe } from '../../core/utils/pipes';
 
 /**
  * LogsViewer: salida de logs en tiempo real del servidor.
@@ -23,8 +23,7 @@ import { MessageService } from 'primeng/api';
  */
 @Component({
   selector: 'app-logs-viewer',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, CheckboxModule],
+  imports: [FormsModule, ButtonModule, CheckboxModule, FmtNumPipe],
   templateUrl: './logs-viewer.html',
   styleUrl: './logs-viewer.css',
 })

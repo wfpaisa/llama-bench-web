@@ -5,50 +5,62 @@
       <div class="metric">
         <div class="k">Prompt T/s</div>
         <div class="k-sub">Reading (prompt processing)</div>
-        <div class="v green">{{ fmt(r.promptTokensPerSecond) }}<small> tok/s</small></div>
+        <div class="v green">{{ r.promptTokensPerSecond | fmtNum }}<small> tok/s</small></div>
       </div>
       <div class="metric">
         <div class="k">Gen T/s</div>
         <div class="k-sub">Generation (token output)</div>
-        <div class="v green">{{ fmt(r.generationTokensPerSecond) }}<small> tok/s</small></div>
+        <div class="v green">{{ r.generationTokensPerSecond | fmtNum }}<small> tok/s</small></div>
       </div>
       <div class="metric">
         <div class="k">Draft acc</div>
-        <div class="v amber">{{ fmt(r.draftAcceptance, 3) }}</div>
+        <div class="v amber">{{ r.draftAcceptance | fmtNum:3 }}</div>
       </div>
       <div class="metric">
         <div class="k">Gen drafts</div>
-        <div class="v">{{ fmt(r.genDrafts, 0) }}</div>
+        <div class="v">{{ r.genDrafts | fmtNum:0 }}</div>
       </div>
       <div class="metric">
         <div class="k">Acc drafts</div>
-        <div class="v">{{ fmt(r.accDrafts, 0) }}</div>
+        <div class="v">{{ r.accDrafts | fmtNum:0 }}</div>
       </div>
       <div class="metric">
         <div class="k">Gen tokens</div>
-        <div class="v">{{ fmt(r.genTokens, 0) }}</div>
+        <div class="v">{{ r.genTokens | fmtNum:0 }}</div>
       </div>
       <div class="metric">
         <div class="k">Acc tokens</div>
-        <div class="v">{{ fmt(r.accTokens, 0) }}</div>
+        <div class="v">{{ r.accTokens | fmtNum:0 }}</div>
       </div>
       <div class="metric">
         <div class="k">Load time</div>
-        <div class="v">{{ fmt(r.loadTimeSeconds) }}<small> s</small></div>
+        <div class="v">{{ r.loadTimeSeconds | fmtNum }}<small> s</small></div>
       </div>
       <div class="metric">
         <div class="k">Gen time</div>
         <div class="k-sub">Tiempo de generación (sin prompt ni startup)</div>
-        <div class="v green">{{ fmtMs(r.generationTimeMs) }}</div>
+        <div class="v green">{{ r.generationTimeMs | fmtMs }}</div>
       </div>
       <div class="metric">
         <div class="k">Latencia req</div>
-        <div class="v">{{ fmt(r.requestLatencyMs, 0) }}<small> ms</small></div>
+        <div class="v">{{ r.requestLatencyMs | fmtNum:0 }}<small> ms</small></div>
       </div>
 
       <div class="metric metric-wide2">
         <div class="k">VRAM</div>
-        <div class="v v-small">{{ gpuLine(r) }}</div>
+        <div class="v v-small">
+          @for (g of r.gpus; track g.index; let last = $last) {
+            {{ label(g) }}: {{ g.memUsedMiB | fmtGb:1 }}<small> GB</small>{{ last ? '' : ' · ' }}
+          } @empty {
+            —
+          }
+        </div>
+      </div>
+
+      <div class="metric">
+        <div class="k">RAM</div>
+        <div class="k-sub">Usada por el benchmark (delta)</div>
+        <div class="v">{{ r.ramUsedMiB | fmtGb:2 }}<small> GB</small></div>
       </div>
 
       @if (r.errors.length) {

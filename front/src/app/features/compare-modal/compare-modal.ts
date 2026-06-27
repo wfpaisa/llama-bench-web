@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { DialogModule } from 'primeng/dialog';
 import { BenchStore } from '../../core/state/bench.store';
 import { BenchmarkResult } from '../../core/models/types';
-import { fmt, fmtMs, shortModel } from '../../core/utils/format';
+import { fmt, fmtGB, fmtMs, shortModel } from '../../core/utils/format';
 
 /** Cada fila de la tabla transpuesta: etiqueta + extractor de valor por resultado. */
 interface CompareRow {
@@ -17,7 +17,6 @@ interface CompareRow {
  */
 @Component({
   selector: 'app-compare-modal',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DialogModule],
   templateUrl: './compare-modal.html',
   styles: [
@@ -86,9 +85,10 @@ export class CompareModal {
       label: 'VRAM (GB)',
       value: (r) =>
         r.gpus
-          .map((g) => (g.memUsedMiB != null ? (g.memUsedMiB / 1024).toFixed(1) : '?'))
+          .map((g) => fmtGB(g.memUsedMiB, 1))
           .join(' + ') || '—',
     },
+    { label: 'RAM (GB)', value: (r) => fmtGB(r.ramUsedMiB, 2) },
   ]);
 
   /** Two-way binding del visible: sincroniza con store.showCompare. */

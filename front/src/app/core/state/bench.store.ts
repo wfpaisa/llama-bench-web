@@ -325,4 +325,5 @@ const SORT_FNS: Record<string, (r: BenchmarkResult) => number> = {
   loadTime: (r) => r.loadTimeSeconds ?? Infinity,
   generationTime: (r) => r.generationTimeMs ?? Infinity,
   totalVram: (r) => r.gpus.reduce((s, g) => s + (g.memUsedMiB ?? 0), 0),
+  ramUsed: (r) => r.ramUsedMiB ?? -Infinity,
 };

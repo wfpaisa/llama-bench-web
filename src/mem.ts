@@ -46,3 +46,13 @@ export async function readRamStats(): Promise<RamInfo> {
   }
   return { memTotalMiB: totalMiB, memUsedMiB: usedMiB, memAvailableMiB: availableMiB }
 }
+
+/**
+ * Resta la baseline de RAM para obtener solo el delta consumido por el
+ * benchmark (RAM ya en uso antes de arrancar el modelo).
+ * Devuelve null si alguno de los dos valores no está disponible.
+ */
+export function subtractRamBaseline(final: RamInfo, baseline: RamInfo): number | null {
+  if (final.memUsedMiB == null || baseline.memUsedMiB == null) return null
+  return Math.max(0, final.memUsedMiB - baseline.memUsedMiB)
+}

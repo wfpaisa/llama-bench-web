@@ -6,6 +6,7 @@
 import type { BenchmarkResult, ParsedScript } from './types.ts'
 import { parseScript } from './script-parser.ts'
 import { readGpuStats, subtractGpuBaseline } from './gpu.ts'
+import { readRamStats, subtractRamBaseline } from './mem.ts'
 import { DEFAULT_PROMPT, parseMetricsFromLogs, sleep, waitForServer } from './metrics.ts'
 import { startServer, stopServer, urlFor } from './server-manager.ts'
 import { saveResult } from './history.ts'
@@ -31,8 +32,8 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
   // Marcador: índice del log desde el cual parsear al final.
   const logStartIndex = getLogBuffer().length
 
-  // 0b) Capturar baseline de GPU antes de iniciar (para restar VRAM ya usada).
-  const gpuBaseline = await readGpuStats()
+  // 0b) Capturar baseline de GPU y RAM antes de iniciar (para restar lo ya en uso).
+  const [gpuBaseline, ramBaseline] = await Promise.all([readGpuStats(), readRamStats()])
 
   // Inicializar AbortController para permitir cancelación desde la UI.
   const controller = new AbortController()
@@ -113,9 +114,10 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
     const relevantLines = getLogBuffer().slice(logStartIndex)
     const parsedMetrics = parseMetricsFromLogs(relevantLines)
 
-    // 5) GPU stats finales y restar baseline.
-    const gpusFinal = await readGpuStats()
+    // 5) GPU y RAM stats finales y restar baseline.
+    const [gpusFinal, ramFinal] = await Promise.all([readGpuStats(), readRamStats()])
     const gpus = subtractGpuBaseline(gpusFinal, gpuBaseline)
+    const ramUsedMiB = subtractRamBaseline(ramFinal, ramBaseline)
 
     const result: BenchmarkResult = {
       id: crypto.randomUUID(),
@@ -137,6 +139,7 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
       prompt,
       response: responseText,
       gpus,
+      ramUsedMiB,
       errors,
     }
 
@@ -172,6 +175,7 @@ function finalize(parsed: ParsedScript | null, prompt: string, errors: string[])
     prompt,
     response: '',
     gpus: [],
+    ramUsedMiB: null,
     errors,
   }
 }
