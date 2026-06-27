@@ -81,6 +81,7 @@ export class BenchStore {
   readonly sortCol = signal('date');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
   readonly showCompare = signal(false);
+  readonly showChart = signal(false);
 
   // ── Logs UI ──
   readonly autoscroll = signal(true);
@@ -345,6 +346,16 @@ export class BenchStore {
   }
   closeCompare(): void {
     this.showCompare.set(false);
+  }
+
+  // ── Gráfico ──
+  openChart(): boolean {
+    if (this.selectedResults().length < 1) return false;
+    this.showChart.set(true);
+    return true;
+  }
+  closeChart(): void {
+    this.showChart.set(false);
   }
 }
 

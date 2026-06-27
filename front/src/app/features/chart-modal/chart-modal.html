@@ -1,0 +1,35 @@
+<p-dialog
+  header="Gráfico comparativo"
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [maximizable]="false"
+  [style]="{ width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' }"
+  [contentStyle]="{ height: 'calc(100vh - 8rem)', padding: '0.5rem 1rem' }"
+>
+  <div class="chart-toolbar">
+    <label for="metricSelect" class="metric-label">Métrica</label>
+    <p-select
+      inputId="metricSelect"
+      [options]="metricOptions"
+      [ngModel]="selectedMetric()"
+      (onChange)="onMetricChange($event.value)"
+      optionLabel="label"
+      optionValue="value"
+      [style]="{ 'min-width': '16rem' }"
+      appendTo="body"
+    />
+    <span class="muted small chart-hint">
+      Hover sobre una barra para ver los datos del modelo · la barra verde es el mejor valor.
+    </span>
+  </div>
+
+  @if (items().length) {
+    <div class="chart-canvas">
+      <p-chart type="bar" [data]="chartData()" [options]="chartOptions()" height="100%" />
+    </div>
+  } @else {
+    <div class="chart-empty muted">Selecciona uno o más resultados en el historial.</div>
+  }
+</p-dialog>

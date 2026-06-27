@@ -48,6 +48,7 @@ export interface HistoryColumn {
  */
 const DEFAULT_VISIBLE = [
   'model',
+  'ctx',
   'generationTime',
   'genTps',
   'vram',
@@ -350,6 +351,18 @@ export class HistoryTable {
       return;
     }
     this.store.openCompare();
+  }
+
+  protected chart(): void {
+    if (this.store.selectedCount() < 1) {
+      this.messages.add({
+        severity: 'warn',
+        summary: 'Selecciona al menos un resultado.',
+        life: 3000,
+      });
+      return;
+    }
+    this.store.openChart();
   }
 
   protected clearAll(event: Event): void {

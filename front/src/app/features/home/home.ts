@@ -22,6 +22,7 @@ import { ResponseCard } from '../response-card/response-card';
 import { LastResult } from '../last-result/last-result';
 import { HistoryTable } from '../history-table/history-table';
 import { CompareModal } from '../compare-modal/compare-modal';
+import { ChartModal } from '../chart-modal/chart-modal';
 import { LogsViewer } from '../logs-viewer/logs-viewer';
 
 /**
@@ -42,6 +43,7 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
     LastResult,
     HistoryTable,
     CompareModal,
+    ChartModal,
     LogsViewer,
   ],
   templateUrl: './home.html',

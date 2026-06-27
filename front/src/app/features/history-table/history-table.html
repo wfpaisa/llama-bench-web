@@ -26,6 +26,13 @@
         (onClick)="compare()"
       />
       <p-button
+        label="Chart"
+        icon="pi pi-chart-bar"
+        [text]="true"
+        [disabled]="store.selectedCount() < 1"
+        (onClick)="chart()"
+      />
+      <p-button
         label="Limpiar todo"
         icon="pi pi-trash"
         severity="danger"
