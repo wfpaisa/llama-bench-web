@@ -8,6 +8,7 @@
         pTextarea
         [ngModel]="script()"
         (ngModelChange)="onScriptChange($event)"
+        (paste)="onScriptPaste($event)"
         placeholder="./llama-server -hf modelo --ctx-size 8192 ..."
         spellcheck="false"
         class="script-area"

@@ -45,18 +45,28 @@
       <label
         for="bench-max-tokens"
         class="muted small"
-        title="Tokens máximos a generar (-1 = ilimitado)"
+        title="Tokens máximos a generar (desactivado = sin límite)"
       >
         Max Tokens
       </label>
-      <p-inputnumber
-        inputId="bench-max-tokens"
-        [ngModel]="maxTokens()"
-        (ngModelChange)="store.setMaxTokens($event)"
-        [min]="1"
-        [showButtons]="false"
-        styleClass="max-tokens"
-      />
+      <div class="max-tokens-row">
+        <p-checkbox
+          [ngModel]="maxTokensEnabled()"
+          (ngModelChange)="store.setMaxTokensEnabled($event)"
+          [binary]="true"
+          inputId="bench-max-tokens-enabled"
+        />
+        <label for="bench-max-tokens-enabled" class="muted small">Limitar</label>
+        <p-inputnumber
+          inputId="bench-max-tokens"
+          [ngModel]="maxTokens()"
+          (ngModelChange)="store.setMaxTokens($event)"
+          [min]="1"
+          [showButtons]="false"
+          [disabled]="!maxTokensEnabled()"
+          styleClass="max-tokens"
+        />
+      </div>
     </div>
   </div>
 

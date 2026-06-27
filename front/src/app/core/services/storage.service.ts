@@ -14,6 +14,8 @@ const KEYS = {
   script: 'llama-bench-script',
   prompt: 'llama-bench-prompt',
   sort: 'llama-bench-sort',
+  maxTokens: 'llama-bench-max-tokens',
+  maxTokensEnabled: 'llama-bench-max-tokens-enabled',
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +56,34 @@ export class StorageService {
   }
   saveSort(value: SortState): void {
     this.set(KEYS.sort, JSON.stringify(value));
+  }
+
+  // ── Max Tokens (valor + habilitado) ──
+  loadMaxTokens(): number | null {
+    try {
+      const raw = localStorage.getItem(KEYS.maxTokens);
+      if (raw == null) return null;
+      const n = Number(raw);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    } catch {
+      return null;
+    }
+  }
+  saveMaxTokens(value: number): void {
+    this.set(KEYS.maxTokens, String(value));
+  }
+
+  loadMaxTokensEnabled(): boolean | null {
+    try {
+      const raw = localStorage.getItem(KEYS.maxTokensEnabled);
+      if (raw == null) return null;
+      return raw === 'true';
+    } catch {
+      return null;
+    }
+  }
+  saveMaxTokensEnabled(value: boolean): void {
+    this.set(KEYS.maxTokensEnabled, String(value));
   }
 
   // ── Helpers internos ──

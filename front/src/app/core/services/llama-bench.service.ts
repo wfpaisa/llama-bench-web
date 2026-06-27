@@ -21,7 +21,8 @@ import type {
 export interface BenchmarkRequest {
   script: string;
   prompt: string;
-  maxTokens: number;
+  /** null = sin límite de tokens (checkbox desactivado). */
+  maxTokens: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -58,7 +59,10 @@ export class LlamaBenchService {
 
   // ── Benchmark ──
   runBenchmark(req: BenchmarkRequest): Observable<BenchmarkResponse> {
-    // El backend lee `max_tokens` (snake_case).
+    // El backend lee `max_tokens` (snake_case). null = sin límite (checkbox
+    // "Limitar" desactivado) → el backend lo traduce a -1 hacia llama-server.
+    // Se envía el campo siempre (aunque sea null) para que el router distinga
+    // "sin límite" (null) de "default 2048" (campo ausente).
     return this.api.post<BenchmarkResponse>('/benchmark', {
       script: req.script,
       prompt: req.prompt,

@@ -19,7 +19,7 @@ import { emptyParsedScript, setBenchAbortController } from './state.ts'
  * Ejecuta un benchmark completo contra llama-server.
  * Garantiza que el servidor se detenga al final (finally).
  */
-export async function runBenchmark(script: string, prompt: string, maxTokens: number = 2048): Promise<BenchmarkResult> {
+export async function runBenchmark(script: string, prompt: string, maxTokens: number | null = 2048): Promise<BenchmarkResult> {
   const errors: string[] = []
 
   // 0) Parsear el script. Si falla, no hay nada que ejecutar.
@@ -36,11 +36,7 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
   // 0b) Capturar baseline de GPU y RAM antes de iniciar (para restar lo ya en uso).
   //     También enumeramos los devices del backend (--list-devices) para medir el
   //     delta de VRAM libre consumido por el modelo al final.
-  const [gpuBaseline, ramBaseline, baselineDevices] = await Promise.all([
-    readGpuStats(),
-    readRamStats(),
-    listDevices(parsed.binary),
-  ])
+  const [gpuBaseline, ramBaseline, baselineDevices] = await Promise.all([readGpuStats(), readRamStats(), listDevices(parsed.binary)])
 
   // Inicializar AbortController para permitir cancelación desde la UI.
   const controller = new AbortController()
@@ -75,10 +71,23 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
 
     // 3) Request de benchmark. Se omite cualquier parámetro de sampling que
     //    no estuviera en el script (temp/topP/topK = null).
+    //    max_tokens: null (checkbox "Limitar" desactivado en la UI) se traduce
+    //    a -1, que en llama-server significa "generar hasta EOS" (sin límite);
+    //    un number > 0 se envía tal cual. Omitir el campo NO sirve: llama-server
+    //    aplicaría su default interno (n_predict) y cortaría la respuesta.
     const body: Record<string, unknown> = {
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: maxTokens,
+      max_tokens: maxTokens === null ? -1 : maxTokens,
       stream: false,
+
+      // Parametros adicionales
+      // return_progress: true,
+      // reasoning_format: 'auto',
+      // chat_template_kwargs: { enable_thinking: true }, // deshabilitar thinking en false
+      // thinking_budget_tokens: 512, // en max quitar este parametro
+      // reasoning_control: true,
+      //  backend_sampling: false,
+      // timings_per_token: true,
     }
     if (parsed.model) {
       body.model = parsed.model.split(':')[0] ?? parsed.model

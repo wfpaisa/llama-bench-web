@@ -10,13 +10,15 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { formatScript } from '../../core/utils/format';
 
 /**
  * BenchmarkPanel: orquesta la ejecución de un benchmark automático.
- * - Edición del prompt + Max Tokens.
+ * - Edición del prompt + Max Tokens (desactivable con checkbox → sin límite).
  * - Botón Benchmark: POST /benchmark (bloqueante); al terminar pinta el
  *   resultado, refresca el historial y avisa con toast.
  * - Botón Detener (visible durante el run): POST /benchmark/stop.
@@ -25,11 +27,13 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service';
  * - Restablecer: llena el textarea con el prompt por defecto built-in (sin
  *   confirmación, al instante).
  * - Si el prompt está en blanco al Guardar, se persiste el prompt por defecto.
+ * - Al ejecutar el benchmark se formatea el script automáticamente antes de
+ *   enviarlo al backend.
  */
 @Component({
   selector: 'app-benchmark-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, TextareaModule, InputNumberModule],
+  imports: [FormsModule, ButtonModule, TextareaModule, InputNumberModule, CheckboxModule],
   templateUrl: './benchmark-panel.html',
   styleUrl: './benchmark-panel.css',
 })
@@ -42,6 +46,7 @@ export class BenchmarkPanel implements OnDestroy {
   /** Modelo del prompt, sincronizado con store.prompt. */
   protected readonly prompt = signal(this.store.prompt());
   protected readonly maxTokens = this.store.maxTokens;
+  protected readonly maxTokensEnabled = this.store.maxTokensEnabled;
   protected readonly running = this.store.running;
 
   /** Timer interval (200ms) que refresca el elapsed mientras el benchmark corre. */
@@ -70,12 +75,16 @@ export class BenchmarkPanel implements OnDestroy {
 
   run(): void {
     if (this.store.benchRunning()) return;
+    // Formatear el script antes de ejecutar el benchmark (igual que el botón
+    // Formatear del editor) para enviarlo normalizado al backend.
+    const formatted = formatScript(this.store.script());
+    this.store.setScript(formatted);
     this.store.startBenchmark();
     this.api
       .runBenchmark({
-        script: this.store.script(),
+        script: formatted,
         prompt: this.store.prompt(),
-        maxTokens: this.store.maxTokens(),
+        maxTokens: this.store.maxTokensEnabled() ? this.store.maxTokens() : null,
       })
       .subscribe({
         next: (data) => {

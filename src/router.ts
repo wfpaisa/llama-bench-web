@@ -151,12 +151,14 @@ export async function handleRequest(req: Request): Promise<Response> {
     setBenchmarkRunning(true)
     let script = ''
     let prompt = DEFAULT_PROMPT
-    let maxTokens = 2048
+    let maxTokens: number | null = 2048
     try {
       const body = await req.json().catch(() => ({}))
       if (typeof body?.script === 'string') script = body.script
       if (typeof body?.prompt === 'string' && body.prompt.trim()) prompt = body.prompt
-      if (typeof body?.max_tokens === 'number' && body.max_tokens > 0) maxTokens = body.max_tokens
+
+      if (body?.max_tokens === null) maxTokens = null
+      else if (typeof body?.max_tokens === 'number' && body.max_tokens > 0) maxTokens = body.max_tokens
     } catch {
       /* usa defaults */
     }

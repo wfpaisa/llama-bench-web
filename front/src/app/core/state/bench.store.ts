@@ -58,6 +58,8 @@ export class BenchStore {
   readonly script = signal('');
   readonly prompt = signal('');
   readonly maxTokens = signal(2048);
+  /** Si false, el benchmark se ejecuta sin límite de tokens (omisión de max_tokens). */
+  readonly maxTokensEnabled = signal(true);
 
   // ── Estado del benchmark ──
   readonly benchRunning = signal(false);
@@ -156,12 +158,15 @@ export class BenchStore {
     effect(() => this.storage.saveScript(this.script()));
     effect(() => this.storage.savePrompt(this.prompt()));
     effect(() => this.storage.saveSort({ col: this.sortCol(), dir: this.sortDir() }));
+    effect(() => this.storage.saveMaxTokens(this.maxTokens()));
+    effect(() => this.storage.saveMaxTokensEnabled(this.maxTokensEnabled()));
   }
 
   /**
    * Siembra el estado inicial desde localStorage. Llamar una vez al arrancar la app
-   * (antes de cualquier carga de datos del backend) para que el sort persistido
-   * aplique desde el primer render.
+   * (antes de cualquier carga de datos del backend) para que el sort y los
+   * valores persistidos de Max Tokens (valor + habilitado) apliquen desde el
+   * primer render.
    */
   init(): void {
     const sort = this.storage.loadSort();
@@ -169,6 +174,10 @@ export class BenchStore {
       this.sortCol.set(sort.col);
       this.sortDir.set(sort.dir);
     }
+    const maxTokens = this.storage.loadMaxTokens();
+    if (maxTokens !== null) this.maxTokens.set(maxTokens);
+    const enabled = this.storage.loadMaxTokensEnabled();
+    if (enabled !== null) this.maxTokensEnabled.set(enabled);
   }
 
   // ════════════ Actions: status / logs / gpu ════════════
@@ -222,6 +231,10 @@ export class BenchStore {
 
   setMaxTokens(n: number): void {
     this.maxTokens.set(n);
+  }
+
+  setMaxTokensEnabled(v: boolean): void {
+    this.maxTokensEnabled.set(v);
   }
 
   setAutoscroll(v: boolean): void {

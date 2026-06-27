@@ -130,13 +130,41 @@ export class ScriptEditor {
     this.store.setScript(value);
   }
 
+  /**
+   * Al pegar texto en el textarea, formatea el contenido resultante y lo
+   * persiste. Normaliza scripts pegados desde cualquier fuente.
+   */
+  onScriptPaste(event: Event): void {
+    const e = event as ClipboardEvent;
+    const pasted = e.clipboardData?.getData('text') ?? '';
+    if (!pasted) return;
+    e.preventDefault();
+    const ta = e.target as HTMLTextAreaElement;
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    const merged = ta.value.slice(0, start) + pasted + ta.value.slice(end);
+    const formatted = formatScript(merged);
+    this.onScriptChange(formatted);
+  }
+
   // ── Acciones ──
 
+  /**
+   * Formatea el script actual del store (fuente de verdad) y lo refleja en el
+   * textarea. No avisa con toast si se invoca desde start()/format interno.
+   */
   format(): void {
     const formatted = formatScript(this.store.script());
     this.store.setScript(formatted);
     this.script.set(formatted);
     this.messages.add({ severity: 'success', summary: 'Script formateado', life: 2600 });
+  }
+
+  /** Formatea el script silenciosamente (sin toast). */
+  private formatSilent(): void {
+    const formatted = formatScript(this.store.script());
+    this.store.setScript(formatted);
+    this.script.set(formatted);
   }
 
   // ── Catálogo de flags ──
@@ -176,6 +204,8 @@ export class ScriptEditor {
   }
 
   start(): void {
+    // Formatear el script antes de arrancar para enviarlo normalizado al backend.
+    this.formatSilent();
     this.api.startServer(this.store.script()).subscribe({
       next: () =>
         this.messages.add({ severity: 'info', summary: 'Servidor iniciando…', life: 2600 }),
