@@ -48,13 +48,17 @@
 
       <div class="metric metric-wide2">
         <div class="k">VRAM</div>
-        <div class="v v-small">
-          @for (d of vramItems(); track d.id; let last = $last) {
-            <span [title]="d.name + (d.totalMiB != null ? ' (' + (d.totalMiB / 1024).toFixed(1) + ' GB total)' : '')">
-              {{ d.id }}: {{ d.usedMiB | fmtGb:1 }}<small> GB</small>
-            </span>{{ last ? '' : ' · ' }}
-          } @empty {
-            —
+        <div class="v v-small vram-rows">
+          @if (deviceRows().length) {
+            @for (d of deviceRows(); track d.index) {
+              <span [pTooltip]="d.detail">{{ d.vendor }} {{ d.index }} - {{ d.gb }} GB</span>
+            }
+          } @else {
+            @for (d of legacyVramItems(); track d.id; let last = $last) {
+              <span>{{ d.id }}: {{ d.usedMiB | fmtGb:1 }}<small> GB</small></span>{{ last ? '' : ' · ' }}
+            } @empty {
+              —
+            }
           }
         </div>
       </div>

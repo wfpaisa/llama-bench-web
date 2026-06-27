@@ -1,19 +1,17 @@
 import { Component, computed, inject } from '@angular/core';
+import { TooltipModule } from 'primeng/tooltip';
 import { BenchStore } from '../../core/state/bench.store';
-import { gpuLabel } from '../../core/utils/format';
+import { gpuLabel, deviceVramRows, type DeviceVramRow } from '../../core/utils/format';
 import { FmtGbPipe, FmtMsPipe, FmtNumPipe } from '../../core/utils/pipes';
 import { BenchmarkResult, GpuInfo } from '../../core/models/types';
 
 /**
- * Vista de VRAM unificada para el template: id legible, GB usados y nombre
- * (para tooltip). Cubre devices del backend (deviceVram) y GPUs legacy (gpus)
- * cuando no hay deviceVram.
+ * Vista de VRAM para el fallback legacy (resultados sin deviceVram): id legible
+ * (índice del SO) y GB usados.
  */
-interface VramView {
+interface LegacyVramView {
   id: string;
   usedMiB: number | null;
-  name: string;
-  totalMiB: number | null;
 }
 
 /**
@@ -25,32 +23,33 @@ interface VramView {
   selector: 'app-last-result',
   templateUrl: './last-result.html',
   styleUrl: './last-result.css',
-  imports: [FmtNumPipe, FmtMsPipe, FmtGbPipe],
+  imports: [FmtNumPipe, FmtMsPipe, FmtGbPipe, TooltipModule],
 })
 export class LastResult {
   protected readonly store = inject(BenchStore);
   protected readonly result = computed<BenchmarkResult | null>(() => this.store.lastResult());
 
   /**
-   * Items de VRAM a mostrar: devices del backend (ids CUDA0/Vulkan0) si los hay;
-   * si no, GPUs legacy (nvidia-smi/sysfs) vía gpuLabel.
+   * Filas de VRAM por device del backend (vendor + índice + GB + tooltip),
+   * igual que en la tabla de historial. Vacío si no hay deviceVram: en ese
+   * caso el template cae al fallback legacy (legacyVramItems).
    */
-  protected readonly vramItems = computed<VramView[]>(() => {
+  protected readonly deviceRows = computed<DeviceVramRow[]>(() => {
+    const r = this.result();
+    return r ? deviceVramRows(r) : [];
+  });
+
+  /**
+   * Items de VRAM legacy (índice del SO + GB) para resultados sin deviceVram
+   * (entradas viejas o cuando el backend no reporta devices).
+   */
+  protected readonly legacyVramItems = computed<LegacyVramView[]>(() => {
     const r = this.result();
     if (!r) return [];
-    if (r.deviceVram && r.deviceVram.length > 0) {
-      return r.deviceVram.map((d) => ({
-        id: d.device.id,
-        usedMiB: d.usedMiB,
-        name: d.device.name,
-        totalMiB: d.device.totalMiB,
-      }));
-    }
+    if (r.deviceVram && r.deviceVram.length > 0) return [];
     return r.gpus.map((g: GpuInfo) => ({
       id: gpuLabel(g),
       usedMiB: g.memUsedMiB,
-      name: g.index,
-      totalMiB: g.memTotalMiB,
     }));
   });
 }
