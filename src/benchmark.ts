@@ -51,14 +51,30 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
 
   // 1) Arrancar servidor.
   systemLog('benchmark: iniciando llama-server…')
+  let m
   try {
-    await startServer(parsed)
+    m = await startServer(parsed)
   } catch (e) {
     errors.push(`No se pudo iniciar el servidor: ${(e as Error).message}`)
     return finalize(parsed, prompt, errors)
   }
 
   try {
+    checkAbort()
+
+    // 1b) Esperar que el proceso quede "ready". Si muere durante el arranque
+    //     (modelo inválido, OOM, crash…), `ready` se rechaza al instante con el
+    //     exit code, evitando los 120s de health-check inútil. Al estar dentro
+    //     del try/finally, el rechazo propaga al router (→ toast de error) y el
+    //     finally detiene el servidor.
+    try {
+      await m.ready
+    } catch (e) {
+      throw new Error(
+        `El servidor no arrancó: ${(e as Error).message}. ` +
+          'Revisá el script, su formato y los flags (binario, modelo, rutas, comillas, continuaciones \\).'
+      )
+    }
     checkAbort()
 
     // 2) Esperar que el servidor acepte conexiones HTTP.

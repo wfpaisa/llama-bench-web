@@ -110,7 +110,7 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
     try {
       const parsed = parseScript(script)
-      const pid = await startServer(parsed)
+      const pid = (await startServer(parsed)).pid
       // Resolvemos la promesa de ready en background; respondemos ya.
       return json({ ok: true, pid })
     } catch (e) {

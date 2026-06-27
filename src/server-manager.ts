@@ -11,7 +11,7 @@
 import { spawn, type Subprocess } from 'bun'
 import { dirname, resolve } from 'node:path'
 import type { ParsedScript, LogEntry } from './types.ts'
-import { managed, setManaged, status, setStatus, setStatusError } from './state.ts'
+import { type ManagedServer, managed, setManaged, status, setStatus, setStatusError } from './state.ts'
 import { pushLog, systemLog } from './logs.ts'
 
 /**
@@ -39,9 +39,11 @@ export function urlFor(c: { host: string; port: number }): string {
 
 /**
  * Arranca llama-server con el script parseado.
- * Lanza Error si ya hay uno corriendo.
+ * Devuelve el ManagedServer (con su promesa `ready`) para que el llamador pueda
+ * esperarla: si el proceso muere antes de estar listo, `ready` se rechaza al
+ * instante. Lanza Error si ya hay uno corriendo.
  */
-export async function startServer(parsed: ParsedScript): Promise<number> {
+export async function startServer(parsed: ParsedScript): Promise<ManagedServer> {
   if (managed) throw new Error('Ya hay un servidor corriendo. Detenlo primero.')
 
   const { binary, argv } = parsed
@@ -69,7 +71,7 @@ export async function startServer(parsed: ParsedScript): Promise<number> {
   })
 
   const pid = proc.pid!
-  setManaged({
+  const m: ManagedServer = {
     proc,
     pid,
     startedAt: new Date().toISOString(),
@@ -78,7 +80,8 @@ export async function startServer(parsed: ParsedScript): Promise<number> {
     readyResolve: resolveReady,
     readyReject: rejectReady,
     done: false,
-  })
+  }
+  setManaged(m)
 
   setStatus('starting')
   setStatusError(null)
@@ -120,7 +123,7 @@ export async function startServer(parsed: ParsedScript): Promise<number> {
     5 * 60 * 1000
   )
 
-  return pid
+  return m
 }
 
 async function streamPipes(proc: Subprocess<'ignore', 'pipe', 'pipe'>): Promise<void> {
