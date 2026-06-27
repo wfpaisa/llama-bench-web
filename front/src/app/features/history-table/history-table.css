@@ -19,6 +19,13 @@
   margin-left: 0.5rem;
 }
 
+/* Barra del selector de columnas (caption del p-table). */
+.columns-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.25rem 0;
+}
+
 .muted {
   color: var(--color-text-muted);
 }

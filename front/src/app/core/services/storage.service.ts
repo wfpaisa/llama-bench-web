@@ -16,6 +16,7 @@ const KEYS = {
   sort: 'llama-bench-sort',
   maxTokens: 'llama-bench-max-tokens',
   maxTokensEnabled: 'llama-bench-max-tokens-enabled',
+  historyColumns: 'llama-bench-history-columns',
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -84,6 +85,21 @@ export class StorageService {
   }
   saveMaxTokensEnabled(value: boolean): void {
     this.set(KEYS.maxTokensEnabled, String(value));
+  }
+
+  // ── Columnas visibles del historial ──
+  loadHistoryColumns(): string[] | null {
+    try {
+      const raw = localStorage.getItem(KEYS.historyColumns);
+      if (!raw) return null;
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) && arr.every((x) => typeof x === 'string') ? arr : null;
+    } catch {
+      return null;
+    }
+  }
+  saveHistoryColumns(cols: string[]): void {
+    this.set(KEYS.historyColumns, JSON.stringify(cols));
   }
 
   // ── Helpers internos ──

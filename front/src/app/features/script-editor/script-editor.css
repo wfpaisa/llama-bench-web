@@ -72,11 +72,14 @@
 }
 
 /* Header de columna: etiqueta + disparador de filtro en línea. */
-.th-filter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+th {
+  font-size: 0.85rem;
+
+  .th-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }
 
 /* Fila del flag ya presente en el script: borde a la izquierda. */

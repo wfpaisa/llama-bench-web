@@ -47,109 +47,176 @@
     [globalFilterFields]="['modelBase']"
     size="small"
   >
+    <ng-template #caption>
+      <div class="columns-bar">
+        <p-multiselect
+          [options]="columnOptions"
+          [ngModel]="selectedColumns()"
+          (onChange)="onColumnsChange($event.value)"
+          (onClear)="onColumnsClear()"
+          optionLabel="header"
+          display="chip"
+          [showClear]="true"
+          placeholder="Columnas"
+          selectedItemsLabel="{0} columnas"
+          [style]="{ 'min-width': '16rem' }"
+          [panelStyle]="{ minWidth: '18rem' }"
+        />
+      </div>
+    </ng-template>
+
     <ng-template #header>
       <tr>
         <th style="min-width: 2rem"></th>
-        <th [pSortableColumn]="'date'" title="Fecha y hora del benchmark">
-          <div class="column-name">Fecha <p-sortIcon field="date" /></div>
-        </th>
-        <th style="min-width: 25rem" title="Modelo utilizado">
-          <div class="column-name">
-            Modelo
-            <p-columnFilter
-              field="modelBase"
-              matchMode="in"
-              display="menu"
-              [showMatchModes]="false"
-              [showOperator]="false"
-              [showAddButton]="false"
-            >
-              <ng-template #filter let-value let-filter="filterCallback">
-                <p-multiselect
-                  [ngModel]="value"
-                  [options]="modelOptions()"
-                  placeholder="Todos"
-                  (onChange)="filter($event.value)"
-                  style="min-width: 14rem"
-                  [panelStyle]="{ minWidth: '16rem' }"
-                />
-              </ng-template>
-            </p-columnFilter>
-          </div>
-        </th>
-        <th [pSortableColumn]="'ctx'" title="Tamaño de contexto (--ctx-size)">
-          <div class="column-name">ctx <p-sortIcon field="ctx" /></div>
-        </th>
-        <th title="Tamaño de batch / micro-batch (--batch-size / --ubatch-size)">
-          <div class="column-name">batch</div>
-        </th>
-        <th title="Tipo de caché K/V (--cache-type-k / --cache-type-v)">
-          <div class="column-name">cache</div>
-        </th>
-        <th title="Dispositivo (--device) y backend del binario (CUDA/Vulkan)">
-          <div class="column-name">device</div>
-        </th>
-        <th style="min-width: 5rem" title="Reparto de tensores (--tensor-split)">
-          <div class="column-name">tsplit</div>
-        </th>
-        <th class="col-gen" title="Cantidad de tokens generados">
-          <div class="column-name">Generated tokens</div>
-        </th>
-        <th
-          class="col-gen"
-          [pSortableColumn]="'generationTime'"
-          title="Tiempo de generación (eval time, sin prompt ni startup)"
-        >
-          <div class="column-name">Generation time <p-sortIcon field="generationTime" /></div>
-        </th>
-        <th
-          class="col-gen"
-          [pSortableColumn]="'genTps'"
-          title="Velocidad de generación (tokens por segundo)"
-        >
-          <div class="column-name">Generation speed <p-sortIcon field="genTps" /></div>
-        </th>
-        <th class="col-read" title="Cantidad de tokens del prompt">
-          <div class="column-name">Prompt tokens</div>
-        </th>
-        <th class="col-read" title="Tiempo de procesado del prompt (prompt eval time)">
-          <div class="column-name">Prompt processing time</div>
-        </th>
-        <th
-          class="col-read"
-          [pSortableColumn]="'promptTps'"
-          title="Velocidad de procesado del prompt (tokens por segundo)"
-        >
-          <div class="column-name">Prompt processing speed <p-sortIcon field="promptTps" /></div>
-        </th>
-        <th [pSortableColumn]="'draftAcc'" title="Aceptación del draft (speculative / MTP)">
-          <div class="column-name">draft acc <p-sortIcon field="draftAcc" /></div>
-        </th>
-        <th title="Drafts generados (#gen drafts)">
-          <div class="column-name">gen dr</div>
-        </th>
-        <th title="Drafts aceptados (#acc drafts)">
-          <div class="column-name">acc dr</div>
-        </th>
-        <th title="Tokens generados por draft-mtp (#gen tokens)">
-          <div class="column-name">gen tk</div>
-        </th>
-        <th title="Tokens aceptados por draft-mtp (#acc tokens)">
-          <div class="column-name">acc tk</div>
-        </th>
-        <th [pSortableColumn]="'loadTime'" title="Tiempo de carga del modelo en segundos">
-          <div class="column-name">load s <p-sortIcon field="loadTime" /></div>
-        </th>
-        <th title="VRAM usada por GPU (índice del SO)">
-          <div class="column-name">VRAM</div>
-        </th>
-        <th [pSortableColumn]="'totalVram'" title="VRAM total usada (suma de GPUs)">
-          <div class="column-name">Total VRAM <p-sortIcon field="totalVram" /></div>
-        </th>
-        <th [pSortableColumn]="'ramUsed'" title="RAM usada por el benchmark (delta durante el run)">
-          <div class="column-name">RAM <p-sortIcon field="ramUsed" /></div>
-        </th>
-        <th style="width: 5rem"></th>
+        @if (colVisible('date')) {
+          <th [pSortableColumn]="'date'" title="Fecha y hora del benchmark">
+            <div class="column-name">Fecha <p-sortIcon field="date" /></div>
+          </th>
+        }
+        @if (colVisible('model')) {
+          <th style="min-width: 25rem" title="Modelo utilizado">
+            <div class="column-name">
+              Modelo
+              <p-columnFilter
+                field="modelBase"
+                matchMode="in"
+                display="menu"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-multiselect
+                    [ngModel]="value"
+                    [options]="modelOptions()"
+                    placeholder="Todos"
+                    (onChange)="filter($event.value)"
+                    style="min-width: 14rem"
+                    [panelStyle]="{ minWidth: '16rem' }"
+                  />
+                </ng-template>
+              </p-columnFilter>
+            </div>
+          </th>
+        }
+        @if (colVisible('ctx')) {
+          <th [pSortableColumn]="'ctx'" title="Tamaño de contexto (--ctx-size)">
+            <div class="column-name">ctx <p-sortIcon field="ctx" /></div>
+          </th>
+        }
+        @if (colVisible('batch')) {
+          <th title="Tamaño de batch / micro-batch (--batch-size / --ubatch-size)">
+            <div class="column-name">batch</div>
+          </th>
+        }
+        @if (colVisible('cache')) {
+          <th title="Tipo de caché K/V (--cache-type-k / --cache-type-v)">
+            <div class="column-name">cache</div>
+          </th>
+        }
+        @if (colVisible('device')) {
+          <th title="Dispositivo (--device) y backend del binario (CUDA/Vulkan)">
+            <div class="column-name">device</div>
+          </th>
+        }
+        @if (colVisible('tsplit')) {
+          <th style="min-width: 5rem" title="Reparto de tensores (--tensor-split)">
+            <div class="column-name">tsplit</div>
+          </th>
+        }
+        @if (colVisible('genTokens')) {
+          <th class="col-gen" title="Cantidad de tokens generados">
+            <div class="column-name">Generated tokens</div>
+          </th>
+        }
+        @if (colVisible('generationTime')) {
+          <th
+            class="col-gen"
+            [pSortableColumn]="'generationTime'"
+            title="Tiempo de generación (eval time, sin prompt ni startup)"
+          >
+            <div class="column-name">Generation time <p-sortIcon field="generationTime" /></div>
+          </th>
+        }
+        @if (colVisible('genTps')) {
+          <th
+            class="col-gen"
+            [pSortableColumn]="'genTps'"
+            title="Velocidad de generación (tokens por segundo)"
+          >
+            <div class="column-name">Generation speed <p-sortIcon field="genTps" /></div>
+          </th>
+        }
+        @if (colVisible('promptTokens')) {
+          <th class="col-read" title="Cantidad de tokens del prompt">
+            <div class="column-name">Prompt tokens</div>
+          </th>
+        }
+        @if (colVisible('promptTime')) {
+          <th class="col-read" title="Tiempo de procesado del prompt (prompt eval time)">
+            <div class="column-name">Prompt processing time</div>
+          </th>
+        }
+        @if (colVisible('promptTps')) {
+          <th
+            class="col-read"
+            [pSortableColumn]="'promptTps'"
+            title="Velocidad de procesado del prompt (tokens por segundo)"
+          >
+            <div class="column-name">Prompt speed <p-sortIcon field="promptTps" /></div>
+          </th>
+        }
+        @if (colVisible('draftAcc')) {
+          <th [pSortableColumn]="'draftAcc'" title="Aceptación del draft (speculative / MTP)">
+            <div class="column-name">draft acc <p-sortIcon field="draftAcc" /></div>
+          </th>
+        }
+        @if (colVisible('genDr')) {
+          <th title="Drafts generados (#gen drafts)">
+            <div class="column-name">gen dr</div>
+          </th>
+        }
+        @if (colVisible('accDr')) {
+          <th title="Drafts aceptados (#acc drafts)">
+            <div class="column-name">acc dr</div>
+          </th>
+        }
+        @if (colVisible('genTk')) {
+          <th title="Tokens generados por draft-mtp (#gen tokens)">
+            <div class="column-name">gen tk</div>
+          </th>
+        }
+        @if (colVisible('accTk')) {
+          <th title="Tokens aceptados por draft-mtp (#acc tokens)">
+            <div class="column-name">acc tk</div>
+          </th>
+        }
+        @if (colVisible('loadTime')) {
+          <th [pSortableColumn]="'loadTime'" title="Tiempo de carga del modelo en segundos">
+            <div class="column-name">load s <p-sortIcon field="loadTime" /></div>
+          </th>
+        }
+        @if (colVisible('vram')) {
+          <th title="VRAM usada por GPU (índice del SO)">
+            <div class="column-name">VRAM</div>
+          </th>
+        }
+        @if (colVisible('totalVram')) {
+          <th [pSortableColumn]="'totalVram'" title="VRAM total usada (suma de GPUs)">
+            <div class="column-name">Total VRAM <p-sortIcon field="totalVram" /></div>
+          </th>
+        }
+        @if (colVisible('ram')) {
+          <th
+            [pSortableColumn]="'ramUsed'"
+            title="RAM usada por el benchmark (delta durante el run)"
+          >
+            <div class="column-name">RAM <p-sortIcon field="ramUsed" /></div>
+          </th>
+        }
+        @if (colVisible('actions')) {
+          <th style="width: 5rem"></th>
+        }
       </tr>
     </ng-template>
 
@@ -163,86 +230,136 @@
             title="Seleccionar para comparar"
           />
         </td>
-        <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
-        <td>
-          <span class="model-cell" [title]="r.config?.model ?? ''">
-            <span class="model-name">{{ modelBaseName(r.config?.model) }}</span>
-            @if (parsed(r.config?.model); as p) {
-              @if (p.size) {
-                <span class="badge badge-size">{{ p.size }}</span>
+        @if (colVisible('date')) {
+          <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
+        }
+        @if (colVisible('model')) {
+          <td>
+            <span class="model-cell" [title]="r.config?.model ?? ''">
+              <span class="model-name">{{ modelBaseName(r.config?.model) }}</span>
+              @if (parsed(r.config?.model); as p) {
+                @if (p.size) {
+                  <span class="badge badge-size">{{ p.size }}</span>
+                }
+                @if (p.quant) {
+                  <span class="badge badge-quant">{{ p.quant }}</span>
+                }
+                @if (p.mtp) {
+                  <span class="badge badge-mtp">MTP</span>
+                }
               }
-              @if (p.quant) {
-                <span class="badge badge-quant">{{ p.quant }}</span>
-              }
-              @if (p.mtp) {
-                <span class="badge badge-mtp">MTP</span>
-              }
-            }
-          </span>
-        </td>
-        <td class="num">{{ r.config?.ctxSize | fmtNum:0 }}</td>
-        <td class="num">{{ r.config?.batchSize | fmtNum:0 }}/{{ r.config?.ubatchSize | fmtNum:0 }}</td>
-        <td>{{ r.config?.cacheTypeK ?? '—' }}/{{ r.config?.cacheTypeV ?? '—' }}</td>
-        <td class="device-cell">
-          @if (backend(r); as b) {
-            <span class="badge badge-backend" [title]="'Backend del binario: ' + b">{{ b }}</span>
-          }
-          <span>{{ r.config?.device ?? '—' }}</span>
-        </td>
-        <td>{{ r.config?.tensorSplit ?? '—' }}</td>
-        <td class="num col-gen">{{ r.generationTokenCount | fmtNum:0 }}</td>
-        <td class="num col-gen" [class.best]="isBestGenTime(r)">
-          {{ r.generationTimeMs | fmtSec }}<small class="stime">s</small>
-        </td>
-        <td class="num col-gen" [class.best]="isBestGen(r)">
-          {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
-        </td>
-        <td class="num col-read">{{ r.promptTokenCount | fmtNum:0 }}</td>
-        <td class="num col-read">{{ r.promptEvalTimeMs | fmtSec }}<small class="stime">s</small></td>
-        <td class="num col-read" [class.best]="isBestPrompt(r)">
-          {{ r.promptTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
-        </td>
-        <td class="num" [class.best]="isBestDraft(r)">{{ r.draftAcceptance | fmtNum:3 }}</td>
-        <td class="num">{{ r.genDrafts | fmtNum:0 }}</td>
-        <td class="num">{{ r.accDrafts | fmtNum:0 }}</td>
-        <td class="num">{{ r.genTokens | fmtNum:0 }}</td>
-        <td class="num">{{ r.accTokens | fmtNum:0 }}</td>
-        <td class="num" [class.best]="isBestLoad(r)">
-          {{ r.loadTimeSeconds | fmtNum }}<small class="stime">s</small>
-        </td>
-        @if (deviceRows(r).length) {
+            </span>
+          </td>
+        }
+        @if (colVisible('ctx')) {
+          <td class="num">{{ r.config?.ctxSize | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('batch')) {
           <td class="num">
-            <div class="vram-rows">
-              @for (d of deviceRows(r); track d.index) {
-                <span [pTooltip]="d.detail">{{ d.vendor }} {{ d.index }} - {{ d.gb }} GB</span>
+            {{ r.config?.batchSize | fmtNum: 0 }}/{{ r.config?.ubatchSize | fmtNum: 0 }}
+          </td>
+        }
+        @if (colVisible('cache')) {
+          <td>{{ r.config?.cacheTypeK ?? '—' }}/{{ r.config?.cacheTypeV ?? '—' }}</td>
+        }
+        @if (colVisible('device')) {
+          <td class="device-cell">
+            @if (backend(r); as b) {
+              <span class="badge badge-backend" [title]="'Backend del binario: ' + b">{{ b }}</span>
+            }
+            <span>{{ r.config?.device ?? '—' }}</span>
+          </td>
+        }
+        @if (colVisible('tsplit')) {
+          <td>{{ r.config?.tensorSplit ?? '—' }}</td>
+        }
+        @if (colVisible('genTokens')) {
+          <td class="num col-gen">{{ r.generationTokenCount | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('generationTime')) {
+          <td class="num col-gen" [class.best]="isBestGenTime(r)">
+            {{ r.generationTimeMs | fmtSec }}<small class="stime">s</small>
+          </td>
+        }
+        @if (colVisible('genTps')) {
+          <td class="num col-gen" [class.best]="isBestGen(r)">
+            {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
+          </td>
+        }
+        @if (colVisible('promptTokens')) {
+          <td class="num col-read">{{ r.promptTokenCount | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('promptTime')) {
+          <td class="num col-read">
+            {{ r.promptEvalTimeMs | fmtSec }}<small class="stime">s</small>
+          </td>
+        }
+        @if (colVisible('promptTps')) {
+          <td class="num col-read" [class.best]="isBestPrompt(r)">
+            {{ r.promptTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
+          </td>
+        }
+        @if (colVisible('draftAcc')) {
+          <td class="num" [class.best]="isBestDraft(r)">{{ r.draftAcceptance | fmtNum: 3 }}</td>
+        }
+        @if (colVisible('genDr')) {
+          <td class="num">{{ r.genDrafts | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('accDr')) {
+          <td class="num">{{ r.accDrafts | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('genTk')) {
+          <td class="num">{{ r.genTokens | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('accTk')) {
+          <td class="num">{{ r.accTokens | fmtNum: 0 }}</td>
+        }
+        @if (colVisible('loadTime')) {
+          <td class="num" [class.best]="isBestLoad(r)">
+            {{ r.loadTimeSeconds | fmtNum }}<small class="stime">s</small>
+          </td>
+        }
+        @if (colVisible('vram')) {
+          @if (deviceRows(r).length) {
+            <td class="num">
+              <div class="vram-rows">
+                @for (d of deviceRows(r); track d.index) {
+                  <span [pTooltip]="d.detail">{{ d.vendor }} {{ d.index }} - {{ d.gb }} GB</span>
+                }
+              </div>
+            </td>
+          } @else {
+            <td class="num">{{ gpuTxt(r) }}</td>
+          }
+        }
+        @if (colVisible('totalVram')) {
+          <td class="num">{{ totalVramTxt(r) }}<small class="stime">GB</small></td>
+        }
+        @if (colVisible('ram')) {
+          <td class="num">{{ r.ramUsedMiB | fmtGb: 2 }}<small class="stime">GB</small></td>
+        }
+        @if (colVisible('actions')) {
+          <td>
+            <div class="row-actions">
+              @if (hasScript(r.config)) {
+                <p-button
+                  icon="pi pi-arrow-up-left"
+                  [text]="true"
+                  size="small"
+                  (onClick)="apply(r)"
+                  pTooltip="Cargar script en editor"
+                />
               }
+              <p-button
+                icon="pi pi-times"
+                [text]="true"
+                severity="danger"
+                size="small"
+                (onClick)="remove($event, r)"
+              />
             </div>
           </td>
-        } @else {
-          <td class="num">{{ gpuTxt(r) }}</td>
         }
-        <td class="num">{{ totalVramTxt(r) }}<small class="stime">GB</small></td>
-        <td class="num">{{ r.ramUsedMiB | fmtGb:2 }}<small class="stime">GB</small></td>
-        <td>
-          <div class="row-actions">
-            @if (hasScript(r.config)) {
-              <p-button
-                icon="pi pi-arrow-up-left"
-                [text]="true"
-                size="small"
-                (onClick)="apply(r)"
-                pTooltip="Cargar script en editor"
-              />
-            }
-            <p-button
-              icon="pi pi-times"
-              [text]="true"
-              severity="danger"
-              size="small"
-              (onClick)="remove($event, r)"
-            />
-          </div>
-        </td>
       </tr>
     </ng-template>
 

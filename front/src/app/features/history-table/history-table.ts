@@ -7,6 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { StorageService } from '../../core/services/storage.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
 import {
   backendLabel,
@@ -32,6 +33,59 @@ export interface HistoryRow extends BenchmarkResult {
 }
 
 /**
+ * Definición de una columna conmutable de la tabla de historial.
+ * `key` identifica la columna (se persiste en localStorage).
+ */
+export interface HistoryColumn {
+  key: string;
+  header: string;
+}
+
+/**
+ * Claves de las columnas seleccionadas por defecto al primer uso.
+ */
+const DEFAULT_VISIBLE = [
+  'model',
+  'generationTime',
+  'genTps',
+  'vram',
+  'totalVram',
+  'ram',
+  'actions',
+  'promptTps',
+];
+
+/**
+ * Catálogo completo de columnas conmutables de la tabla (orden de render).
+ * Las columnas fijas (checkbox) no aparecen aquí.
+ */
+const COLUMN_DEFS: HistoryColumn[] = [
+  { key: 'date', header: 'Fecha' },
+  { key: 'model', header: 'Modelo' },
+  { key: 'ctx', header: 'ctx' },
+  { key: 'batch', header: 'batch' },
+  { key: 'cache', header: 'cache' },
+  { key: 'device', header: 'device' },
+  { key: 'tsplit', header: 'tsplit' },
+  { key: 'genTokens', header: 'Generated tokens' },
+  { key: 'generationTime', header: 'Generation time' },
+  { key: 'genTps', header: 'Generation speed' },
+  { key: 'promptTokens', header: 'Prompt tokens' },
+  { key: 'promptTime', header: 'Prompt processing time' },
+  { key: 'promptTps', header: 'Prompt processing speed' },
+  { key: 'draftAcc', header: 'draft acc' },
+  { key: 'genDr', header: 'gen dr' },
+  { key: 'accDr', header: 'acc dr' },
+  { key: 'genTk', header: 'gen tk' },
+  { key: 'accTk', header: 'acc tk' },
+  { key: 'loadTime', header: 'load s' },
+  { key: 'vram', header: 'VRAM' },
+  { key: 'totalVram', header: 'Total VRAM' },
+  { key: 'ram', header: 'RAM' },
+  { key: 'actions', header: 'Acciones' },
+];
+
+/**
  * HistoryTable: tabla de resultados históricos de benchmarks.
  * - p-table con sort por columna (sortCol/sortDir persistidos en localStorage).
  * - Filtro por modelo base vía p-columnFilter + p-multiselect (filtrado nativo
@@ -45,7 +99,16 @@ export interface HistoryRow extends BenchmarkResult {
  */
 @Component({
   selector: 'app-history-table',
-  imports: [FormsModule, ButtonModule, MultiSelectModule, TableModule, TooltipModule, FmtNumPipe, FmtSecPipe, FmtGbPipe],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    MultiSelectModule,
+    TableModule,
+    TooltipModule,
+    FmtNumPipe,
+    FmtSecPipe,
+    FmtGbPipe,
+  ],
   templateUrl: './history-table.html',
   styleUrl: './history-table.css',
 })
@@ -54,9 +117,47 @@ export class HistoryTable {
   private readonly api = inject(LlamaBenchService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
+  private readonly storage = inject(StorageService);
 
   protected readonly fmt = fmt;
   protected readonly modelOptions = this.store.modelOptions;
+
+  // ── Columnas visibles (selector) ──
+
+  /** Catálogo completo de columnas para el p-multiselect del caption. */
+  protected readonly allColumns = COLUMN_DEFS;
+  /**
+   * Claves de columnas visibles. Se siembra desde localStorage si existe;
+   * si no, usa DEFAULT_VISIBLE. El effect persiste cambios.
+   */
+  protected readonly visibleColumnKeys = signal<string[]>(
+    this.storage.loadHistoryColumns() ?? [...DEFAULT_VISIBLE],
+  );
+  protected readonly columnOptions = this.allColumns;
+  /** Opciones seleccionadas en el multiselect (objetos completos). */
+  protected readonly selectedColumns = computed<HistoryColumn[]>(() => {
+    const set = new Set(this.visibleColumnKeys());
+    return this.allColumns.filter((c) => set.has(c.key));
+  });
+
+  /** Devuelve true si la columna `key` está visible. */
+  protected colVisible(key: string): boolean {
+    return this.visibleColumnKeys().includes(key);
+  }
+
+  /** Callback del p-multiselect: sincroniza claves + persiste. */
+  protected onColumnsChange(cols: HistoryColumn[]): void {
+    const keys = cols.map((c) => c.key);
+    this.visibleColumnKeys.set(keys);
+    this.storage.saveHistoryColumns(keys);
+  }
+
+  /** Al limpiar (botón ✕ del multiselect): vuelve a las columnas por defecto. */
+  protected onColumnsClear(): void {
+    const keys = [...DEFAULT_VISIBLE];
+    this.visibleColumnKeys.set(keys);
+    this.storage.saveHistoryColumns(keys);
+  }
 
   // ── Modos de visualización de la card (estado efímero, no persistido) ──
 
@@ -68,9 +169,7 @@ export class HistoryTable {
   protected readonly fullWidthLabel = computed(() =>
     this.fullWidth() ? 'Ancho normal' : 'Full width',
   );
-  protected readonly maximizeLabel = computed(() =>
-    this.maximized() ? 'Reducir' : 'Maximizar',
-  );
+  protected readonly maximizeLabel = computed(() => (this.maximized() ? 'Reducir' : 'Maximizar'));
   protected readonly maximizeIcon = computed(() =>
     this.maximized() ? 'pi pi-window-minimize' : 'pi pi-window-maximize',
   );
