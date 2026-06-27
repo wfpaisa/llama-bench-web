@@ -55,7 +55,12 @@ export class BenchStore {
   readonly history = signal<BenchmarkResult[]>([]);
 
   // ── Script + prompt (fuente de verdad editable) ──
-  readonly script = signal('');
+  // El script se siembra desde localStorage al construir el store, de modo que
+  // al recargar el valor persistido queda disponible de inmediato (antes de que
+  // el effect de persistencia pueda ejecutarse). Sin esto, el effect escribía el
+  // valor inicial '' y pisoteaba localStorage, por lo que loadInitialScript caía
+  // siempre al default del archivo. El prompt se maneja aparte (3-tier en Home).
+  readonly script = signal(this.storage.loadScript() ?? '');
   readonly prompt = signal('');
   readonly maxTokens = signal(2048);
   /** Si false, el benchmark se ejecuta sin límite de tokens (omisión de max_tokens). */
