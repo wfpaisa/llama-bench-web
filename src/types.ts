@@ -103,6 +103,46 @@ export interface GpuInfo {
   gpuUtilPct: number | null
 }
 
+/** Backend de cómputo del binario de llama-server (deducido de --list-devices). */
+export type GpuBackend =
+  | 'cuda'
+  | 'vulkan'
+  | 'sycl'
+  | 'metal'
+  | 'opencl'
+  | 'cann'
+  | 'cpu'
+  | 'unknown'
+
+/**
+ * Device reportado por `llama-server --list-devices`: el id del BACKEND
+ * (CUDA0, Vulkan0, …), no del SO. A diferencia de GpuInfo (nvidia-smi/sysfs),
+ * cubre todos los vendors del binario, incluido Intel vía Vulkan.
+ */
+export interface LlamaDevice {
+  /** Id del backend (p.ej. "CUDA0", "Vulkan0"). */
+  id: string
+  /** Nombre legible (p.ej. "NVIDIA GeForce RTX 5070 Ti"). */
+  name: string
+  /** Marca deducida del nombre. */
+  vendor: 'nvidia' | 'amd' | 'intel' | 'unknown'
+  /** VRAM total en MiB. */
+  totalMiB: number
+  /** VRAM libre en MiB. */
+  freeMiB: number
+}
+
+/**
+ * VRAM consumida por el modelo en un device del backend: el device reportado
+ * por --list-devices + el delta de VRAM libre (antes − después de cargar el
+ * modelo). `usedMiB` es null si no se pudo medir el delta.
+ */
+export interface DeviceVram {
+  device: LlamaDevice
+  /** Delta de VRAM libre consumido por el modelo (baseline.free − final.free). */
+  usedMiB: number | null
+}
+
 /** Métricas de RAM del sistema (Linux, /proc/meminfo). null si no disponible. */
 export interface RamInfo {
   /** RAM total en MiB (MemTotal). */
@@ -153,6 +193,14 @@ export interface BenchmarkResult {
   response: string
   /** Métricas de GPUs. */
   gpus: GpuInfo[]
+  /** Backend de cómputo del binario (cuda/vulkan/…). null si no se detectó. */
+  backend: GpuBackend | null
+  /**
+   * VRAM por device del backend (delta consumido por el modelo), filtrado por
+   * `--device`. Vacío en entradas viejas o si --list-devices falló; en ese caso
+   * el render cae a `gpus` (legacy nvidia-smi/sysfs).
+   */
+  deviceVram: DeviceVram[]
   /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
   ramUsedMiB: number | null
   /** Errores encontrados durante el run. */

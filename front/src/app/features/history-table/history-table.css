@@ -85,9 +85,36 @@
   }
 }
 
+.device-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+
+  .badge-backend {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: var(--radius-full, 9999px);
+    font-weight: 600;
+    line-height: 1.4;
+    background: var(--p-green-900);
+    color: var(--p-green-200);
+  }
+}
+
 .row-actions {
   display: flex;
   gap: 0.15rem;
+}
+
+/* Celda VRAM: una fila por device del backend, cada una con su tooltip. */
+.vram-rows {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 /* Encabezados en mayúsculas. */

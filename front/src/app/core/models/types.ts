@@ -65,6 +65,43 @@ export interface GpuInfo {
   gpuUtilPct: number | null;
 }
 
+/** Backend de cómputo del binario de llama-server (deducido de --list-devices). */
+export type GpuBackend =
+  | 'cuda'
+  | 'vulkan'
+  | 'sycl'
+  | 'metal'
+  | 'opencl'
+  | 'cann'
+  | 'cpu'
+  | 'unknown';
+
+/**
+ * Device reportado por `llama-server --list-devices`: id del BACKEND (CUDA0,
+ * Vulkan0, …). A diferencia de GpuInfo, cubre todos los vendors del binario.
+ */
+export interface LlamaDevice {
+  /** Id del backend (p.ej. "CUDA0", "Vulkan0"). */
+  id: string;
+  /** Nombre legible (p.ej. "NVIDIA GeForce RTX 5070 Ti"). */
+  name: string;
+  /** Marca deducida del nombre. */
+  vendor: 'nvidia' | 'amd' | 'intel' | 'unknown';
+  /** VRAM total en MiB. */
+  totalMiB: number;
+  /** VRAM libre en MiB. */
+  freeMiB: number;
+}
+
+/**
+ * VRAM consumida por el modelo en un device del backend: device + delta de VRAM
+ * libre (antes − después de cargar el modelo). `usedMiB` null si no se pudo medir.
+ */
+export interface DeviceVram {
+  device: LlamaDevice;
+  usedMiB: number | null;
+}
+
 /** Métricas de RAM del sistema (Linux, /proc/meminfo). null si no disponible. */
 export interface RamInfo {
   memTotalMiB: number | null;
@@ -93,6 +130,14 @@ export interface BenchmarkResult {
   prompt: string;
   response: string;
   gpus: GpuInfo[];
+  /** Backend de cómputo del binario (cuda/vulkan/…). null si no se detectó. */
+  backend: GpuBackend | null;
+  /**
+   * VRAM por device del backend (delta consumido por el modelo), filtrado por
+   * `--device`. Vacío en entradas viejas o si --list-devices falló; el render
+   * cae a `gpus` (legacy nvidia-smi/sysfs).
+   */
+  deviceVram: DeviceVram[];
   /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
   ramUsedMiB: number | null;
   errors: string[];

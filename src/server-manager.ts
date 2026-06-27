@@ -14,6 +14,23 @@ import type { ParsedScript, LogEntry } from './types.ts'
 import { managed, setManaged, status, setStatus, setStatusError } from './state.ts'
 import { pushLog, systemLog } from './logs.ts'
 
+/**
+ * Construye el entorno de runtime del binario de llama-server:
+ *   - `cwd`: el directorio del binario (refleja lo que el usuario hace en la
+ *     terminal y resuelve .so relativas).
+ *   - `env`: copia de process.env con LD_LIBRARY_PATH apuntando al dir del
+ *     binario (para libllama-server-impl.so y similares).
+ * Reutilizado por startServer() y por listDevices() (devices.ts).
+ */
+export function binaryRuntimeEnv(binary: string): { cwd: string; env: Record<string, string> } {
+  const binAbs = resolve(binary)
+  const binDir = dirname(binAbs)
+  const env = { ...process.env } as Record<string, string>
+  const existing = env['LD_LIBRARY_PATH'] || ''
+  env['LD_LIBRARY_PATH'] = existing ? `${binDir}:${existing}` : binDir
+  return { cwd: binDir, env }
+}
+
 /** Construye la URL base del server gestionado a partir de host/port. */
 export function urlFor(c: { host: string; port: number }): string {
   const host = c.host || '127.0.0.1'
@@ -29,15 +46,8 @@ export async function startServer(parsed: ParsedScript): Promise<number> {
 
   const { binary, argv } = parsed
 
-  // Resolver el directorio del binario para:
-  //   1. Ponerlo como cwd (refleja lo que el usuario hace en la terminal).
-  //   2. Añadirlo a LD_LIBRARY_PATH para que encuentre .so relativas
-  //      (p.ej. libllama-server-impl.so).
-  const binAbs = resolve(binary)
-  const binDir = dirname(binAbs)
-  const env = { ...process.env } as Record<string, string>
-  const existing = env['LD_LIBRARY_PATH'] || ''
-  env['LD_LIBRARY_PATH'] = existing ? `${binDir}:${existing}` : binDir
+  // Entorno de runtime del binario (cwd + LD_LIBRARY_PATH).
+  const { cwd: binDir, env } = binaryRuntimeEnv(binary)
 
   systemLog(`spawn: ${binary} ${argv.join(' ')}  (cwd=${binDir})`)
 

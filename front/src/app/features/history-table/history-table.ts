@@ -8,7 +8,17 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
-import { fmt, gpuVramLine, modelBase, parseModel, shortModel, totalVramTxt } from '../../core/utils/format';
+import {
+  backendLabel,
+  deviceVramLine,
+  deviceVramRows,
+  fmt,
+  modelBase,
+  parseModel,
+  shortModel,
+  totalDeviceVramTxt,
+  type DeviceVramRow,
+} from '../../core/utils/format';
 import { FmtGbPipe, FmtNumPipe, FmtSecPipe } from '../../core/utils/pipes';
 
 /**
@@ -97,13 +107,25 @@ export class HistoryTable {
   protected hasScript(c: ParsedScript | undefined): boolean {
     return !!c && typeof c.script === 'string' && c.script.length > 0;
   }
-  /** VRAM por GPU: índice del SO legible (mismo helper que Último resultado). */
-  protected gpuTxt(r: BenchmarkResult): string {
-    return gpuVramLine(r, true);
+  /**
+   * Una fila por device del backend para la celda VRAM (vendor + index + GB,
+   * con tooltip individual por device). Vacío si no hay deviceVram: en ese
+   * caso el template cae al fallback legacy (gpuTxt, una sola línea).
+   */
+  protected deviceRows(r: BenchmarkResult): DeviceVramRow[] {
+    return deviceVramRows(r);
   }
-  /** VRAM total usada (suma de GPUs). */
+  /** VRAM legacy (una sola línea) para resultados sin deviceVram. */
+  protected gpuTxt(r: BenchmarkResult): string {
+    return deviceVramLine(r, true);
+  }
+  /** VRAM total usada (suma de devices del backend; fallback a GPUs legacy). */
   protected totalVramTxt(r: BenchmarkResult): string {
-    return totalVramTxt(r);
+    return totalDeviceVramTxt(r);
+  }
+  /** Etiqueta del backend (CUDA/Vulkan/…); '' si no se detectó. */
+  protected backend(r: BenchmarkResult): string {
+    return backendLabel(r.backend);
   }
 
   // ── Highlights "best" (sobre TODA la history) ──

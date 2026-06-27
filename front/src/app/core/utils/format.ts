@@ -2,7 +2,19 @@
 // (src/front/app.ts). Sin estado ni dependencias, fáciles de testear y reutilizar
 // desde pipes y plantillas.
 
-import type { BenchmarkResult, GpuInfo } from '../models/types';
+import type { BenchmarkResult, DeviceVram, GpuBackend, GpuInfo, LlamaDevice } from '../models/types';
+
+/** Vista por device del backend para render multi-fila en el historial. */
+export interface DeviceVramRow {
+  /** Marca en mayúsculas (AMD/NVIDIA/INTEL/—). */
+  vendor: string;
+  /** Índice del device sin el prefijo del backend (p.ej. "0" de "Vulkan0"). */
+  index: string;
+  /** GB usados por el modelo (1 decimal); '?' si no se pudo medir. */
+  gb: string;
+  /** Texto completo para el tooltip (id + nombre + total/free). */
+  detail: string;
+}
 
 // ── Formateo numérico con locale es-CO (separador de miles "." y decimal ",") ──
 // Cache de Intl.NumberFormat por nº de decimales: crear formatters es caro y se
@@ -108,6 +120,85 @@ export function escapeHtml(s: unknown): string {
     };
     return map[c];
   });
+}
+
+/**
+ * Etiqueta legible del backend de cómputo del binario (cuda→"CUDA", …).
+ * '' si es null/unknown.
+ */
+export function backendLabel(b: GpuBackend | null | undefined): string {
+  if (!b || b === 'unknown') return '';
+  return b.charAt(0).toUpperCase() + b.slice(1);
+}
+
+/**
+ * Línea de VRAM por device del backend para un resultado, usando los ids del
+ * binario (CUDA0/Vulkan0, los mismos que --device). Cae a gpuVramLine() (legacy
+ * nvidia-smi/sysfs) si el resultado no trae deviceVram (entradas viejas).
+ *
+ *   deviceVramLine(r)        → "Vulkan0: 2,1 GB · Vulkan1: 9,8 GB"
+ *   deviceVramLine(r, true)  → "Vulkan0:2,1, Vulkan1:9,8"  (compacto, sin unidad)
+ */
+export function deviceVramLine(r: BenchmarkResult, compact = false): string {
+  const dv = r.deviceVram;
+  if (!dv || dv.length === 0) return gpuVramLine(r, compact);
+  return (
+    dv
+      .map((d) => {
+        const gb = d.usedMiB != null ? fmtGB(d.usedMiB, 1) : '?';
+        return compact ? `${d.device.id}:${gb}` : `${d.device.id}: ${gb} GB`;
+      })
+      .join(compact ? ', ' : ' · ') || '—'
+  );
+}
+
+/**
+ * Tooltip con nombre legible de cada device del backend (para hover en el
+ * historial). '' si no hay deviceVram.
+ */
+export function deviceNamesLine(r: BenchmarkResult): string {
+  const dv = r.deviceVram;
+  if (!dv || dv.length === 0) return '';
+  return dv.map((d) => `${d.device.id}: ${d.device.name} (${fmtGB(d.device.totalMiB, 1)} GB)`).join(' · ');
+}
+
+/** Marca en mayúsculas y legible (AMD/NVIDIA/INTEL), o '—' si es desconocida. */
+function vendorUpper(v: LlamaDevice['vendor']): string {
+  return v && v !== 'unknown' ? v.toUpperCase() : '—';
+}
+
+/**
+ * Una fila por device del backend para render multi-fila en la celda VRAM:
+ *   { vendor:"AMD", index:"0", gb:"1,5", detail:"Vulkan0: AMD … (8176 MiB, 5407 MiB free)" }
+ * `index` es el número tras el prefijo del backend ("Vulkan0" → "0"). Devuelve []
+ * si no hay deviceVram (el template cae al fallback legacy).
+ */
+export function deviceVramRows(r: BenchmarkResult): DeviceVramRow[] {
+  const dv = r.deviceVram;
+  if (!dv || dv.length === 0) return [];
+  return dv.map((d: DeviceVram) => {
+    const dev = d.device;
+    // El id del backend termina en dígitos: "Vulkan0" → "0", "CUDA0" → "0".
+    const num = dev.id.match(/(\d+)$/)?.[1] ?? dev.id;
+    return {
+      vendor: vendorUpper(dev.vendor),
+      index: num,
+      gb: d.usedMiB != null ? fmtGB(d.usedMiB, 1) : '?',
+      detail: `${dev.id}: ${dev.name} (${Math.round(dev.totalMiB)} MiB, ${Math.round(dev.freeMiB)} MiB free)`,
+    };
+  });
+}
+
+/**
+ * VRAM total usada (suma de devices del backend) en GB; '—' si no hay.
+ * Cae a totalVramTxt() (legacy suma de gpus) si no hay deviceVram.
+ * Devuelve SOLO el valor (sin "GB"); la unidad va como <small> en el template.
+ */
+export function totalDeviceVramTxt(r: BenchmarkResult): string {
+  const dv = r.deviceVram;
+  if (!dv || dv.length === 0) return totalVramTxt(r);
+  const totalMiB = dv.reduce((sum, d) => sum + (d.usedMiB ?? 0), 0);
+  return totalMiB > 0 ? fmtGB(totalMiB, 1) : '—';
 }
 
 /**

@@ -7,6 +7,7 @@ import type { BenchmarkResult, ParsedScript } from './types.ts'
 import { parseScript } from './script-parser.ts'
 import { readGpuStats, subtractGpuBaseline } from './gpu.ts'
 import { readRamStats, subtractRamBaseline } from './mem.ts'
+import { listDevices, detectBackend, computeDeviceVram } from './devices.ts'
 import { DEFAULT_PROMPT, parseMetricsFromLogs, sleep, waitForServer } from './metrics.ts'
 import { startServer, stopServer, urlFor } from './server-manager.ts'
 import { saveResult } from './history.ts'
@@ -33,7 +34,13 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
   const logStartIndex = getLogBuffer().length
 
   // 0b) Capturar baseline de GPU y RAM antes de iniciar (para restar lo ya en uso).
-  const [gpuBaseline, ramBaseline] = await Promise.all([readGpuStats(), readRamStats()])
+  //     También enumeramos los devices del backend (--list-devices) para medir el
+  //     delta de VRAM libre consumido por el modelo al final.
+  const [gpuBaseline, ramBaseline, baselineDevices] = await Promise.all([
+    readGpuStats(),
+    readRamStats(),
+    listDevices(parsed.binary),
+  ])
 
   // Inicializar AbortController para permitir cancelación desde la UI.
   const controller = new AbortController()
@@ -119,6 +126,13 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
     const gpus = subtractGpuBaseline(gpusFinal, gpuBaseline)
     const ramUsedMiB = subtractRamBaseline(ramFinal, ramBaseline)
 
+    // 5b) Devices del backend con el modelo aún cargado: delta de VRAM libre
+    //     consumido por el modelo, filtrado por --device. El backend (cuda/
+    //     vulkan/…) se deduce del id del device.
+    const finalDevices = await listDevices(parsed.binary)
+    const deviceVram = computeDeviceVram(baselineDevices, finalDevices, parsed.device)
+    const backend = detectBackend(baselineDevices)
+
     const result: BenchmarkResult = {
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
@@ -139,6 +153,8 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
       prompt,
       response: responseText,
       gpus,
+      backend: backend === 'unknown' ? null : backend,
+      deviceVram,
       ramUsedMiB,
       errors,
     }
@@ -175,6 +191,8 @@ function finalize(parsed: ParsedScript | null, prompt: string, errors: string[])
     prompt,
     response: '',
     gpus: [],
+    backend: null,
+    deviceVram: [],
     ramUsedMiB: null,
     errors,
   }

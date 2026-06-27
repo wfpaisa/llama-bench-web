@@ -49,8 +49,10 @@
       <div class="metric metric-wide2">
         <div class="k">VRAM</div>
         <div class="v v-small">
-          @for (g of r.gpus; track g.index; let last = $last) {
-            {{ label(g) }}: {{ g.memUsedMiB | fmtGb:1 }}<small> GB</small>{{ last ? '' : ' · ' }}
+          @for (d of vramItems(); track d.id; let last = $last) {
+            <span [title]="d.name + (d.totalMiB != null ? ' (' + (d.totalMiB / 1024).toFixed(1) + ' GB total)' : '')">
+              {{ d.id }}: {{ d.usedMiB | fmtGb:1 }}<small> GB</small>
+            </span>{{ last ? '' : ' · ' }}
           } @empty {
             —
           }

@@ -2,7 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { DialogModule } from 'primeng/dialog';
 import { BenchStore } from '../../core/state/bench.store';
 import { BenchmarkResult } from '../../core/models/types';
-import { fmt, fmtGB, fmtMs, shortModel } from '../../core/utils/format';
+import { fmt, fmtGB, fmtMs, backendLabel, deviceVramLine, shortModel } from '../../core/utils/format';
 
 /** Cada fila de la tabla transpuesta: etiqueta + extractor de valor por resultado. */
 interface CompareRow {
@@ -70,6 +70,7 @@ export class CompareModal {
       value: (r) => `${r.config?.cacheTypeK ?? '—'}/${r.config?.cacheTypeV ?? '—'}`,
     },
     { label: 'device', value: (r) => r.config?.device || '—' },
+    { label: 'backend', value: (r) => backendLabel(r.backend) || '—' },
     { label: 'tensor-split', value: (r) => r.config?.tensorSplit || '—' },
     { label: 'Prompt T/s', value: (r) => fmt(r.promptTokensPerSecond) },
     { label: 'Gen T/s', value: (r) => fmt(r.generationTokensPerSecond) },
@@ -83,10 +84,7 @@ export class CompareModal {
     { label: 'Latencia (ms)', value: (r) => fmt(r.requestLatencyMs, 0) },
     {
       label: 'VRAM (GB)',
-      value: (r) =>
-        r.gpus
-          .map((g) => fmtGB(g.memUsedMiB, 1))
-          .join(' + ') || '—',
+      value: (r) => deviceVramLine(r, true) || '—',
     },
     { label: 'RAM (GB)', value: (r) => fmtGB(r.ramUsedMiB, 2) },
   ]);

@@ -86,7 +86,7 @@
         <th title="Tipo de caché K/V (--cache-type-k / --cache-type-v)">
           <div class="column-name">cache</div>
         </th>
-        <th title="Dispositivo (--device)">
+        <th title="Dispositivo (--device) y backend del binario (CUDA/Vulkan)">
           <div class="column-name">device</div>
         </th>
         <th style="min-width: 5rem" title="Reparto de tensores (--tensor-split)">
@@ -183,7 +183,12 @@
         <td class="num">{{ r.config?.ctxSize | fmtNum:0 }}</td>
         <td class="num">{{ r.config?.batchSize | fmtNum:0 }}/{{ r.config?.ubatchSize | fmtNum:0 }}</td>
         <td>{{ r.config?.cacheTypeK ?? '—' }}/{{ r.config?.cacheTypeV ?? '—' }}</td>
-        <td>{{ r.config?.device ?? '—' }}</td>
+        <td class="device-cell">
+          @if (backend(r); as b) {
+            <span class="badge badge-backend" [title]="'Backend del binario: ' + b">{{ b }}</span>
+          }
+          <span>{{ r.config?.device ?? '—' }}</span>
+        </td>
         <td>{{ r.config?.tensorSplit ?? '—' }}</td>
         <td class="num col-gen">{{ r.generationTokenCount | fmtNum:0 }}</td>
         <td class="num col-gen" [class.best]="isBestGenTime(r)">
@@ -205,7 +210,17 @@
         <td class="num" [class.best]="isBestLoad(r)">
           {{ r.loadTimeSeconds | fmtNum }}<small class="stime">s</small>
         </td>
-        <td class="num">{{ gpuTxt(r) }}</td>
+        @if (deviceRows(r).length) {
+          <td class="num">
+            <div class="vram-rows">
+              @for (d of deviceRows(r); track d.index) {
+                <span [pTooltip]="d.detail">{{ d.vendor }} {{ d.index }} - {{ d.gb }} GB</span>
+              }
+            </div>
+          </td>
+        } @else {
+          <td class="num">{{ gpuTxt(r) }}</td>
+        }
         <td class="num">{{ totalVramTxt(r) }}<small class="stime">GB</small></td>
         <td class="num">{{ r.ramUsedMiB | fmtGb:2 }}<small class="stime">GB</small></td>
         <td>
