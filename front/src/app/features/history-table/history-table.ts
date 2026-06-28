@@ -37,10 +37,27 @@ export interface HistoryRow extends BenchmarkResult {
 /**
  * Definición de una columna conmutable de la tabla de historial.
  * `key` identifica la columna (se persiste en localStorage).
+ * `group` agrupa columnas por familia para tintear fondo y elegir icono:
+ *   - 'gen'   → Escritura (generation tokens / time / speed).
+ *   - 'read'  → Lectura (prompt tokens / time / speed).
+ *   - 'draft' → Especulativo (draft acc / gen dr / acc dr / gen tk / acc tk).
  */
 export interface HistoryColumn {
   key: string;
   header: string;
+  group?: 'gen' | 'read' | 'draft';
+}
+
+/**
+ * Metadatos de cada grupo: icono PrimeNG + etiqueta + clase de tinte de fondo.
+ * Se usa tanto en el indicador junto al selector como en cada ítem del listado.
+ */
+export interface ColumnGroupMeta {
+  key: 'gen' | 'read' | 'draft';
+  icon: string;
+  label: string;
+  /** Clase que aplica el tinte de fondo (definida en el CSS del componente). */
+  cellClass: string;
 }
 
 /**
@@ -70,22 +87,32 @@ const COLUMN_DEFS: HistoryColumn[] = [
   { key: 'cache', header: 'cache' },
   { key: 'device', header: 'device' },
   { key: 'tsplit', header: 'tsplit' },
-  { key: 'genTokens', header: 'Generated tokens' },
-  { key: 'generationTime', header: 'Generation time' },
-  { key: 'genTps', header: 'Generation speed' },
-  { key: 'promptTokens', header: 'Prompt tokens' },
-  { key: 'promptTime', header: 'Prompt processing time' },
-  { key: 'promptTps', header: 'Prompt processing speed' },
-  { key: 'draftAcc', header: 'draft acc' },
-  { key: 'genDr', header: 'gen dr' },
-  { key: 'accDr', header: 'acc dr' },
-  { key: 'genTk', header: 'gen tk' },
-  { key: 'accTk', header: 'acc tk' },
+  { key: 'genTokens', header: 'Generated tokens', group: 'gen' },
+  { key: 'generationTime', header: 'Generation time', group: 'gen' },
+  { key: 'genTps', header: 'Generation speed', group: 'gen' },
+  { key: 'promptTokens', header: 'Prompt tokens', group: 'read' },
+  { key: 'promptTime', header: 'Prompt processing time', group: 'read' },
+  { key: 'promptTps', header: 'Prompt processing speed', group: 'read' },
+  { key: 'draftAcc', header: 'draft acc', group: 'draft' },
+  { key: 'genDr', header: 'gen dr', group: 'draft' },
+  { key: 'accDr', header: 'acc dr', group: 'draft' },
+  { key: 'genTk', header: 'gen tk', group: 'draft' },
+  { key: 'accTk', header: 'acc tk', group: 'draft' },
   { key: 'loadTime', header: 'load s' },
   { key: 'vram', header: 'VRAM' },
   { key: 'totalVram', header: 'Total VRAM' },
   { key: 'ram', header: 'RAM' },
   { key: 'actions', header: 'Acciones' },
+];
+
+/**
+ * Metadatos de los grupos conmutables, para el indicador de leyenda junto al
+ * selector de columnas y para tintear/iconizar cada ítem del listado.
+ */
+const COLUMN_GROUPS: ColumnGroupMeta[] = [
+  { key: 'gen', icon: 'pi pi-pen-to-square', label: 'Escritura', cellClass: 'col-gen' },
+  { key: 'read', icon: 'pi pi-eye', label: 'Lectura', cellClass: 'col-read' },
+  { key: 'draft', icon: 'pi pi-filter', label: 'Especulativo', cellClass: 'col-draft' },
 ];
 
 /**
@@ -130,6 +157,10 @@ export class HistoryTable {
 
   /** Catálogo completo de columnas para el p-multiselect del caption. */
   protected readonly allColumns = COLUMN_DEFS;
+  /** Grupos conmutables (leyenda + tinte/icono de cada ítem del listado). */
+  protected readonly columnGroups = COLUMN_GROUPS;
+  /** Mapa key → metadatos del grupo, para tintear ítems del multiselect. */
+  private readonly groupByKey = new Map(COLUMN_GROUPS.map((g) => [g.key, g]));
   /**
    * Claves de columnas visibles. Se siembra desde localStorage si existe;
    * si no, usa DEFAULT_VISIBLE. El effect persiste cambios.
@@ -147,6 +178,11 @@ export class HistoryTable {
   /** Devuelve true si la columna `key` está visible. */
   protected colVisible(key: string): boolean {
     return this.visibleColumnKeys().includes(key);
+  }
+
+  /** Metadatos del grupo de una columna (icono + tinte); undefined si no agrupa. */
+  protected groupOf(col: HistoryColumn): ColumnGroupMeta | undefined {
+    return col.group ? this.groupByKey.get(col.group) : undefined;
   }
 
   /** Callback del p-multiselect: sincroniza claves + persiste. */

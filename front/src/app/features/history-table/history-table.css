@@ -19,11 +19,49 @@
   margin-left: 0.5rem;
 }
 
-/* Barra del selector de columnas (caption del p-table). */
+/* Barra del selector de columnas (caption del p-table): leyenda de grupos
+   + multiselect de columnas. */
 .columns-bar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
   padding: 0.25rem 0;
+  flex-wrap: wrap;
+}
+
+/* Leyenda de grupos junto al selector: cuadradito de color + icono + label. */
+.group-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.group-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* Cuadradito de 16×16 con el tinte de fondo del grupo. Reutiliza las clases
+   col-gen / col-read / col-draft para mantener un único origen de color. */
+.group-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
+}
+.group-swatch.col-gen {
+  background: color-mix(in srgb, var(--p-primary-500), transparent 84%);
+}
+.group-swatch.col-read {
+  background: color-mix(in srgb, var(--p-purple-500), transparent 84%);
+}
+.group-swatch.col-draft {
+  background: color-mix(in srgb, var(--p-orange-500), transparent 84%);
 }
 
 .muted {
@@ -100,16 +138,49 @@ th .column-name {
   text-transform: uppercase;
 }
 
-/* Grupos de columnas con tinte muy tenue:
-   - Generation (azul): tokens / time / speed de generación.
-   - Reading (morado): tokens / time / speed de procesado del prompt. */
+/* Grupos de columnas con tinte tenue:
+   - Generation (primary): tokens / time / speed de generación.
+   - Reading (morado): tokens / time / speed de procesado del prompt.
+   - Draft (naranja): draft acc / gen dr / acc dr / gen tk / acc tk. */
 :host ::ng-deep th.col-gen,
 :host ::ng-deep td.col-gen {
-  background: color-mix(in srgb, var(--p-blue-500, #3b82f6) 7%, transparent);
+  background: color-mix(in srgb, var(--p-primary-500), transparent 84%);
 }
 :host ::ng-deep th.col-read,
 :host ::ng-deep td.col-read {
-  background: color-mix(in srgb, var(--p-purple-500, #a855f7) 7%, transparent);
+  background: color-mix(in srgb, var(--p-purple-500), transparent 84%);
+}
+:host ::ng-deep th.col-draft,
+:host ::ng-deep td.col-draft {
+  background: color-mix(in srgb, var(--p-orange-500), transparent 84%);
+}
+
+/* Ítem del listado del multiselect de columnas: icono + nombre + tinte de
+   fondo del grupo a su izquierda para reconocer la familia. El panel vive
+   fuera del host (overlay), por eso va con ::ng-deep y selectores globales. */
+:host ::ng-deep .column-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+:host ::ng-deep .column-item .item-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+:host ::ng-deep .column-item .item-swatch.col-gen {
+  background: color-mix(in srgb, var(--p-primary-500), transparent 84%);
+}
+:host ::ng-deep .column-item .item-swatch.col-read {
+  background: color-mix(in srgb, var(--p-purple-500), transparent 84%);
+}
+:host ::ng-deep .column-item .item-swatch.col-draft {
+  background: color-mix(in srgb, var(--p-orange-500), transparent 84%);
 }
 
 /* Layout automático: cada columna toma el ancho de su contenido o de su

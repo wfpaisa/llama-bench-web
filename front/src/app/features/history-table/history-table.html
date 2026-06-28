@@ -56,6 +56,15 @@
   >
     <ng-template #caption>
       <div class="columns-bar">
+        <div class="group-legend">
+          @for (g of columnGroups; track g.key) {
+            <span class="group-legend-item">
+              <span class="group-swatch" [class]="g.cellClass"></span>
+              <i [class]="g.icon"></i>
+              {{ g.label }}
+            </span>
+          }
+        </div>
         <p-multiselect
           [options]="columnOptions"
           [ngModel]="selectedColumns()"
@@ -68,7 +77,18 @@
           selectedItemsLabel="{0} columnas"
           [style]="{ 'min-width': '16rem' }"
           [panelStyle]="{ minWidth: '18rem' }"
-        />
+        >
+          <ng-template let-col #item>
+            <div class="column-item" [class.has-group]="!!groupOf(col)">
+              @if (groupOf(col); as g) {
+                <span class="item-swatch" [class]="g.cellClass">
+                  <i [class]="g.icon"></i>
+                </span>
+              }
+              <span>{{ col.header }}</span>
+            </div>
+          </ng-template>
+        </p-multiselect>
       </div>
     </ng-template>
 
@@ -182,27 +202,31 @@
           </th>
         }
         @if (colVisible('draftAcc')) {
-          <th [pSortableColumn]="'draftAcc'" title="Aceptación del draft (speculative / MTP)">
+          <th
+            class="col-draft"
+            [pSortableColumn]="'draftAcc'"
+            title="Aceptación del draft (speculative / MTP)"
+          >
             <div class="column-name">draft acc <p-sortIcon field="draftAcc" /></div>
           </th>
         }
         @if (colVisible('genDr')) {
-          <th title="Drafts generados (#gen drafts)">
+          <th class="col-draft" title="Drafts generados (#gen drafts)">
             <div class="column-name">gen dr</div>
           </th>
         }
         @if (colVisible('accDr')) {
-          <th title="Drafts aceptados (#acc drafts)">
+          <th class="col-draft" title="Drafts aceptados (#acc drafts)">
             <div class="column-name">acc dr</div>
           </th>
         }
         @if (colVisible('genTk')) {
-          <th title="Tokens generados por draft-mtp (#gen tokens)">
+          <th class="col-draft" title="Tokens generados por draft-mtp (#gen tokens)">
             <div class="column-name">gen tk</div>
           </th>
         }
         @if (colVisible('accTk')) {
-          <th title="Tokens aceptados por draft-mtp (#acc tokens)">
+          <th class="col-draft" title="Tokens aceptados por draft-mtp (#acc tokens)">
             <div class="column-name">acc tk</div>
           </th>
         }
@@ -316,19 +340,21 @@
           </td>
         }
         @if (colVisible('draftAcc')) {
-          <td class="num" [class.best]="isBestDraft(r)">{{ r.draftAcceptance | fmtNum: 3 }}</td>
+          <td class="num col-draft" [class.best]="isBestDraft(r)">
+            {{ r.draftAcceptance | fmtNum: 3 }}
+          </td>
         }
         @if (colVisible('genDr')) {
-          <td class="num">{{ r.genDrafts | fmtNum: 0 }}</td>
+          <td class="num col-draft">{{ r.genDrafts | fmtNum: 0 }}</td>
         }
         @if (colVisible('accDr')) {
-          <td class="num">{{ r.accDrafts | fmtNum: 0 }}</td>
+          <td class="num col-draft">{{ r.accDrafts | fmtNum: 0 }}</td>
         }
         @if (colVisible('genTk')) {
-          <td class="num">{{ r.genTokens | fmtNum: 0 }}</td>
+          <td class="num col-draft">{{ r.genTokens | fmtNum: 0 }}</td>
         }
         @if (colVisible('accTk')) {
-          <td class="num">{{ r.accTokens | fmtNum: 0 }}</td>
+          <td class="num col-draft">{{ r.accTokens | fmtNum: 0 }}</td>
         }
         @if (colVisible('loadTime')) {
           <td class="num" [class.best]="isBestLoad(r)">
