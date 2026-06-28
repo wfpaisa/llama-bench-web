@@ -5,7 +5,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, SelectItemGroup } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -51,9 +51,11 @@ export interface HistoryColumn {
 /**
  * Metadatos de cada grupo: icono PrimeNG + etiqueta + clase de tinte de fondo.
  * Se usa tanto en el indicador junto al selector como en cada ítem del listado.
+ * El grupo 'general' agrupa todas las columnas que no son de generación/lectura/
+ * especulación.
  */
 export interface ColumnGroupMeta {
-  key: 'gen' | 'read' | 'draft';
+  key: 'gen' | 'read' | 'draft' | 'general';
   icon: string;
   label: string;
   /** Clase que aplica el tinte de fondo (definida en el CSS del componente). */
@@ -66,13 +68,16 @@ export interface ColumnGroupMeta {
 const DEFAULT_VISIBLE = [
   'model',
   'ctx',
+  'batch',
+  'cache',
   'generationTime',
   'genTps',
+  'promptTps',
+  'promptTime',
   'vram',
   'totalVram',
   'ram',
   'actions',
-  'promptTps',
 ];
 
 /**
@@ -108,12 +113,32 @@ const COLUMN_DEFS: HistoryColumn[] = [
 /**
  * Metadatos de los grupos conmutables, para el indicador de leyenda junto al
  * selector de columnas y para tintear/iconizar cada ítem del listado.
+ * El orden define el de los grupos en el multiselect.
  */
 const COLUMN_GROUPS: ColumnGroupMeta[] = [
   { key: 'gen', icon: 'pi pi-pen-to-square', label: 'Escritura', cellClass: 'col-gen' },
   { key: 'read', icon: 'pi pi-eye', label: 'Lectura', cellClass: 'col-read' },
-  { key: 'draft', icon: 'pi pi-filter', label: 'Especulativo', cellClass: 'col-draft' },
+  { key: 'draft', icon: 'pi pi-eraser', label: 'Especulativo', cellClass: 'col-draft' },
+  { key: 'general', icon: 'pi pi-table', label: 'General', cellClass: 'col-general' },
 ];
+
+/** Orden de los grupos en el listado del multiselect (campo `group` de la opción). */
+const GROUP_ORDER: ColumnGroupMeta['key'][] = ['gen', 'read', 'draft', 'general'];
+
+/**
+ * Opciones del p-multiselect agrupadas (formato SelectItemGroup[]). El grupo
+ * 'general' agrupa todas las columnas que no son escritura/lectura/especulación.
+ * Cada ítem conserva el `group` y el `cellClass` para que el template pueda
+ * tintear el swatch y el header de grupo.
+ */
+const GROUPED_COLUMNS: SelectItemGroup[] = GROUP_ORDER.map((gk) => {
+  const meta = COLUMN_GROUPS.find((g) => g.key === gk)!;
+  const items = COLUMN_DEFS.filter((c) => (c.group ?? 'general') === gk).map((c) => ({
+    label: c.header,
+    value: c.key,
+  }));
+  return { label: meta.label, value: gk, items };
+});
 
 /**
  * HistoryTable: tabla de resultados históricos de benchmarks.
@@ -155,10 +180,12 @@ export class HistoryTable {
 
   // ── Columnas visibles (selector) ──
 
-  /** Catálogo completo de columnas para el p-multiselect del caption. */
+  /** Catálogo plano completo de columnas (para colVisible / selectedColumns). */
   protected readonly allColumns = COLUMN_DEFS;
   /** Grupos conmutables (leyenda + tinte/icono de cada ítem del listado). */
   protected readonly columnGroups = COLUMN_GROUPS;
+  /** Opciones agrupadas para el p-multiselect con [group]="true". */
+  protected readonly columnOptions = GROUPED_COLUMNS;
   /** Mapa key → metadatos del grupo, para tintear ítems del multiselect. */
   private readonly groupByKey = new Map(COLUMN_GROUPS.map((g) => [g.key, g]));
   /**
@@ -168,26 +195,35 @@ export class HistoryTable {
   protected readonly visibleColumnKeys = signal<string[]>(
     this.storage.loadHistoryColumns() ?? [...DEFAULT_VISIBLE],
   );
-  protected readonly columnOptions = this.allColumns;
-  /** Opciones seleccionadas en el multiselect (objetos completos). */
-  protected readonly selectedColumns = computed<HistoryColumn[]>(() => {
-    const set = new Set(this.visibleColumnKeys());
-    return this.allColumns.filter((c) => set.has(c.key));
-  });
+  /**
+   * Valor seleccionado en el multiselect: claves de columnas (string[]).
+   * En modo agrupado el p-multiselect emite los `value` de los ítems.
+   */
+  protected readonly selectedColumns = computed<string[]>(() => [...this.visibleColumnKeys()]);
 
   /** Devuelve true si la columna `key` está visible. */
   protected colVisible(key: string): boolean {
     return this.visibleColumnKeys().includes(key);
   }
 
-  /** Metadatos del grupo de una columna (icono + tinte); undefined si no agrupa. */
-  protected groupOf(col: HistoryColumn): ColumnGroupMeta | undefined {
-    return col.group ? this.groupByKey.get(col.group) : undefined;
+  /** Metadatos del grupo de una clave de columna (icono + tinte). */
+  protected groupOf(key: string): ColumnGroupMeta {
+    const col = this.allColumns.find((c) => c.key === key);
+    return this.groupByKey.get(col?.group ?? 'general')!;
+  }
+
+  /**
+   * Metadatos directos por clave de grupo (gen/read/draft/general).
+   * A diferencia de `groupOf` (que recibe una clave de *columna*), este recibe
+   * la clave del *grupo* tal cual la emite el `SelectItemGroup.value` del
+   * p-multiselect agrupado, y devuelve sus metadatos sin derivarlos.
+   */
+  protected groupMeta(key: ColumnGroupMeta['key']): ColumnGroupMeta {
+    return this.groupByKey.get(key) ?? this.groupByKey.get('general')!;
   }
 
   /** Callback del p-multiselect: sincroniza claves + persiste. */
-  protected onColumnsChange(cols: HistoryColumn[]): void {
-    const keys = cols.map((c) => c.key);
+  protected onColumnsChange(keys: string[]): void {
     this.visibleColumnKeys.set(keys);
     this.storage.saveHistoryColumns(keys);
   }

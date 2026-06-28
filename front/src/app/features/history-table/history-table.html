@@ -67,10 +67,10 @@
         </div>
         <p-multiselect
           [options]="columnOptions"
+          [group]="true"
           [ngModel]="selectedColumns()"
           (onChange)="onColumnsChange($event.value)"
           (onClear)="onColumnsClear()"
-          optionLabel="header"
           display="chip"
           [showClear]="true"
           placeholder="Columnas"
@@ -78,14 +78,18 @@
           [style]="{ 'min-width': '16rem' }"
           [panelStyle]="{ minWidth: '18rem' }"
         >
-          <ng-template let-col #item>
-            <div class="column-item" [class.has-group]="!!groupOf(col)">
-              @if (groupOf(col); as g) {
-                <span class="item-swatch" [class]="g.cellClass">
-                  <i [class]="g.icon"></i>
-                </span>
-              }
-              <span>{{ col.header }}</span>
+          <ng-template let-grp #group>
+            <span class="group-header" [class]="groupMeta(grp.value).cellClass">
+              <i [class]="groupMeta(grp.value).icon"></i>
+              {{ grp.label }}
+            </span>
+          </ng-template>
+          <ng-template let-item #item>
+            <div class="column-item">
+              <span class="item-swatch" [class]="groupOf(item.value).cellClass">
+                <i [class]="groupOf(item.value).icon"></i>
+              </span>
+              <span>{{ item.label }}</span>
             </div>
           </ng-template>
         </p-multiselect>
@@ -109,7 +113,7 @@
           </th>
         }
         @if (colVisible('model')) {
-          <th style="min-width: 20rem" title="Modelo utilizado">
+          <th style="min-width: 18rem" title="Modelo utilizado">
             <div class="column-name">
               Modelo
               <p-columnFilter

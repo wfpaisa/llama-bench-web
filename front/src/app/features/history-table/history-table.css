@@ -49,8 +49,8 @@
    col-gen / col-read / col-draft para mantener un único origen de color. */
 .group-swatch {
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   border-radius: 3px;
   border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
 }
@@ -62,6 +62,9 @@
 }
 .group-swatch.col-draft {
   background: color-mix(in srgb, var(--p-orange-500), transparent 84%);
+}
+.group-swatch.col-general {
+  background: transparent;
 }
 
 .muted {
@@ -181,6 +184,34 @@ th .column-name {
 }
 :host ::ng-deep .column-item .item-swatch.col-draft {
   background: color-mix(in srgb, var(--p-orange-500), transparent 84%);
+}
+:host ::ng-deep .column-item .item-swatch.col-general {
+  background: color-mix(in srgb, var(--p-surface-400, #94a3b8), transparent 84%);
+}
+
+/* Header de cada grupo dentro del panel del multiselect: icono + label con el
+   tinte de fondo del grupo. El panel vive fuera del host (overlay), por eso
+   va con ::ng-deep y selectores globales. */
+:host ::ng-deep .group-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+:host ::ng-deep .group-header.col-gen {
+  background: color-mix(in srgb, var(--p-primary-500), transparent 84%);
+}
+:host ::ng-deep .group-header.col-read {
+  background: color-mix(in srgb, var(--p-purple-500), transparent 84%);
+}
+:host ::ng-deep .group-header.col-draft {
+  background: color-mix(in srgb, var(--p-orange-500), transparent 84%);
+}
+:host ::ng-deep .group-header.col-general {
+  background: color-mix(in srgb, var(--p-surface-400, #94a3b8), transparent 84%);
 }
 
 /* Layout automático: cada columna toma el ancho de su contenido o de su
