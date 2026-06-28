@@ -78,7 +78,13 @@ export class BenchStore {
 
   // ── Historial: selección, orden ──
   readonly selected = signal<Set<string>>(new Set());
-  readonly sortCol = signal('date');
+  /**
+   * Columna por la que ordena la tabla de historial. El nombre coincide con el
+   * `field` de los `pSortableColumn` del template (props reales del row, p.ej.
+   * 'timestamp', 'generationTokensPerSecond', 'config.ctxSize', …), que es lo
+   * que PrimeNG resuelve con `resolveFieldData` para su sort interno.
+   */
+  readonly sortCol = signal('timestamp');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
   readonly showCompare = signal(false);
   readonly showChart = signal(false);
@@ -128,23 +134,12 @@ export class BenchStore {
   });
 
   /**
-   * Historial ordenado para renderizar en la tabla.
-   * El filtrado por modelo lo hace PrimeNG nativamente (p-columnFilter),
-   * por eso aquí solo se ordena.
+   * Historial para renderizar en la tabla. El orden lo maneja PrimeNG
+   * internamente (sort por columna con `field` reales), y el filtrado por
+   * modelo también lo hace PrimeNG (p-columnFilter). Aquí solo devolvemos el
+   * historial crudo; la tabla aplica su propio sort sobre este `[value]`.
    */
-  readonly visibleHistory = computed<BenchmarkResult[]>(() => {
-    const list = [...this.history()];
-    const col = this.sortCol();
-    const dir = this.sortDir();
-    const fn = SORT_FNS[col];
-    if (!fn) return list;
-    list.sort((a, b) => {
-      const x = fn(a);
-      const y = fn(b);
-      return dir === 'asc' ? (x > y ? 1 : x < y ? -1 : 0) : y > x ? 1 : y < x ? -1 : 0;
-    });
-    return list;
-  });
+  readonly visibleHistory = computed<BenchmarkResult[]>(() => [...this.history()]);
 
   /** Resultados seleccionados (para comparar). */
   readonly selectedResults = computed<BenchmarkResult[]>(() => {
@@ -179,7 +174,10 @@ export class BenchStore {
   init(): void {
     const sort = this.storage.loadSort();
     if (sort) {
-      this.sortCol.set(sort.col);
+      // Migrar alias legacy de columna (cuando el sort lo hacía el store con
+      // SORT_FNS) a los `field` reales que ahora usa PrimeNG para ordenar.
+      const col = SORT_FIELD_LEGACY[sort.col] ?? sort.col;
+      this.sortCol.set(col);
       this.sortDir.set(sort.dir);
     }
     const maxTokens = this.storage.loadMaxTokens();
@@ -328,16 +326,6 @@ export class BenchStore {
     return this.selected().has(id);
   }
 
-  /** Reordena por columna: alterna dirección si es la misma, si no, desc. */
-  sortBy(col: string): void {
-    if (this.sortCol() === col) {
-      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
-    } else {
-      this.sortCol.set(col);
-      this.sortDir.set('desc');
-    }
-  }
-
   // ── Comparación ──
   openCompare(): boolean {
     if (this.selectedResults().length < 2) return false;
@@ -359,21 +347,21 @@ export class BenchStore {
   }
 }
 
-// Comparadores por columna para el orden del historial. Mismos del vanilla.
-const SORT_FNS: Record<string, (r: BenchmarkResult) => number> = {
-  date: (r) => new Date(r.timestamp).getTime(),
-  ctx: (r) => r.config.ctxSize ?? -Infinity,
-  promptTps: (r) => r.promptTokensPerSecond ?? -Infinity,
-  genTps: (r) => r.generationTokensPerSecond ?? -Infinity,
-  draftAcc: (r) => r.draftAcceptance ?? -Infinity,
-  loadTime: (r) => r.loadTimeSeconds ?? Infinity,
-  generationTime: (r) => r.generationTimeMs ?? Infinity,
-  totalVram: (r) => {
-    // Preferir deviceVram (delta de devices del backend); fallback a gpus legacy.
-    if (r.deviceVram && r.deviceVram.length > 0) {
-      return r.deviceVram.reduce((s, d) => s + (d.usedMiB ?? 0), 0);
-    }
-    return r.gpus.reduce((s, g) => s + (g.memUsedMiB ?? 0), 0);
-  },
-  ramUsed: (r) => r.ramUsedMiB ?? -Infinity,
+/**
+ * Mapa de alias legacy → `field` real de PrimeNG. Antes el sort lo hacía el
+ * store con comparadores propios (SORT_FNS) usando claves cortas ('genTps',
+ * 'date', …); ahora PrimeNG ordena por props reales del row. Esto migra el
+ * valor persistido en localStorage al cargar, para que al recargar no quede
+ * apuntando a un field inexistente (y por tanto sin ordenar).
+ */
+const SORT_FIELD_LEGACY: Record<string, string> = {
+  date: 'timestamp',
+  ctx: 'config.ctxSize',
+  promptTps: 'promptTokensPerSecond',
+  genTps: 'generationTokensPerSecond',
+  draftAcc: 'draftAcceptance',
+  loadTime: 'loadTimeSeconds',
+  generationTime: 'generationTimeMs',
+  totalVram: 'totalVramMiB',
+  ramUsed: 'ramUsedMiB',
 };

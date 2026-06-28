@@ -5,7 +5,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationService, MessageService, SelectItemGroup } from 'primeng/api';
+import { ConfirmationService, MessageService, SelectItemGroup, SortEvent } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -27,11 +27,15 @@ import { FmtGbPipe, FmtNumPipe, FmtSecPipe } from '../../core/utils/pipes';
 /**
  * Fila de historial para la tabla: el resultado original + `modelBase`
  * aplanado para que el p-columnFilter de PrimeNG (matchMode "in") pueda
- * comparar contra las opciones del multiselect.
+ * comparar contra las opciones del multiselect, y `totalVramMiB` precalculado
+ * para que la columna "Total VRAM" (que no es una prop nativa del resultado)
+ * pueda ordenarse con un `field` real que PrimeNG resuelve.
  */
 export interface HistoryRow extends BenchmarkResult {
   /** Modelo base (sin org/ ni :quant), campo por el que filtra el multiselect. */
   modelBase: string;
+  /** VRAM total usada en MiB (suma de devices del backend o GPUs legacy). */
+  totalVramMiB: number;
 }
 
 /**
@@ -258,14 +262,39 @@ export class HistoryTable {
   }
 
   /**
-   * Datos para la tabla: historial visible con un campo `modelBase` aplanado
-   * por el que filtra el p-columnFilter (matchMode "in").
+   * Side-effect del sort de la p-table: PrimeNG ya reordenó `[value]`
+   * internamente; aquí solo persistimos el estado (columna + dirección) en el
+   * store para poder restaurarlo al recargar la página. No tocamos los datos:
+   * el orden es responsabilidad de la tabla.
+   */
+  protected onSort(event: SortEvent | Event): void {
+    const { field, order } = event as SortEvent;
+    if (field && order) {
+      this.store.sortCol.set(field);
+      this.store.sortDir.set(order === 1 ? 'asc' : 'desc');
+    }
+  }
+
+  /**
+   * Datos para la tabla: historial visible con campos aplanados que necesita el
+   * template/PrimeNG:
+   *  - `modelBase`: por el que filtra el p-columnFilter (matchMode "in").
+   *  - `totalVramMiB`: suma de VRAM usada (devices del backend o GPUs legacy)
+   *    para que la columna "Total VRAM" pueda ordenarse con un `field` real.
    */
   protected readonly tableData = computed<HistoryRow[]>(() =>
-    this.store.visibleHistory().map((r) => ({
-      ...r,
-      modelBase: modelBase(r.config?.model) ?? '',
-    })),
+    this.store.visibleHistory().map((r) => {
+      const dv = r.deviceVram;
+      const totalVramMiB =
+        dv && dv.length > 0
+          ? dv.reduce((s, d) => s + (d.usedMiB ?? 0), 0)
+          : (r.gpus || []).reduce((s, g) => s + (g.memUsedMiB ?? 0), 0);
+      return {
+        ...r,
+        modelBase: modelBase(r.config?.model) ?? '',
+        totalVramMiB,
+      };
+    }),
   );
 
   // ── Helpers de celda ──

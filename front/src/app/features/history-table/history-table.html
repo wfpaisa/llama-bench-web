@@ -53,6 +53,9 @@
     [showGridlines]="true"
     [globalFilterFields]="['modelBase']"
     size="small"
+    [sortField]="store.sortCol()"
+    [sortOrder]="store.sortDir() === 'asc' ? 1 : -1"
+    (sort)="onSort($event)"
   >
     <ng-template #caption>
       <div class="columns-bar">
@@ -108,8 +111,8 @@
         </th>
         <th style="min-width: 2.5rem" title="Número de fila">#</th>
         @if (colVisible('date')) {
-          <th [pSortableColumn]="'date'" title="Fecha y hora del benchmark">
-            <div class="column-name">Fecha <p-sortIcon field="date" /></div>
+          <th [pSortableColumn]="'timestamp'" title="Fecha y hora del benchmark">
+            <div class="column-name">Fecha <p-sortIcon field="timestamp" /></div>
           </th>
         }
         @if (colVisible('model')) {
@@ -139,8 +142,8 @@
           </th>
         }
         @if (colVisible('ctx')) {
-          <th [pSortableColumn]="'ctx'" title="Tamaño de contexto (--ctx-size)">
-            <div class="column-name">ctx <p-sortIcon field="ctx" /></div>
+          <th [pSortableColumn]="'config.ctxSize'" title="Tamaño de contexto (--ctx-size)">
+            <div class="column-name">ctx <p-sortIcon field="config.ctxSize" /></div>
           </th>
         }
         @if (colVisible('batch')) {
@@ -171,19 +174,21 @@
         @if (colVisible('generationTime')) {
           <th
             class="col-gen"
-            [pSortableColumn]="'generationTime'"
+            [pSortableColumn]="'generationTimeMs'"
             title="Tiempo de generación (eval time, sin prompt ni startup)"
           >
-            <div class="column-name">Generation time <p-sortIcon field="generationTime" /></div>
+            <div class="column-name">Generation time <p-sortIcon field="generationTimeMs" /></div>
           </th>
         }
         @if (colVisible('genTps')) {
           <th
             class="col-gen"
-            [pSortableColumn]="'genTps'"
+            [pSortableColumn]="'generationTokensPerSecond'"
             title="Velocidad de generación (tokens por segundo)"
           >
-            <div class="column-name">Generation speed <p-sortIcon field="genTps" /></div>
+            <div class="column-name">
+              Generation speed <p-sortIcon field="generationTokensPerSecond" />
+            </div>
           </th>
         }
         @if (colVisible('promptTokens')) {
@@ -199,19 +204,19 @@
         @if (colVisible('promptTps')) {
           <th
             class="col-read"
-            [pSortableColumn]="'promptTps'"
+            [pSortableColumn]="'promptTokensPerSecond'"
             title="Velocidad de procesado del prompt (tokens por segundo)"
           >
-            <div class="column-name">Prompt speed <p-sortIcon field="promptTps" /></div>
+            <div class="column-name">Prompt speed <p-sortIcon field="promptTokensPerSecond" /></div>
           </th>
         }
         @if (colVisible('draftAcc')) {
           <th
             class="col-draft"
-            [pSortableColumn]="'draftAcc'"
+            [pSortableColumn]="'draftAcceptance'"
             title="Aceptación del draft (speculative / MTP)"
           >
-            <div class="column-name">draft acc <p-sortIcon field="draftAcc" /></div>
+            <div class="column-name">draft acc <p-sortIcon field="draftAcceptance" /></div>
           </th>
         }
         @if (colVisible('genDr')) {
@@ -235,8 +240,8 @@
           </th>
         }
         @if (colVisible('loadTime')) {
-          <th [pSortableColumn]="'loadTime'" title="Tiempo de carga del modelo en segundos">
-            <div class="column-name">load s <p-sortIcon field="loadTime" /></div>
+          <th [pSortableColumn]="'loadTimeSeconds'" title="Tiempo de carga del modelo en segundos">
+            <div class="column-name">load s <p-sortIcon field="loadTimeSeconds" /></div>
           </th>
         }
         @if (colVisible('vram')) {
@@ -245,16 +250,16 @@
           </th>
         }
         @if (colVisible('totalVram')) {
-          <th [pSortableColumn]="'totalVram'" title="VRAM total usada (suma de GPUs)">
-            <div class="column-name">Total VRAM <p-sortIcon field="totalVram" /></div>
+          <th [pSortableColumn]="'totalVramMiB'" title="VRAM total usada (suma de GPUs)">
+            <div class="column-name">Total VRAM <p-sortIcon field="totalVramMiB" /></div>
           </th>
         }
         @if (colVisible('ram')) {
           <th
-            [pSortableColumn]="'ramUsed'"
+            [pSortableColumn]="'ramUsedMiB'"
             title="RAM usada por el benchmark (delta durante el run)"
           >
-            <div class="column-name">RAM <p-sortIcon field="ramUsed" /></div>
+            <div class="column-name">RAM <p-sortIcon field="ramUsedMiB" /></div>
           </th>
         }
         @if (colVisible('actions')) {
