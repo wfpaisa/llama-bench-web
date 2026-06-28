@@ -25,3 +25,10 @@ export const HISTORY_CAP = 200
 
 // Capacidad del buffer circular de logs en memoria.
 export const LOG_CAP = 5000
+
+// Archivo de diagnóstico del último benchmark (debug de métricas en null).
+// Se sobrescribe en cada run con las últimas líneas del slice del benchmark.
+export const DEBUG_LOG_FILE = join(DATA_DIR, 'log_debug.txt')
+
+// Máximo de líneas volcadas a log_debug.txt por cada benchmark.
+export const DEBUG_LOG_TAIL_LINES = 1000

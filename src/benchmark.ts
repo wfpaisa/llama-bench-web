@@ -8,12 +8,13 @@ import { parseScript } from './script-parser.ts'
 import { readGpuStats, subtractGpuBaseline } from './gpu.ts'
 import { readRamStats, subtractRamBaseline } from './mem.ts'
 import { listDevices, detectBackend, computeDeviceVram } from './devices.ts'
-import { DEFAULT_PROMPT, parseMetricsFromLogs, sleep, waitForServer } from './metrics.ts'
+import { DEFAULT_PROMPT, pollMetricsUntilReady, waitForServer } from './metrics.ts'
 import { startServer, stopServer, urlFor } from './server-manager.ts'
 import { saveResult } from './history.ts'
 import { systemLog } from './logs.ts'
 import { getLogBuffer } from './logs.ts'
 import { emptyParsedScript, setBenchAbortController } from './state.ts'
+import { dumpDebugLog } from './debug-log.ts'
 
 /**
  * Ejecuta un benchmark completo contra llama-server.
@@ -70,10 +71,7 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
     try {
       await m.ready
     } catch (e) {
-      throw new Error(
-        `El servidor no arrancó: ${(e as Error).message}. ` +
-          'Revisá el script, su formato y los flags (binario, modelo, rutas, comillas, continuaciones \\).'
-      )
+      throw new Error(`El servidor no arrancó: ${(e as Error).message}. ` + 'Revisá el script, su formato y los flags (binario, modelo, rutas, comillas, continuaciones \\).')
     }
     checkAbort()
 
@@ -138,13 +136,15 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
 
     checkAbort()
 
-    // Dar un pequeño margen para que el servidor flushee las líneas de timing.
-    await sleep(400)
-    checkAbort()
-
     // 4) Parsear métricas de logs.
+    //    Las líneas `print_timing` (prompt/eval time) se emiten al stdout de
+    //    llama-server DESPUÉS de enviar la respuesta HTTP, en la fase de
+    //    "release" del slot. Un `sleep` fijo es frágil: a veces las líneas
+    //    llegan tarde y el parseo pilla el buffer antes de tiempo → todas las
+    //    métricas quedan null. Hacemos polling hasta ver la señal fiable de fin
+    //    (tokens/s de generación) o un timeout de seguridad.
     const relevantLines = getLogBuffer().slice(logStartIndex)
-    const parsedMetrics = parseMetricsFromLogs(relevantLines)
+    const parsedMetrics = await pollMetricsUntilReady(() => getLogBuffer().slice(logStartIndex), controller.signal)
 
     // 5) GPU y RAM stats finales y restar baseline.
     const [gpusFinal, ramFinal] = await Promise.all([readGpuStats(), readRamStats()])
@@ -183,6 +183,21 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
       ramUsedMiB,
       errors,
     }
+
+    // 5c) Dump de diagnóstico: vuelca las últimas líneas del slice + métricas a
+    //     data/log_debug.txt (sobrescribe en cada run). Best-effort: si falla,
+    //     no rompe el flujo.
+    const nullMetrics = Object.entries(parsedMetrics)
+      .filter(([, v]) => v === null)
+      .map(([k]) => k)
+    const debugExtra = [
+      `## Contexto del run`,
+      `- requestLatencyMs: ${requestLatencyMs.toFixed(0)}`,
+      `- maxTokens: ${maxTokens === null ? 'null (EOS)' : maxTokens}`,
+      `- líneas en el slice: ${relevantLines.length}`,
+      `- métricas en null: ${nullMetrics.length ? nullMetrics.join(', ') : 'ninguna'}`,
+    ]
+    await dumpDebugLog(relevantLines, parsedMetrics, debugExtra)
 
     await saveResult(result)
     systemLog('benchmark: finalizado y guardado.')

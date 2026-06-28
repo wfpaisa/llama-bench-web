@@ -145,6 +145,9 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     }
   }
   // Fallback de load time: medir entre "loading model" y "model loaded".
+  // En builds recientes de llama-server "model loaded" viene SIN los ms (la
+  // regex principal de arriba no matchea), así que este delta de timestamps es
+  // la fuente principal de load time.
   if (m.loadTimeSeconds === null) {
     let loadingIdx = -1
     let loadedIdx = -1
@@ -158,4 +161,35 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     }
   }
   return m
+}
+
+/**
+ * Hace polling del buffer de logs hasta que aparezcan las métricas de timing de
+ * generación, o hasta agotar el timeout.
+ *
+ * Las líneas `print_timing` (prompt/eval time) se emiten al stdout de
+ * llama-server DESPUÉS de que la respuesta HTTP ya fue enviada, en la fase de
+ * "release" del slot. Un `sleep` fijo es frágil: a veces las líneas llegan
+ * >400 ms tarde y el parseo pilla el buffer antes de tiempo → todas las
+ * métricas quedan null (race condition intermitente). Este polling espera
+ * activamente hasta ver la señal fiable de fin (tokens/s de generación, que es
+ * la última línea en emitirse) o un timeout de seguridad.
+ *
+ * @param readLines  Getter fresco del slice de logs a parsear (se relee en cada
+ *                   iteración porque el buffer sigue creciendo).
+ * @param signal     AbortSignal para cancelar el wait (p.ej. benchmark cancelado).
+ * @param timeoutMs  Máximo a esperar antes de rendirse (default 5s).
+ * @param pollMs     Intervalo entre reintentos (default 150ms).
+ */
+export async function pollMetricsUntilReady(readLines: () => LogEntry[], signal?: AbortSignal, timeoutMs: number = 5000, pollMs: number = 150): Promise<ParsedMetrics> {
+  const deadline = Date.now() + timeoutMs
+  let parsed = parseMetricsFromLogs(readLines())
+  // generationTokensPerSecond es la señal más fiable de fin: "eval time … X
+  // tokens per second" se imprime al final del todo. Si el modelo no generó,
+  // se agota el timeout y se devuelven las métricas (parciales o null).
+  while (parsed.generationTokensPerSecond === null && Date.now() < deadline && !signal?.aborted) {
+    await sleep(pollMs)
+    parsed = parseMetricsFromLogs(readLines())
+  }
+  return parsed
 }

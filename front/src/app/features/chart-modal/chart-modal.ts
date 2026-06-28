@@ -46,15 +46,56 @@ interface ChartMetric {
  * corresponde a "Generation speed", como pide la spec.
  */
 const METRICS: ChartMetric[] = [
-  { key: 'genTps', label: 'Generation speed', unit: 't/s', value: (r) => r.generationTokensPerSecond },
+  {
+    key: 'genTps',
+    label: 'Generation speed',
+    unit: 't/s',
+    value: (r) => r.generationTokensPerSecond,
+  },
   { key: 'promptTps', label: 'Prompt speed', unit: 't/s', value: (r) => r.promptTokensPerSecond },
-  { key: 'generationTime', label: 'Generation time', unit: 's', lowerIsBetter: true, value: (r) => (r.generationTimeMs != null ? r.generationTimeMs / 1000 : null) },
-  { key: 'promptTime', label: 'Prompt processing time', unit: 's', lowerIsBetter: true, value: (r) => (r.promptEvalTimeMs != null ? r.promptEvalTimeMs / 1000 : null) },
-  { key: 'loadTime', label: 'Load time', unit: 's', lowerIsBetter: true, value: (r) => r.loadTimeSeconds },
-  { key: 'latency', label: 'Request latency', unit: 's', lowerIsBetter: true, value: (r) => (r.requestLatencyMs != null ? r.requestLatencyMs / 1000 : null) },
+  {
+    key: 'generationTime',
+    label: 'Generation time',
+    unit: 's',
+    lowerIsBetter: true,
+    value: (r) => (r.generationTimeMs != null ? r.generationTimeMs / 1000 : null),
+  },
+  {
+    key: 'promptTime',
+    label: 'Prompt processing time',
+    unit: 's',
+    lowerIsBetter: true,
+    value: (r) => (r.promptEvalTimeMs != null ? r.promptEvalTimeMs / 1000 : null),
+  },
+  {
+    key: 'loadTime',
+    label: 'Load time',
+    unit: 's',
+    lowerIsBetter: true,
+    value: (r) => r.loadTimeSeconds,
+  },
+  {
+    key: 'latency',
+    label: 'Request latency',
+    unit: 's',
+    lowerIsBetter: true,
+    value: (r) => (r.requestLatencyMs != null ? r.requestLatencyMs / 1000 : null),
+  },
   { key: 'draftAcc', label: 'Draft acceptance', unit: '', value: (r) => r.draftAcceptance },
-  { key: 'totalVram', label: 'Total VRAM', unit: 'GB', lowerIsBetter: true, value: (r) => sumVramMiB(r) != null ? sumVramMiB(r)! / 1024 : null },
-  { key: 'ram', label: 'RAM', unit: 'GB', lowerIsBetter: true, value: (r) => (r.ramUsedMiB != null ? r.ramUsedMiB / 1024 : null) },
+  {
+    key: 'totalVram',
+    label: 'Total VRAM',
+    unit: 'GB',
+    lowerIsBetter: true,
+    value: (r) => (sumVramMiB(r) != null ? sumVramMiB(r)! / 1024 : null),
+  },
+  {
+    key: 'ram',
+    label: 'RAM',
+    unit: 'GB',
+    lowerIsBetter: true,
+    value: (r) => (r.ramUsedMiB != null ? r.ramUsedMiB / 1024 : null),
+  },
   { key: 'ctx', label: 'Context size', unit: '', value: (r) => r.config?.ctxSize ?? null },
   { key: 'genTokens', label: 'Generated tokens', unit: '', value: (r) => r.generationTokenCount },
 ];
@@ -173,14 +214,13 @@ export class ChartModal {
       }
     });
 
-    const colors = data.map((_, i) =>
-      i === bestIdx
-        ? 'rgba(34, 197, 94, 0.55)' // verde: mejor
-        : 'rgba(59, 130, 246, 0.45)', // azul: resto
+    const colors = data.map(
+      (_, i) =>
+        i === bestIdx
+          ? 'rgba(34, 197, 94, 0.55)' // verde: mejor
+          : 'rgba(59, 130, 246, 0.45)', // azul: resto
     );
-    const borders = data.map((_, i) =>
-      i === bestIdx ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)',
-    );
+    const borders = data.map((_, i) => (i === bestIdx ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)'));
 
     return {
       labels,
@@ -219,9 +259,8 @@ export class ChartModal {
         tooltip: {
           callbacks: {
             // Título = label de la barra ("1-Qwen3.6"); cuerpo = datos del modelo.
-            title: (ctx: { label: string }[]) => (ctx[0]?.label ?? ''),
-            label: (ctx: { dataIndex: number }) =>
-              tooltips[ctx.dataIndex] ?? [],
+            title: (ctx: { label: string }[]) => ctx[0]?.label ?? '',
+            label: (ctx: { dataIndex: number }) => tooltips[ctx.dataIndex] ?? [],
           },
         },
       },
@@ -232,7 +271,11 @@ export class ChartModal {
         },
         y: {
           beginAtZero: true,
-          title: { display: true, text: metric.unit ? `${metric.label} (${metric.unit})` : metric.label, color: textColorSecondary },
+          title: {
+            display: true,
+            text: metric.unit ? `${metric.label} (${metric.unit})` : metric.label,
+            color: textColorSecondary,
+          },
           ticks: { color: textColorSecondary },
           grid: { color: surfaceBorder },
         },
