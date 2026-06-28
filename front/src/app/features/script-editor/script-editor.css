@@ -6,7 +6,7 @@
 /* Layout: dos columnas en desktop, una sola en pantallas estrechas. */
 .cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
@@ -17,21 +17,15 @@
   }
 }
 
-/* ── Columna UNO: editor de script ── */
+/* ── Columna UNO: editor de script (CodeMirror via app-code-editor) ── */
 
 .script-area {
-  width: 100%;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  line-height: 1.5;
-  resize: vertical;
-  min-height: 12rem;
-  field-sizing: content;
-  min-height: 35rem; /* altura mínima: 3 líneas */
+  display: block;
 }
 
 .actions {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;

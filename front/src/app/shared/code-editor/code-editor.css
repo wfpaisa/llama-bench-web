@@ -1,0 +1,24 @@
+/* CodeEditor: contenedor del editor CodeMirror 6. */
+
+:host {
+  display: block;
+}
+
+.cm-host {
+  height: 35rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* El editor ocupa todo el contenedor y usa la fuente mono del sistema. */
+.cm-host ::ng-deep .cm-editor,
+.cm-host ::ng-deep .cm-scroller {
+  height: 100%;
+}
+
+.cm-host ::ng-deep .cm-scroller {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.5;
+}

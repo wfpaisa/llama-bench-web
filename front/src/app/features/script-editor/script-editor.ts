@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { TextareaModule } from 'primeng/textarea';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
@@ -25,6 +24,7 @@ import { formatScript } from '../../core/utils/format';
 import { addFlagToScript, flagForms, LLAMA_FLAGS, LlamaFlag } from '../../core/data/llama-flags';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { CodeEditor } from '../../shared/code-editor/code-editor';
 
 /** Severidad de p-tag por categoría de flag (para diferenciarlas visualmente). */
 const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
@@ -37,7 +37,7 @@ const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
 /**
  * ScriptEditor: edición del script de llama-server (fuente de verdad).
  * Layout en dos columnas:
- *  - Columna UNO: textarea con el script + acciones (formatear, default, play/stop).
+ *  - Columna UNO: CodeMirror (bash) con el script + acciones (formatear, default, play/stop).
  *  - Columna DOS: p-table con todas las flags conocidas, con búsqueda global
  *    (en el caption) + filtros por columna (multiselect para categoría, texto
  *    para nombre/flag larga/corta). Cada fila con botón "info" (abre diálogo con
@@ -50,7 +50,6 @@ const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
   imports: [
     FormsModule,
     ButtonModule,
-    TextareaModule,
     DialogModule,
     TooltipModule,
     InputTextModule,
@@ -61,6 +60,7 @@ const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
     TagModule,
     InputGroupModule,
     InputGroupAddonModule,
+    CodeEditor,
   ],
   templateUrl: './script-editor.html',
   styleUrl: './script-editor.css',
@@ -71,9 +71,12 @@ export class ScriptEditor {
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
 
-  /** Modelo local del textarea, sincronizado bidireccionalmente con store.script. */
+  /** Modelo local del editor, sincronizado bidireccionalmente con store.script. */
   protected readonly script = signal(this.store.script());
   protected readonly running = this.store.running;
+
+  /** Función de formateo pasada al CodeEditor para normalizar el texto pegado. */
+  protected readonly formatScriptFn = formatScript;
 
   /** Referencia a la p-table para poder limpiar filtros / buscar globalmente. */
   protected readonly table = viewChild<Table>('dt');
@@ -128,23 +131,6 @@ export class ScriptEditor {
   onScriptChange(value: string): void {
     this.script.set(value);
     this.store.setScript(value);
-  }
-
-  /**
-   * Al pegar texto en el textarea, formatea el contenido resultante y lo
-   * persiste. Normaliza scripts pegados desde cualquier fuente.
-   */
-  onScriptPaste(event: Event): void {
-    const e = event as ClipboardEvent;
-    const pasted = e.clipboardData?.getData('text') ?? '';
-    if (!pasted) return;
-    e.preventDefault();
-    const ta = e.target as HTMLTextAreaElement;
-    const start = ta.selectionStart ?? ta.value.length;
-    const end = ta.selectionEnd ?? ta.value.length;
-    const merged = ta.value.slice(0, start) + pasted + ta.value.slice(end);
-    const formatted = formatScript(merged);
-    this.onScriptChange(formatted);
   }
 
   // ── Acciones ──

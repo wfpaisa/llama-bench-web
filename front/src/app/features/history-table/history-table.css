@@ -117,8 +117,6 @@ th .column-name {
    estiramiento al 100% del contenedor. */
 :host ::ng-deep .p-datatable .p-datatable-table {
   table-layout: auto;
-  min-width: 0 !important;
-  width: auto !important;
 }
 
 th,
@@ -129,8 +127,6 @@ td {
 /* Anula los min-width/width fijos (también los inline del template) para
    que ninguna columna quede más ancha que su contenido o encabezado. */
 th {
-  min-width: 0 !important;
-  width: auto !important;
   font-size: 0.75rem;
 
   /* Header de la columna Modelo: etiqueta + disparador de filtro en línea. */
