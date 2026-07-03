@@ -20,6 +20,7 @@ import {
   backendLabel,
   deviceVramLine,
   modelBase,
+  parseModel,
   shortModel,
 } from '../../core/utils/format';
 
@@ -158,12 +159,18 @@ export class ChartModal {
   }
 
   /**
-   * Label corto de cada barra: "<n>-<modeloBase>" donde <n> es el índice (1-based)
-   * dentro de la selección, p.ej. "1-Qwen3.6", "2-Qwen3.6". Usa el base sin
-   * org/ni quant para que series del mismo modelo se vean iguales.
+   * Label de cada barra como array (Chart.js lo renderiza multi-línea):
+   *   ["1-Qwen3.6", "Q4_K_M"]
+   * La primera línea es el índice + modelo base; la segunda, la quantización.
+   * Si no hay quant, la segunda línea queda vacía para que todas las barras
+   * mantengan la misma altura de label (y ancho consistente). Así el modelo y
+   * su quant se separan visualmente en vez de mezclarse en una sola línea.
    */
-  private barLabel(r: BenchmarkResult, idx: number): string {
-    return `${idx + 1}-${modelBase(r.config?.model) ?? 'modelo'}`;
+  private barLabel(r: BenchmarkResult, idx: number): string[] {
+    const base = modelBase(r.config?.model) ?? 'modelo';
+    const p = parseModel(r.config?.model);
+    const quant = p?.quant ?? '';
+    return [`${idx + 1}-${base}`, quant];
   }
 
   /**
@@ -173,8 +180,10 @@ export class ChartModal {
    */
   private tooltipLines(r: BenchmarkResult): string[] {
     const c = r.config;
-    return [
-      `${shortModel(c?.model)}:${c?.model?.split(':').slice(1).join(':') ?? ''}`,
+    const p = parseModel(c?.model);
+    const lines = [
+      shortModel(c?.model),
+      p?.quant ? `- Quant: ${p.quant}` : '',
       `- Prompt speed: ${fmt(r.promptTokensPerSecond)} t/s`,
       `- Gen speed: ${fmt(r.generationTokensPerSecond)} t/s`,
       `- Generation time: ${fmtSec(r.generationTimeMs)} s`,
@@ -187,6 +196,7 @@ export class ChartModal {
       `- VRAM: ${deviceVramLine(r, true) || '—'}`,
       `- RAM: ${fmtGB(r.ramUsedMiB, 2)} GB`,
     ];
+    return lines.filter((l) => l !== '');
   }
 
   /** Configuración (data + options) del chart, recomputada por métrica/ítems. */
@@ -258,8 +268,13 @@ export class ChartModal {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            // Título = label de la barra ("1-Qwen3.6"); cuerpo = datos del modelo.
-            title: (ctx: { label: string }[]) => ctx[0]?.label ?? '',
+            // Título = primera línea del label de la barra ("1-Qwen3.6"); la
+            // quant va aparte en el cuerpo del tooltip. ctx.label puede ser
+            // string (label simple) o string[] (label multi-línea del eje X).
+            title: (ctx: { label: string | string[] }[]) => {
+              const l = ctx[0]?.label;
+              return Array.isArray(l) ? (l[0] ?? '') : (l ?? '');
+            },
             label: (ctx: { dataIndex: number }) => tooltips[ctx.dataIndex] ?? [],
           },
         },
