@@ -13,6 +13,7 @@ import { StorageService } from '../../core/services/storage.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
 import {
   backendLabel,
+  backendSeverity,
   deviceVramLine,
   deviceVramRows,
   fmt,
@@ -97,7 +98,6 @@ const COLUMN_DEFS: HistoryColumn[] = [
   { key: 'ctx', header: 'ctx' },
   { key: 'batch', header: 'batch' },
   { key: 'cache', header: 'cache' },
-  { key: 'device', header: 'device' },
   { key: 'tsplit', header: 'tsplit' },
   { key: 'genTokens', header: 'Generated tokens', group: 'gen' },
   { key: 'generationTime', header: 'Generation time', group: 'gen' },
@@ -334,6 +334,10 @@ export class HistoryTable {
   /** Etiqueta del backend (CUDA/Vulkan/…); '' si no se detectó. */
   protected backend(r: BenchmarkResult): string {
     return backendLabel(r.backend);
+  }
+  /** Severidad (color) del tag del backend, según el backend de cómputo. */
+  protected backendSeverity(b: BenchmarkResult['backend']) {
+    return backendSeverity(b);
   }
 
   // ── Highlights "best" (sobre TODA la history) ──

@@ -165,11 +165,6 @@
             <div class="column-name">cache</div>
           </th>
         }
-        @if (colVisible('device')) {
-          <th title="Dispositivo (--device) y backend del binario (CUDA/Vulkan)">
-            <div class="column-name">device</div>
-          </th>
-        }
         @if (colVisible('tsplit')) {
           <th style="min-width: 5rem" title="Reparto de tensores (--tensor-split)">
             <div class="column-name">tsplit</div>
@@ -315,6 +310,13 @@
                   <p-tag value="MTP" severity="warn" />
                 }
               }
+              @if (backend(r); as b) {
+                <p-tag
+                  [value]="b"
+                  [severity]="backendSeverity(r.backend)"
+                  [title]="'Backend de cómputo: ' + b"
+                />
+              }
             </span>
           </td>
         }
@@ -328,14 +330,6 @@
         }
         @if (colVisible('cache')) {
           <td>{{ r.config?.cacheTypeK ?? '—' }}/{{ r.config?.cacheTypeV ?? '—' }}</td>
-        }
-        @if (colVisible('device')) {
-          <td class="device-cell">
-            @if (backend(r); as b) {
-              <p-tag [value]="b" severity="success" [title]="'Backend del binario: ' + b" />
-            }
-            <span>{{ r.config?.device ?? '—' }}</span>
-          </td>
         }
         @if (colVisible('tsplit')) {
           <td>{{ r.config?.tensorSplit ?? '—' }}</td>

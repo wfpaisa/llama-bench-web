@@ -115,13 +115,6 @@
   }
 }
 
-.device-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
 .row-actions {
   display: flex;
   gap: 0.15rem;

@@ -150,6 +150,38 @@ export function backendLabel(b: GpuBackend | null | undefined): string {
 }
 
 /**
+ * Severidad (color) del p-tag del backend para pintarlo dentro de la celda
+ * del modelo. Convención cromática:
+ *   cuda   → success (verde)   — backend nativo/recomendado en NVIDIA
+ *   vulkan → danger  (rojo)    — vulkan suele ser más lento/inestable
+ *   sycl   → info    (azul)
+ *   metal  → warn    (ámbar)
+ *   opencl → secondary (gris)
+ *   cann   → secondary (gris)
+ *   cpu    → secondary (gris)
+ * '' si el backend no se detectó (no se renderiza el tag).
+ */
+export type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
+export function backendSeverity(b: GpuBackend | null | undefined): TagSeverity {
+  switch (b) {
+    case 'cuda':
+      return 'success';
+    case 'vulkan':
+      return 'danger';
+    case 'sycl':
+      return 'info';
+    case 'metal':
+      return 'warn';
+    case 'opencl':
+    case 'cann':
+    case 'cpu':
+      return 'secondary';
+    default:
+      return 'secondary';
+  }
+}
+
+/**
  * Línea de VRAM por device del backend para un resultado, usando los ids del
  * binario (CUDA0/Vulkan0, los mismos que --device). Cae a gpuVramLine() (legacy
  * nvidia-smi/sysfs) si el resultado no trae deviceVram (entradas viejas).
