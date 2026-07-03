@@ -250,6 +250,18 @@ td {
   font-size: 0.75rem;
 }
 
+/* Celda de calificación: el p-rating ocupa poco espacio y las estrellas son
+   clickeables directamente en la celda. */
+.rating-cell :host ::ng-deep .p-rating,
+:host ::ng-deep .rating-cell .p-rating {
+  gap: 0.1rem;
+}
+:host ::ng-deep .rating-cell .p-rating-option {
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.85rem;
+}
+
 /* ── Modos de visualización de la card ── */
 
 /* Full width: la card sale del contenedor de 1400px de .home y ocupa todo el

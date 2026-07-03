@@ -68,9 +68,22 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
     //     exit code, evitando los 120s de health-check inútil. Al estar dentro
     //     del try/finally, el rechazo propaga al router (→ toast de error) y el
     //     finally detiene el servidor.
+    //
+    //     Además, await m.ready NO observa el AbortController, así que hacemos
+    //     un race contra la señal: si el usuario cancela (o el formato del log
+    //     de ready cambia y nunca se detecta), el await se rompe igual y el
+    //     finally puede detener el servidor. Sin esto, "Detener" no tendría
+    //     efecto durante la fase de arranque.
     try {
-      await m.ready
+      await Promise.race([
+        m.ready,
+        new Promise<never>((_, rej) => {
+          if (controller.signal.aborted) rej(new Error('Benchmark cancelado por el usuario.'))
+          controller.signal.addEventListener('abort', () => rej(new Error('Benchmark cancelado por el usuario.')), { once: true })
+        }),
+      ])
     } catch (e) {
+      checkAbort() // Si fue abort del usuario → lanza el error canónico de cancelación.
       throw new Error(`El servidor no arrancó: ${(e as Error).message}. ` + 'Revisá el script, su formato y los flags (binario, modelo, rutas, comillas, continuaciones \\).')
     }
     checkAbort()

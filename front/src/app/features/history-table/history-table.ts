@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { RatingModule } from 'primeng/rating';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -74,6 +75,7 @@ const DEFAULT_VISIBLE = [
   'ctx',
   'batch',
   'cache',
+  'rating',
   'generationTime',
   'genTps',
   'promptTps',
@@ -90,6 +92,7 @@ const DEFAULT_VISIBLE = [
  */
 const COLUMN_DEFS: HistoryColumn[] = [
   { key: 'date', header: 'Fecha' },
+  { key: 'rating', header: '★ Calificación' },
   { key: 'model', header: 'Modelo' },
   { key: 'ctx', header: 'ctx' },
   { key: 'batch', header: 'batch' },
@@ -162,6 +165,7 @@ const GROUPED_COLUMNS: SelectItemGroup[] = GROUP_ORDER.map((gk) => {
     FormsModule,
     ButtonModule,
     MultiSelectModule,
+    RatingModule,
     TableModule,
     TagModule,
     TooltipModule,
@@ -401,6 +405,36 @@ export class HistoryTable {
   }
 
   // ── Acciones de fila ──
+
+  /**
+   * Persiste el cambio de calificación (1-5 estrellas) de un resultado.
+   * Aplica el nuevo valor optimistamente en el store para feedback inmediato;
+   * si el backend falla, recarga el historial para revertir y muestra un toast.
+   * Un valor de 0 se interpreta como "sin calificar" (null en backend).
+   */
+  protected onRatingChange(r: BenchmarkResult, value: number | null): void {
+    const normalized = !value || value <= 0 ? null : value;
+    this.store.setRating(r.id, normalized);
+    this.api.setRating(r.id, normalized).subscribe({
+      next: () => {
+        this.api.getHistory().subscribe({
+          next: (h) => this.store.setHistory(h.results || []),
+        });
+      },
+      error: (e: Error) => {
+        this.api.getHistory().subscribe({
+          next: (h) => this.store.setHistory(h.results || []),
+        });
+        this.messages.add({
+          severity: 'error',
+          summary: 'Error al guardar calificación',
+          detail: e.message,
+          life: 4000,
+        });
+      },
+    });
+  }
+
   protected apply(r: BenchmarkResult): void {
     const script = r.config?.script;
     if (script) {

@@ -12,13 +12,13 @@ import { readGpuStats } from './gpu.ts'
 import { readRamStats } from './mem.ts'
 import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
-import { clearHistory, deleteResult, ensureDataDir, loadHistory } from './history.ts'
+import { clearHistory, deleteResult, ensureDataDir, loadHistory, setRating } from './history.ts'
 import { getLogBuffer, systemLog } from './logs.ts'
 import { SCRIPT_FILE, PROMPT_FILE } from './config.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
@@ -192,6 +192,31 @@ export async function handleRequest(req: Request): Promise<Response> {
     const id = decodeURIComponent(path.slice('/history/'.length))
     await deleteResult(id)
     return json({ ok: true })
+  }
+
+  // ── Calificación de un resultado (1-5 estrellas) ──
+  // PATCH /history/:id  body: { rating: number | null }
+  if (path.startsWith('/history/') && req.method === 'PATCH') {
+    const id = decodeURIComponent(path.slice('/history/'.length))
+    try {
+      const body = await req.json()
+      const rating = body?.rating
+      // null explícito = "sin calificar"; number entre 0 y 5 (0 = sin calificar).
+      const normalized =
+        rating == null
+          ? null
+          : typeof rating === 'number' && Number.isFinite(rating)
+            ? rating
+            : Number(rating)
+      if (normalized !== null && (typeof normalized !== 'number' || normalized < 0 || normalized > 5)) {
+        return json({ ok: false, error: 'rating debe estar entre 0 y 5.' }, 400)
+      }
+      const ok = await setRating(id, normalized)
+      if (!ok) return json({ ok: false, error: 'Resultado no encontrado.' }, 404)
+      return json({ ok: true })
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500)
+    }
   }
 
   // ── Exportar/limpiar logs ──

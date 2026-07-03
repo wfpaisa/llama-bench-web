@@ -326,6 +326,17 @@ export class BenchStore {
     return this.selected().has(id);
   }
 
+  /**
+   * Actualiza optimistamente la calificación de un resultado en el historial
+   * local (para feedback inmediato en la UI). El componente que la invoca es
+   * responsable de persistirla vía el servicio; si falla, debe recargar el
+   * historial para revertir.
+   */
+  setRating(id: string, rating: number | null): void {
+    const next = this.history().map((r) => (r.id === id ? { ...r, rating } : r));
+    this.history.set(next);
+  }
+
   // ── Comparación ──
   openCompare(): boolean {
     if (this.selectedResults().length < 2) return false;

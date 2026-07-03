@@ -136,7 +136,11 @@ async function streamPipes(proc: Subprocess<'ignore', 'pipe', 'pipe'>): Promise<
 async function drainStream(reader: ReadableStreamDefaultReader<Uint8Array>, stream: LogEntry['stream']): Promise<void> {
   const decoder = new TextDecoder()
   let buf = ''
-  const READY = /server is listening|llama server is listening|HTTP server listening|all slots are ready/i
+  // Formatos históricos + nuevo formato de llama.cpp (2025+):
+  //   "server is listening" / "llama server is listening" / "HTTP server listening"
+  //   "all slots are ready"
+  //   "llama_server: listening on http://…" (formato actual con timestamps y tag srv)
+  const READY = /server is listening|llama server is listening|HTTP server listening|all slots are ready|listening on https?:\/\//i
   try {
     for (;;) {
       const { done, value } = await reader.read()

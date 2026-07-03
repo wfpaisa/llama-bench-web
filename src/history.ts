@@ -34,6 +34,22 @@ export async function deleteResult(id: string): Promise<void> {
   await writeFile(HISTORY_FILE, JSON.stringify(next, null, 2))
 }
 
+/**
+ * Actualiza la calificación (1-5 estrellas) de un resultado por id.
+ * `rating` null elimina la calificación. Devuelve false si el id no existe.
+ */
+export async function setRating(id: string, rating: number | null): Promise<boolean> {
+  const all = await loadHistory()
+  const idx = all.findIndex((r) => r.id === id)
+  if (idx === -1) return false
+  // Validar rango 1-5 (o null para "sin calificar").
+  const valid = rating == null || (Number.isFinite(rating) && rating >= 0 && rating <= 5)
+  if (!valid) return false
+  all[idx] = { ...all[idx], rating: rating ?? null }
+  await writeFile(HISTORY_FILE, JSON.stringify(all, null, 2))
+  return true
+}
+
 /** Vacía todo el historial. */
 export async function clearHistory(): Promise<void> {
   await ensureDataDir()

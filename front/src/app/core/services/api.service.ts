@@ -43,6 +43,13 @@ export class ApiService {
     return this.http.delete<T>(this.url(path)).pipe(catchError(this.mapError<T>()));
   }
 
+  /** PATCH JSON; lanza Error(body.error || status) si no es 2xx. */
+  patch<T extends JsonBody = JsonBody>(path: string, body: unknown | null = null): Observable<T> {
+    return this.http
+      .patch<T>(this.url(path), body ?? {}, { headers: { 'Content-Type': 'application/json' } })
+      .pipe(catchError(this.mapError<T>()));
+  }
+
   private url(path: string): string {
     return `${this.base}${path}`;
   }

@@ -83,6 +83,14 @@ export class LlamaBenchService {
     return this.api.delete<OkResponse>(`/history/${encodeURIComponent(id)}`);
   }
 
+  /**
+   * Actualiza la calificación (1-5 estrellas) de un resultado.
+   * Pasar null limpia la calificación.
+   */
+  setRating(id: string, rating: number | null): Observable<OkResponse> {
+    return this.api.patch<OkResponse>(`/history/${encodeURIComponent(id)}`, { rating });
+  }
+
   clearHistory(): Observable<OkResponse> {
     return this.api.delete<OkResponse>('/history');
   }

@@ -195,6 +195,11 @@ export interface BenchmarkResult {
   deviceVram: DeviceVram[]
   /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
   ramUsedMiB: number | null
+  /**
+   * Calificación del usuario (1-5 estrellas). null = sin calificar.
+   * Campo opcional para compatibilidad con entradas viejas del historial.
+   */
+  rating?: number | null
   /** Errores encontrados durante el run. */
   errors: string[]
 }

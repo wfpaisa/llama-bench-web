@@ -115,6 +115,15 @@
             <div class="column-name">Fecha <p-sortIcon field="timestamp" /></div>
           </th>
         }
+        @if (colVisible('rating')) {
+          <th
+            [pSortableColumn]="'rating'"
+            style="min-width: 8rem"
+            title="Calificación (1-5 estrellas). Clic para ordenar."
+          >
+            <div class="column-name">★ <p-sortIcon field="rating" /></div>
+          </th>
+        }
         @if (colVisible('model')) {
           <th style="min-width: 18rem" title="Modelo utilizado">
             <div class="column-name">
@@ -281,6 +290,15 @@
         <td class="num">{{ i + 1 }}</td>
         @if (colVisible('date')) {
           <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
+        }
+        @if (colVisible('rating')) {
+          <td class="rating-cell">
+            <p-rating
+              [ngModel]="r.rating ?? 0"
+              [stars]="5"
+              (ngModelChange)="onRatingChange(r, $event)"
+            />
+          </td>
         }
         @if (colVisible('model')) {
           <td>
