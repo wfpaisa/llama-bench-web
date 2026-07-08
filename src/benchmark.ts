@@ -9,7 +9,7 @@ import { readGpuStats, subtractGpuBaseline } from './gpu.ts'
 import { readRamStats, subtractRamBaseline } from './mem.ts'
 import { listDevices, detectBackend, computeDeviceVram } from './devices.ts'
 import { DEFAULT_PROMPT, pollMetricsUntilReady, waitForServer } from './metrics.ts'
-import { startServer, stopServer, urlFor } from './server-manager.ts'
+import { startServer, stopServer, urlFor, assertBinaryExists } from './server-manager.ts'
 import { saveResult } from './history.ts'
 import { systemLog } from './logs.ts'
 import { getLogBuffer } from './logs.ts'
@@ -29,6 +29,14 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
     parsed = parseScript(script)
   } catch (e) {
     return finalize(null, prompt, [`Script inválido: ${(e as Error).message}`])
+  }
+
+  // 0a) Validar que el binario exista antes de hacer nada: evita un ENOENT
+  //     críptico de posix_spawn en startServer y da un mensaje accionable.
+  try {
+    assertBinaryExists(parsed.binary)
+  } catch (e) {
+    return finalize(parsed, prompt, [(e as Error).message])
   }
 
   // Marcador: índice del log desde el cual parsear al final.

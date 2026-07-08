@@ -34,6 +34,14 @@
             size="small"
             (onClick)="restoreDefault($event)"
           />
+          <p-button
+            label="Optimizar"
+            icon="pi pi-bolt"
+            [text]="true"
+            size="small"
+            pTooltip="Precalcular parámetros según la VRAM disponible"
+            (onClick)="store.openOptimizer()"
+          />
         </div>
 
         <div class="buttons">
@@ -168,14 +176,15 @@
         <ng-template #body let-f>
           <tr [class.present]="flagPresent().has(f.long)">
             <td class="cell-actions">
-              <p-button
-                icon="pi pi-arrow-left"
-                size="small"
-                severity="success"
-                pTooltip="Agregar al script"
-                [text]="true"
-                (onClick)="addToScript(f)"
-              />
+              @if (!flagPresent().has(f.long)) {
+                <p-button
+                  icon="pi pi-arrow-left"
+                  size="small"
+                  severity="success"
+                  [text]="true"
+                  (onClick)="addToScript(f)"
+                />
+              }
             </td>
 
             <td class="cell-actions">
@@ -231,8 +240,7 @@
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '90vw', maxWidth: '560px' }"
-  [breakpoints]="{ '640px': '95vw' }"
+  [style]="{ width: '48rem' }"
 >
   @if (infoFlag(); as f) {
     <div class="info-body">

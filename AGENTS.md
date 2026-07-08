@@ -44,9 +44,9 @@ src/                        # Backend (Bun, API pura)
   server.ts                 # Entry point: Bun.serve + bootstrap + shutdown handlers
   config.ts                 # Constantes de entorno (PORT, DATA_DIR, HISTORY_FILE, caps…)
   state.ts                  # Estado global mutable (managed, status, logBuffer, …) + setters
-  types.ts                  # Interfaces del dominio (BenchmarkResult, GpuInfo, ParsedScript…)
+  types.ts                  # Interfaces del dominio (BenchmarkResult, GpuInfo, ParsedScript, TunedParams, ModelMeta…)
   logs.ts                   # Buffer de logs: pushLog, systemLog, getLogBuffer
-  script-parser.ts          # Tokenizado y parseo del script de shell (tokenizeScript, parseScript)
+  script-parser.ts          # Tokenizado y parseo del script de shell (tokenizeScript, parseScript, hasFlag)
   server-manager.ts         # Gestión del proceso llama-server (startServer, stopServer, urlFor)
   gpu.ts                    # Métricas de GPU NVIDIA (nvidia-smi) + AMD (sysfs)
   mem.ts                    # Métricas de RAM del sistema (/proc/meminfo)
@@ -54,6 +54,7 @@ src/                        # Backend (Bun, API pura)
   metrics.ts                # Parsing de métricas desde logs + health-check + utilidades
   benchmark.ts              # Orquestador del benchmark completo (runBenchmark, finalize)
   history.ts                # Persistencia del historial (loadHistory, saveResult, …)
+  optimizer.ts              # Heurística de VRAM + parser del header GGUF + resolución de archivo (-hf/--model)
   router.ts                 # HTTP request handler: path matching + CORS (solo API JSON)
   shutdown.ts               # Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP)
 data/                       # Datos locales (gitignored)
@@ -66,14 +67,20 @@ front/                      # Frontend (Angular 22 + PrimeNG 21)
     app.routes.ts           # Ruta '' → Home (lazy)
     app.ts / app.html       # Shell: header + p-toast + p-confirmdialog + router-outlet
     core/
-      models/types.ts       # Interfaces espejo del backend
+      models/types.ts       # Interfaces espejo del backend (ParsedScript, TunedParams, ModelMeta, EstimateResponse…)
       services/             # api.service (HttpClient), llama-bench.service, storage.service
       state/bench.store.ts  # Estado global con signals + actions + effects
-      utils/                # format.ts (fn puras), pipes.ts, llama-flags.ts (catálogo)
+      data/llama-flags.ts   # Catálogo estático de ~270 flags de llama-server (categorias, defaults, descripciones)
+      utils/
+        format.ts           # Fn puras de formato (fmt, fmtGB, parseModel, deviceVramLine…)
+        flag-writer.ts      # Reescritura de flags en el script (applyTunedParams, parseParamsFromScript)
+        vram-estimate.ts    # Heurística client-side de VRAM (estimateVramMiB, buildBreakdown, recommendParams)
+        pipes.ts            # Pipes de Angular
     features/               # Componentes standalone (uno por sección):
       home/, status-bar/, script-editor/, benchmark-panel/,
       gpu-grid/, logs-viewer/, response-card/, last-result/,
-      history-table/, compare-modal/, chart-modal/
+      history-table/, compare-modal/, chart-modal/,
+      optimizer-modal/      # Diálogo optimizador de parámetros (sliders, barras, heurística en vivo)
 ```
 
 > Mandates del frontend en `front/AGENTS.md`: `inject()`,
@@ -94,9 +101,9 @@ bundle de frontend** (eso se hizo en la versión anterior con `Bun.build()` +
 
 1. **config.ts** — constantes de entorno y paths (`PORT`, `DATA_DIR`, `HISTORY_FILE`, `SCRIPT_FILE`, `PROMPT_FILE`, `HISTORY_CAP`, `LOG_CAP`).
 2. **state.ts** — estado global mutable centralizado (`managed`, `status`, `statusError`, `benchmarkRunning`, `logBuffer`, `benchAbortController`) con setters para reasignación desde otros módulos. Exporta también `emptyParsedScript()` y la interfaz `ManagedServer`.
-3. **types.ts** — interfaces del dominio (`ParsedScript`, `BenchmarkResult`, `GpuInfo`, `LlamaDevice`, `DeviceVram`, `RamInfo`, `StatusResponse`, `LogEntry`, `LogsResponse`, `ServerStatus`, `GpuBackend`).
+3. **types.ts** — interfaces del dominio (`ParsedScript`, `BenchmarkResult`, `GpuInfo`, `LlamaDevice`, `DeviceVram`, `RamInfo`, `StatusResponse`, `LogEntry`, `LogsResponse`, `ServerStatus`, `GpuBackend`, `TunedParams`, `ModelMeta`, `VramBreakdown`, `EstimateResponse`).
 4. **logs.ts** — operaciones del buffer circular de logs (`pushLog`, `systemLog`, `getLogBuffer`). El buffer vive en `state.ts`.
-5. **script-parser.ts** — tokenizado de scripts de shell y extracción de flags (`tokenizeScript`, `parseScript`, `flagValue`, `toNumOrNull`). Respeta comillas y continuaciones `\`.
+5. **script-parser.ts** — tokenizado de scripts de shell y extracción de flags (`tokenizeScript`, `parseScript`, `flagValue`, `toNumOrNull`, `hasFlag`). Respeta comillas y continuaciones `\`. Extrae escalares para historial, benchmark y optimizador (incluye `--cpu-moe`, `--cache-reuse`, `--no-mmproj`, `--model`).
 6. **server-manager.ts** — gestión del proceso llama-server (`startServer`, `stopServer`, `urlFor`, `binaryRuntimeEnv`). `startServer` devuelve el `ManagedServer` (con su promesa `ready`). Spawn con grupo de proceso propio, detección de ready, shutdown graceful (SIGTERM → SIGKILL).
 7. **gpu.ts** — lectura de métricas GPU: NVIDIA vía `nvidia-smi` CSV, AMD vía sysfs (`mem_info_vram_*`, `gpu_busy_percent`). Incluye `subtractGpuBaseline` para el delta de VRAM. Re-exporta `mkdir` para `history.ts`.
 8. **mem.ts** — lectura de RAM del sistema vía `/proc/meminfo` (`readRamStats`, `subtractRamBaseline`). Linux-only; devuelve `null` si no está disponible.
@@ -104,8 +111,9 @@ bundle de frontend** (eso se hizo en la versión anterior con `Bun.build()` +
 10. **metrics.ts** — parsing regex de métricas desde logs (`parseMetricsFromLogs`, incluye draft-mtp), health-check con polling (`waitForServer`), `DEFAULT_PROMPT`, `sleep`.
 11. **benchmark.ts** — orquestador del ciclo completo de benchmark (`runBenchmark`, `finalize`). Importa de server-manager, gpu, mem, devices, metrics, history.
 12. **history.ts** — persistencia JSON del historial (`ensureDataDir`, `loadHistory`, `saveResult`, `deleteResult`, `clearHistory`). Cap de `HISTORY_CAP` (200) entradas.
-13. **router.ts** — `handleRequest` con path matching manual y CORS. Solo endpoints de la API. Re-exporta `existsSync` para el bootstrap.
-14. **shutdown.ts** — cierre ordenado ante signals (`registerShutdownHandlers`, `shutdownCleanup`). Aborta el benchmark en curso y detiene el llama-server gestionado para que no quede huérfano ocupando GPU. Idempotente.
+13. **optimizer.ts** — heurística de VRAM y resolución de modelo. Importa `estimateVramMiB`, `recommendParams`, `buildEstimateResponse` (heuristic de VRAM), `parseModelMeta` (deduce params/quant/capas del nombre), `resolveModelFile` (resuelve el `.gguf` real desde `-hf` → HF cache o `--model` → ruta, mide su tamaño exacto) y `readGgufArch` (parser binario del header GGUF que extrae capas, KV heads, head_dim y context_length reales del modelo).
+14. **router.ts** — `handleRequest` con path matching manual y CORS. Solo endpoints de la API (incluye `POST /estimate` del optimizador). Re-exporta `existsSync` para el bootstrap.
+15. **shutdown.ts** — cierre ordenado ante signals (`registerShutdownHandlers`, `shutdownCleanup`). Aborta el benchmark en curso y detiene el llama-server gestionado para que no quede huérfano ocupando GPU. Idempotente.
 
 ### Frontend (`front/`)
 
@@ -250,6 +258,98 @@ in progress or if manual server is still running.
 
 ---
 
+## Optimizador de parámetros
+
+Diálogo (`features/optimizer-modal/`) que precalcula parámetros de
+`llama-server` según los recursos de VRAM disponibles, **sin arrancar el
+binario**. Estimación puramente heurística (client-side), con un botón
+"Default" que restaura los valores de `llama-server --help`.
+
+### Flujo
+
+1. Usuario abre el diálogo (botón "Optimizar ⚡" en `script-editor`).
+2. `POST /estimate` → backend enumera devices (`--list-devices`), resuelve el
+   archivo `.gguf` real (`-hf` → HF cache o `--model` → ruta), lee el header
+   GGUF y devuelve `ModelMeta` + devices.
+3. Frontend siembra los sliders desde el **script actual** (lo que el usuario ya
+   tiene configurado), no desde una recomendación.
+4. La heurística se calcula **client-side** como `computed` (instantánea, sin
+   HTTP por cada cambio de slider) → las barras de consumo se actualizan en vivo.
+5. "Aplicar al script" reescribe los flags afinados en el editor (copia temporal
+   hasta confirmar; "Cancelar" no toca nada).
+
+### Fórmula de estimación
+
+```
+VRAM = pesos + KV cache + overhead
+```
+
+- **Pesos**: tamaño **real** del archivo `.gguf` (medido en disco vía
+  `resolveModelFile`), ajustado por el **offload fraction** de `--n-gpu-layers`
+  (`ngl / capas`). Si `ngl >= capas`, todos los pesos van a VRAM; si no, solo la
+  fracción correspondiente. Si no se resuelve el archivo, se estima con
+  `paramsB × bytesPerParam` (tabla de quants).
+- **KV cache**: `2 × capas × kv_heads × head_dim × ctx_size × bytes_kv`.
+  Las capas, KV heads y head_dim se leen del **header GGUF** (`readGgufArch`:
+  `block_count`, `attention.head_count_kv`, `attention.key_length`), no se
+  adivinan por familia. `--cache-reuse` reduce el ctx efectivo
+  (`ctx − cacheReuse`).
+- **Overhead**: `128 + ubatch × 0.5` MiB (buffers de cómputo del backend). Si
+  `--no-mmproj` está **off** y hay mmproj, se suma su tamaño al overhead.
+
+### Parser del header GGUF (`readGgufArch`)
+
+Lee los primeros 2MB del `.gguf` (sin cargar el archivo entero) y parsea el
+header binario: magic `GGUF` → version → tensor_count → kv_count → pares
+clave/valor tipados. Extrae:
+
+| Clave GGUF | Campo ModelMeta |
+| --- | --- |
+| `<arch>.block_count` | `layers` |
+| `<arch>.attention.head_count_kv` | `kvHeads` |
+| `<arch>.attention.key_length` | `headDim` |
+| `<arch>.context_length` | (disponible, no usado en la fórmula) |
+
+Detiene la lectura apenas tiene las 4 claves. Tolerante a fallos: si el buffer
+se corta o hay un tipo inesperado, devuelve lo que tenga y la fórmula cae a
+defaults conservadores (32 capas, 8 kv_heads, 128 head_dim).
+
+### Resolución del archivo (`resolveModelFile`)
+
+- `-hf "org/model:quant"` → busca en `~/.cache/huggingface/hub/models--org--model/snapshots/<hash>/*.gguf`.
+  Si el hf trae `:Q4_K_S`, prioriza el archivo cuyo nombre coincida con ese
+  quant. Respeta `HF_HOME` (sino `~/.cache/huggingface/hub`).
+- `--model / -m` → usa la ruta explícita (archivo o directorio).
+- También busca el **mmproj** (`mmproj-*.gguf`) en el mismo directorio y mide
+  su tamaño para el cálculo del overhead.
+
+### Backend: `POST /estimate`
+
+Body: `{ script, params?, priority? }`. Devuelve `{ devices, totalFreeMiB,
+backend, modelMeta, heuristic, recommendation }`. No arranca el binario — solo
+ejecuta `--list-devices` (rápido) y resuelve el archivo.
+
+### Frontend: arquitectura sin loops
+
+- **Heurística client-side** (`core/utils/vram-estimate.ts`): espejo de la
+  fórmula del backend, calculada como `computed` que lee `params()` + `meta()` +
+  `devices()`. Los sliders solo hacen `params.set(...)` → las barras se
+  actualizan sin HTTP.
+- **`untracked`** en el `effect` del constructor: `loadDevices()` no lee
+  `params()` de forma reactiva, evitando el loop (params.set → effect → HTTP →
+  params.set → …).
+- **Flag `seeded`**: los params solo se siembran una vez al abrir (desde el
+  script parseado), no en cada llamada.
+
+### Comparación de VRAM
+
+Las barras y el resumen comparan contra la **VRAM total** del device
+(`totalMiB`), no la libre (`freeMiB`). El modelo puede usar VRAM que el
+display-server reporta como "ocupada" — el tope real es la capacidad total de
+la GPU, no el `free` del momento.
+
+---
+
 ## Gotchas
 
 1. **Port 3000, not 8080**: The backend deliberately avoids llama-server's default port. Don't "fix" this to 8080.
@@ -263,9 +363,13 @@ in progress or if manual server is still running.
 9. **No CORS issues**: Backend sets `Access-Control-Allow-Origin: *` on all responses, so el frontend Angular (dev en `:4242`) llama al backend (`:3000`) sin proxy. No usar `withCredentials` (incompatible con `*`).
 10. **Backend = API pura**: Ya no sirve `index.html`, `/app.js` ni `/style.css`. El frontend se sirve aparte (`ng serve` en dev, o estáticos del `front/dist/` en producción). El code de `Bun.build()`/`public/` fue eliminado en la migración a Angular.
 11. **Spanish UI**: All user-facing text is in Spanish. Code comments are also in Spanish.
-12. **`src/types.ts` (backend) y `front/.../core/models/types.ts` son espejos**: El backend ya no comparte tipos con el frontend (viven en proyectos separados). Si una interfaz cambia, actualizar ambos lados.
+12. **`src/types.ts` (backend) y `front/.../core/models/types.ts` son espejos**: El backend ya no comparte tipos con el frontend (viven en proyectos separados). Si una interfaz cambia, actualizar ambos lados. Incluye `TunedParams`, `ModelMeta`, `VramBreakdown`, `EstimateResponse` del optimizador.
 13. **ESM live bindings**: State variables in `src/state.ts` (`managed`, `status`, etc.) are `let` exports. ESM modules see the current value on each access (live bindings), so closures in `server-manager.ts` correctly observe state changes.
 14. **State mutations via setters**: Because `let` exports can't be reassigned from another module directly, `state.ts` provides setter functions (`setManaged`, `setStatus`, etc.) used by all other modules.
 15. **Dev conjunto con `concurrently -k`**: `bun run dev` arranca backend + frontend juntos; la flag `-k` hace que al morir uno se mate el otro (Ctrl+C limpia ambos). Para correr uno solo, usar `dev:back` / `dev:front`.
 16. **`m.ready` antes del health-check**: El benchmark hace `await m.ready` antes de `waitForServer`. Si el proceso muere durante el arranque (modelo inválido, OOM, crash), el error llega de inmediato al frontend en vez de esperar el timeout de 120s.
 17. **Dos sistemas de VRAM**: `deviceVram` (delta de VRAM libre del backend vía `--list-devices`) es el preferido; si está vacío, el render cae a `gpus` (nvidia-smi/sysfs). El backend se deduce del prefijo del primer device, no del binario ni del script.
+18. **Optimizador = heurística sin arrancar el binario**: El optimizador NO hace dry-fit (no arranca `llama-server` para medir). Estima con una fórmula determinística: peso real del `.gguf` + KV cache (arquitectura del header GGUF) + overhead. La única llamada HTTP al abrir es `POST /estimate` (que ejecuta `--list-devices` y resuelve el archivo). Ver sección "Optimizador de parámetros".
+19. **Header GGUF del modelo**: `readGgufArch` lee los primeros 2MB del `.gguf` y extrae capas/KV heads/head_dim reales. Si el modelo no está cacheado (p.ej. se descarga por primera vez), no se puede resolver y la heurística cae a la interpolación por tamaño (menos precisa). El archivo se busca en el HF cache (`~/.cache/huggingface/hub`) o vía `--model` con ruta explícita.
+20. **`--n-gpu-layers` afecta los pesos en VRAM**: Si `ngl < capas`, solo esa fracción de pesos va a VRAM; el resto a RAM del sistema. El KV cache y el overhead siempre van a GPU (no se pueden offload). Mover el slider de "Capas en GPU" reduce los pesos visibles en las barras.
+21. **Comparación contra VRAM total, no libre**: Las barras del optimizador comparan contra `totalMiB` del device, no `freeMiB`. El modelo puede usar VRAM que el display-server reporta como "ocupada" — comparar contra `free` daba falsos rojos. El "¿cabe?" real es contra la capacidad total de la GPU.

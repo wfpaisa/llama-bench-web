@@ -1,0 +1,482 @@
+<p-dialog
+  header="Optimizador de parámetros ⚡"
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '92vw', maxWidth: '1080px', height: '90vh' }"
+  [contentStyle]="{ overflow: 'auto', padding: '0.75rem 1rem' }"
+  [breakpoints]="{ '960px': '95vw' }"
+>
+  <!-- ── Resumen del modelo detectado ── -->
+  @if (meta(); as m) {
+    <div class="meta-row">
+      <span class="meta-base">{{ m.base || '—' }}</span>
+      @if (m.quant) {
+        <span class="badge">{{ m.quant }}</span>
+      }
+      @if (m.weightsFileMiB != null) {
+        <span
+          class="badge real"
+          pTooltip="Tamaño real del archivo .gguf medido en disco (más preciso que la heurística)."
+        >
+          {{ fmtGB(m.weightsFileMiB, 2) }} GB
+        </span>
+      } @else if (m.paramsB != null) {
+        <span class="muted small">{{ fmt(m.paramsB, 1) }}B params</span>
+      }
+      @if (m.layers != null) {
+        @if (m.attentionLayers != null && m.attentionLayers !== m.layers) {
+          <span
+            class="muted small"
+            pTooltip="Modelo híbrido SSM/Attention: solo {{ m.attentionLayers }} de {{ m.layers }} capas generan KV cache; las demás son recurrentes (Mamba/SSM) con estado fijo. El KV cache se calcula sobre las capas de atención."
+          >
+            {{ m.attentionLayers }} / {{ m.layers }} capas de atención
+          </span>
+        } @else {
+          <span class="muted small">{{ m.layers }} capas</span>
+        }
+      }
+      @if (m.bytesPerParam != null && m.weightsFileMiB == null) {
+        <span class="muted small">{{ fmt(m.bytesPerParam, 2) }} B/param</span>
+      }
+      @if (m.mmprojSizeMiB != null) {
+        <span
+          class="muted small"
+          pTooltip="Vision projector detectado. Se suma al overhead salvo que actives --no-mmproj."
+        >
+          mmproj {{ fmtGB(m.mmprojSizeMiB, 2) }} GB
+        </span>
+      }
+      <button
+        class="reload-btn muted small"
+        (click)="reloadDevices()"
+        title="Recargar dispositivos"
+      >
+        <i class="pi pi-refresh"></i> recargar
+      </button>
+    </div>
+  }
+
+  <!-- ── Estado de carga inicial ── -->
+  @if (loadingDevices() && devices().length === 0) {
+    <div class="empty muted">Detectando dispositivos y estimando…</div>
+  }
+
+  @if (loadError()) {
+    <div class="warn-line">⚠ {{ loadError() }}</div>
+  } @else {
+    <!-- ── Cuerpo: dos columnas (controles + barras) ── -->
+    @if (devices().length > 0) {
+      <div class="opt-grid">
+        <!-- Columna izquierda: controles -->
+        <div class="opt-controls">
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="ctxSlider"
+                pTooltip="Cantidad máxima de tokens (prompt + generación) que el modelo puede atender en memoria. Más contexto permite conversaciones o documentos más largos, pero aumenta linealmente el consumo de VRAM del KV cache. Default de llama-server: 0 (tomado del modelo)."
+                >Contexto (ctx-size)</label
+              >
+              <span class="ctrl-val tabular-nums">{{
+                params().ctxSize.toLocaleString('es-CO')
+              }}</span>
+            </div>
+            <p-slider
+              inputId="ctxSlider"
+              [ngModel]="params().ctxSize"
+              (ngModelChange)="params.set({ ...params(), ctxSize: $event })"
+              [min]="512"
+              [max]="ctxMax"
+              [step]="2048"
+            />
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="nglSlider"
+                pTooltip="Capas del modelo descargadas a la GPU. Más capas en GPU = más velocidad, pero más VRAM ocupada por los pesos. 999 = todas en GPU (offload completo). Default de llama-server: auto (el binario decide según la VRAM disponible)."
+                >Capas en GPU (n-gpu-layers)</label
+              >
+              <span class="ctrl-val tabular-nums">{{ params().ngl }}</span>
+            </div>
+            <p-slider
+              inputId="nglSlider"
+              [ngModel]="params().ngl"
+              (ngModelChange)="params.set({ ...params(), ngl: $event })"
+              [min]="0"
+              [max]="999"
+              [step]="1"
+            />
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="batchSlider"
+                pTooltip="Tokens de prompt procesados en paralelo por pasada. Más grande acelera el prompt eval, pero sube el uso de VRAM del compute buffer. Default de llama-server: 2048."
+                >Batch size</label
+              >
+              <span class="ctrl-val tabular-nums">{{ params().batchSize }}</span>
+            </div>
+            <p-slider
+              inputId="batchSlider"
+              [ngModel]="params().batchSize"
+              (ngModelChange)="params.set({ ...params(), batchSize: $event })"
+              [min]="64"
+              [max]="2048"
+              [step]="64"
+            />
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="ubatchSlider"
+                pTooltip="Tokens físicos procesados en paralelo por pasada (micro-batch). Más grande acelera el cómputo, pero aumenta linealmente el compute buffer en VRAM. Suele ser ≤ batch-size. Default de llama-server: 512."
+                >μbatch size</label
+              >
+              <span class="ctrl-val tabular-nums">{{ params().ubatchSize }}</span>
+            </div>
+            <p-slider
+              inputId="ubatchSlider"
+              [ngModel]="params().ubatchSize"
+              (ngModelChange)="params.set({ ...params(), ubatchSize: $event })"
+              [min]="32"
+              [max]="1024"
+              [step]="32"
+            />
+          </div>
+
+          <div class="control-row2">
+            <div class="control-block">
+              <label
+                class="ctrl-label"
+                for="kvkSelect"
+                pTooltip="Tipo de cuantización del KV cache de Keys. Menor precisión (q4_0) reduce VRAM pero puede bajar levemente la calidad; f16 es la más precisa y la que más VRAM consume. Default de llama-server: f16."
+                >KV cache K</label
+              >
+              <p-select
+                inputId="kvkSelect"
+                [options]="kvOptions"
+                [ngModel]="params().cacheTypeK"
+                (ngModelChange)="params.set({ ...params(), cacheTypeK: $event })"
+                optionLabel="label"
+                optionValue="value"
+                [style]="{ width: '100%' }"
+                appendTo="body"
+              />
+            </div>
+            <div class="control-block">
+              <label
+                class="ctrl-label"
+                for="kvvSelect"
+                pTooltip="Tipo de cuantización del KV cache de Values. Igual que K: menor precisión ahorra VRAM a costa de algo de calidad. Default de llama-server: f16."
+                >KV cache V</label
+              >
+              <p-select
+                inputId="kvvSelect"
+                [options]="kvOptions"
+                [ngModel]="params().cacheTypeV"
+                (ngModelChange)="params.set({ ...params(), cacheTypeV: $event })"
+                optionLabel="label"
+                optionValue="value"
+                [style]="{ width: '100%' }"
+                appendTo="body"
+              />
+            </div>
+          </div>
+
+          <div class="control-block">
+            <label
+              class="ctrl-label"
+              for="deviceSelect"
+              pTooltip="Devices del backend (CUDA0, Vulkan0, …) usados para cargar el modelo. Sin selección = todos los detectados."
+              >Devices</label
+            >
+            <p-multiSelect
+              inputId="deviceSelect"
+              [options]="deviceOptions()"
+              [ngModel]="params().device"
+              (ngModelChange)="params.set({ ...params(), device: $event })"
+              optionLabel="label"
+              optionValue="value"
+              [style]="{ width: '100%' }"
+              display="chip"
+              placeholder="Todos"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Tensor split: slider por device + toggle automático -->
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                pTooltip="Reparto del modelo entre los devices seleccionados (proporciones, p.ej. 2:7). Automático reparte proporcional a la VRAM libre de cada device; manual te da control fino, p.ej. para reservar una GPU más libre."
+                >Tensor split (--tensor-split)</label
+              >
+              <button
+                type="button"
+                class="auto-btn"
+                [class.active]="!tensorSplitAuto()"
+                (click)="toggleTensorSplitAuto()"
+              >
+                {{ tensorSplitAuto() ? 'Auto' : 'Manual' }}
+              </button>
+            </div>
+            @if (!tensorSplitAuto()) {
+              @for (it of tensorSplitItems(); track it.device.id) {
+                <div class="ts-row">
+                  <span class="ts-id">{{ it.device.id }}</span>
+                  <span class="ts-name muted small">{{ it.device.name }}</span>
+                  <span class="ts-val tabular-nums">{{ it.value }}</span>
+                  <p-slider
+                    [ngModel]="it.value"
+                    (ngModelChange)="onTensorSplitSlider(it.device.id, $event)"
+                    [min]="0"
+                    [max]="10"
+                    [step]="1"
+                    [style]="{ flex: '1', minWidth: '8rem' }"
+                  />
+                </div>
+              }
+            } @else {
+              <small class="muted">Reparto proporcional a la VRAM libre de cada device.</small>
+            }
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="moeSlider"
+                pTooltip="Capas de expertos MoE (Mixture of Experts) que se ejecutan en CPU en vez de GPU. Útil para modelos MoE grandes (p.ej. Qwen3-30B-A3B) que no caben enteros en VRAM: mueve los expertos (la parte más pesada) a la RAM del sistema. Más capas en CPU = menos VRAM usada, pero más lento (los expertos corren en CPU). Default de llama-server: 0 (todos los expertos en GPU)."
+                >MoE en CPU (--cpu-moe)</label
+              >
+              <span class="ctrl-val tabular-nums">{{ params().nCpuMoe }}</span>
+            </div>
+            <p-slider
+              inputId="moeSlider"
+              [ngModel]="params().nCpuMoe"
+              (ngModelChange)="params.set({ ...params(), nCpuMoe: $event })"
+              [min]="0"
+              [max]="64"
+              [step]="1"
+            />
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="reuseSlider"
+                pTooltip="Cantidad de tokens del cache de la solicitud anterior que el servidor puede reutilizar para la siguiente. Reduce el costo de re-procesar prompts repetitivos (p.ej. en una conversación larga o RAG): solo se paga en VRAM el contexto fresco (ctx-size − cache-reuse). Más alto ahorra KV cache, pero requiere que los prompts tengan prefijos comunes. Default de llama-server: 0 (sin reutilización)."
+                >Cache reuse (--cache-reuse)</label
+              >
+              <span class="ctrl-val tabular-nums">{{ params().cacheReuse }}</span>
+            </div>
+            <p-slider
+              inputId="reuseSlider"
+              [ngModel]="params().cacheReuse"
+              (ngModelChange)="params.set({ ...params(), cacheReuse: $event })"
+              [min]="0"
+              [max]="8192"
+              [step]="64"
+            />
+          </div>
+
+          <div class="control-block switch-row">
+            <label
+              class="ctrl-label"
+              for="faToggle"
+              pTooltip="Activa Flash Attention: reduce el consumo de VRAM del KV cache y acelera el cómputo en GPU moderna. Recomendado salvo compatibilidad. Default de llama-server: auto (activado en GPUs que lo soportan)."
+              >Flash attention</label
+            >
+            <p-toggleswitch
+              inputId="faToggle"
+              [ngModel]="params().flashAttn"
+              (ngModelChange)="params.set({ ...params(), flashAttn: $event })"
+            />
+          </div>
+
+          <div class="control-block switch-row">
+            <label
+              class="ctrl-label"
+              for="mmprojToggle"
+              pTooltip="No cargar el vision projector (mmproj). El mmproj es el módulo de visión que permite procesar imágenes (modelos multimodales). Si tu modelo es solo de texto, activar este switch ahorra toda la VRAM que ocuparía el mmproj (típicamente 0,5–2 GB). Si el modelo es multimodal y lo activás, perderás la capacidad de procesar imágenes. Default de llama-server: off (carga el mmproj si existe)."
+              >No mmproj (--no-mmproj)</label
+            >
+            <p-toggleswitch
+              inputId="mmprojToggle"
+              [ngModel]="params().noMmproj"
+              (ngModelChange)="params.set({ ...params(), noMmproj: $event })"
+            />
+          </div>
+        </div>
+
+        <!-- Columna derecha: barras de consumo + acciones -->
+        <div class="opt-summary">
+          <div class="summary-card" [class.overflow]="overflow()">
+            <div class="summary-head">
+              <span class="summary-title">Consumo estimado</span>
+              <label
+                class="vram-avail-toggle"
+                pTooltip="Cuando está activo, se suma al consumo la VRAM que ya estaba en uso al abrir esta ventana (display server, otras apps, otro modelo cargado…), reflejando la memoria realmente libre para el modelo. Se mide una sola vez al abrir; no se recalcula en vivo."
+              >
+                <p-toggleswitch [ngModel]="countUsedVram()" (ngModelChange)="countUsedVram.set($event)" />
+                <span class="vram-avail-label">vram disponible</span>
+              </label>
+              <span
+                class="badge heuristic"
+                pTooltip="Peso real del .gguf + KV cache (arquitectura del header GGUF) + overhead de cómputo."
+                >estimado</span
+              >
+            </div>
+            <div class="summary-nums">
+              <span class="big {{ overflow() ? 'red' : 'green' }}">{{
+                fmtGB(totalUsedMiB(), 2)
+              }}</span>
+              <span class="muted">/ {{ fmtGB(totalCapacityMiB(), 2) }} GB</span>
+            </div>
+            <div class="usage-bar">
+              <div
+                class="usage-fill"
+                [class.over]="overflow()"
+                [style.width.%]="totalPct() > 100 ? 100 : totalPct()"
+              ></div>
+            </div>
+            <div class="usage-pct muted small tabular-nums">{{ fmt(totalPct(), 0) }}% usado</div>
+
+            <!-- Desglose heurístico (pesos / KV / overhead) -->
+            @if (heuristic(); as h) {
+              <div class="breakdown">
+                <div class="bd-row">
+                  <span
+                    class="muted small bd-label"
+                    pTooltip="Memoria que ocupan los parámetros (pesos) del modelo, según su cuantización: params × bytes/param. Por ejemplo, un modelo 9B en Q6_K ≈ 6,2 GB; en Q4_K_S ≈ 5,0 GB."
+                    >Pesos</span
+                  >
+                  <span class="tabular-nums">{{ fmtGB(h.weightsMiB, 2) }} GB</span>
+                </div>
+                <div class="bd-row">
+                  <span
+                    class="muted small bd-label"
+                    pTooltip="Memoria del cache de atención (Keys + Values) que guarda el contexto de la conversación. Crece linealmente con ctx-size. Cuantizarlo (q8_0, q4_0) reduce su tamaño a costa de leve pérdida de calidad."
+                    >KV cache</span
+                  >
+                  <span class="tabular-nums">{{ fmtGB(h.kvMiB, 2) }} GB</span>
+                </div>
+                <div class="bd-row">
+                  <span
+                    class="muted small bd-label"
+                    pTooltip="Memoria extra que usa el motor, más allá de los pesos y el KV cache: buffers de cómputo (donde el backend hace las multiplicaciones de matrices), estructuras del runtime de CUDA/Vulkan, colas de comandos y memoria temporal del grafo. Escala sobre todo con --ubatch-size; en Vulkan es mayor que en CUDA (por eso la estimación para AMD está inflada ×1,44)."
+                    >Overhead</span
+                  >
+                  <span class="tabular-nums">{{ fmtGB(h.overheadMiB, 2) }} GB</span>
+                </div>
+                @if (countUsedVram() && baselineUsedMiB() > 0) {
+                  <div class="bd-row">
+                    <span
+                      class="muted small bd-label"
+                      pTooltip="VRAM que ya estaba ocupada en los dispositivos al abrir esta ventana (display server, otras apps u otro modelo cargado). Se mide una sola vez al abrir; se suma al consumo para reflejar la memoria realmente libre."
+                      >VRAM en uso</span
+                    >
+                    <span class="tabular-nums">{{ fmtGB(baselineUsedMiB(), 2) }} GB</span>
+                  </div>
+                }
+                <!-- Calibración manual: offset persistido para alinear la
+                     heurística con el uso real medido. -->
+                <div class="bd-row calib-row">
+                  <span
+                    class="muted small bd-label"
+                    pTooltip="Ajuste manual (en MiB) para calibrar la heurística contra el uso real medido. Positivo suma consumo (si el real fue mayor), negativo lo resta. Se reparte entre los dispositivos y se guarda en data/vram-offset.txt; persiste entre sesiones."
+                    >Calibración</span
+                  >
+                  <div class="calib-controls">
+                    <button type="button" class="calib-btn" (click)="adjustOffset(-500)" title="−500 MiB">−500</button>
+                    <button type="button" class="calib-btn" (click)="adjustOffset(-100)" title="−100 MiB">−100</button>
+                    <span class="calib-val tabular-nums">{{ offsetMiB() >= 0 ? '+' : '' }}{{ offsetMiB() }} MiB</span>
+                    <button type="button" class="calib-btn" (click)="adjustOffset(100)" title="+100 MiB">+100</button>
+                    <button type="button" class="calib-btn" (click)="adjustOffset(500)" title="+500 MiB">+500</button>
+                    @if (offsetMiB() !== 0) {
+                      <button type="button" class="calib-reset" (click)="resetOffset()" title="Reiniciar a 0">⟲</button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Barra por device -->
+          @if (bars().length) {
+            <div class="device-bars">
+              <div class="bars-title muted small">Por dispositivo</div>
+              @for (b of bars(); track b.device.id) {
+                <div class="dev-bar" [class.overflow]="b.overflow">
+                  <div class="dev-head">
+                    <span class="dev-id">{{ b.device.id }}</span>
+                    <span class="dev-name muted small">{{ b.device.name }}</span>
+                    <span class="dev-used tabular-nums"
+                      >{{ fmtGB(b.usedMiB + b.baselineMiB, 2) }} /
+                      {{ fmtGB(b.device.totalMiB, 1) }} GB</span
+                    >
+                  </div>
+                  <div class="usage-bar dev-usage-bar">
+                    @if (b.baselineMiB > 0) {
+                      <div
+                        class="usage-fill-baseline"
+                        pTooltip="VRAM ya en uso al abrir (display server, otras apps…): {{ fmtGB(b.baselineMiB, 2) }} GB"
+                        [style.left.%]="0"
+                        [style.width.%]="baselinePctClamped(b)"
+                      ></div>
+                    }
+                    <div
+                      class="usage-fill dev-usage-fill"
+                      [class.over]="b.overflow"
+                      [style.left.%]="baselinePctClamped(b)"
+                      [style.width.%]="modelPctClamped(b)"
+                    ></div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (overflow()) {
+            <div class="warn-line">⚠ La configuración actual excede la VRAM disponible.</div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Footer con acciones ── -->
+      <div class="opt-footer">
+        <p-button
+          label="Default"
+          icon="pi pi-replay"
+          severity="secondary"
+          (onClick)="resetToDefaults()"
+          pTooltip="Restablece todos los campos a los valores por defecto de llama-server"
+        />
+        <span class="spacer"></span>
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          [text]="true"
+          (onClick)="store.closeOptimizer()"
+        />
+        <p-button
+          label="Aplicar al script"
+          icon="pi pi-check"
+          severity="success"
+          (onClick)="applyToScript()"
+        />
+      </div>
+    }
+  }
+</p-dialog>

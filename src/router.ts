@@ -7,14 +7,16 @@ import { readFile, writeFile } from 'node:fs/promises'
 import type { LogsResponse, StatusResponse } from './types.ts'
 import { managed, benchmarkRunning, setBenchmarkRunning, benchAbortController, status, statusError } from './state.ts'
 import { parseScript } from './script-parser.ts'
-import { startServer, stopServer, urlFor } from './server-manager.ts'
+import { startServer, stopServer, urlFor, assertBinaryExists } from './server-manager.ts'
 import { readGpuStats } from './gpu.ts'
 import { readRamStats } from './mem.ts'
 import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
 import { clearHistory, deleteResult, ensureDataDir, loadHistory, setRating } from './history.ts'
 import { getLogBuffer, systemLog } from './logs.ts'
-import { SCRIPT_FILE, PROMPT_FILE } from './config.ts'
+import { SCRIPT_FILE, PROMPT_FILE, VRAM_OFFSET_FILE } from './config.ts'
+import { listDevices } from './devices.ts'
+import { parseModelMeta, buildEstimateResponse, resolveModelFile } from './optimizer.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -98,7 +100,35 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
   }
 
-  // ── Iniciar servidor manual ──
+  // ── Offset de calibración del optimizador (MiB, con signo) ──
+  // Ajuste manual del usuario para que la heurística de VRAM coincida con el
+  // uso real medido. Se persiste como texto plano (un entero). Default: 0.
+  if (path === '/vram-offset' && req.method === 'GET') {
+    try {
+      const content = await readFile(VRAM_OFFSET_FILE, 'utf8')
+      const n = parseInt(content.trim(), 10)
+      return new Response(String(Number.isFinite(n) ? n : 0), {
+        headers: { 'Content-Type': 'text/plain', ...CORS },
+      })
+    } catch {
+      return new Response('0', { headers: { 'Content-Type': 'text/plain', ...CORS } })
+    }
+  }
+  if (path === '/vram-offset' && req.method === 'POST') {
+    try {
+      const body = await req.json()
+      const n = Number(body?.offset)
+      if (!Number.isFinite(n)) {
+        return json({ ok: false, error: "'offset' debe ser un número (MiB)." }, 400)
+      }
+      // Truncar a entero (el offset es siempre MiB enteros desde la UI).
+      await ensureDataDir()
+      await writeFile(VRAM_OFFSET_FILE, String(Math.trunc(n)), 'utf8')
+      return json({ ok: true })
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500)
+    }
+  }
   if (path === '/start' && req.method === 'POST') {
     if (managed) return json({ ok: false, error: 'Ya hay un servidor corriendo.' }, 409)
     let script: string
@@ -110,6 +140,9 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
     try {
       const parsed = parseScript(script)
+      // Validar el binario antes de spawn: evita un ENOENT críptico de
+      // posix_spawn y da un mensaje accionable al usuario.
+      assertBinaryExists(parsed.binary)
       const pid = (await startServer(parsed)).pid
       // Resolvemos la promesa de ready en background; respondemos ya.
       return json({ ok: true, pid })
@@ -178,6 +211,77 @@ export async function handleRequest(req: Request): Promise<Response> {
       return json({ ok: true })
     }
     return json({ ok: false, error: 'No hay un benchmark en ejecución.' }, 404)
+  }
+
+  // ── Optimizador: estimación heurística (sin arrancar el binario) ──
+  // Body: { script, params?, priority? }.
+  // Devuelve devices disponibles + heurística con los params indicados +
+  // recomendación automática que cabe en la VRAM libre.
+  if (path === '/estimate' && req.method === 'POST') {
+    try {
+      const body = await req.json().catch(() => ({}))
+      if (typeof body?.script !== 'string') {
+        return json({ ok: false, error: "Falta el campo 'script'." }, 400)
+      }
+      let parsed
+      try {
+        parsed = parseScript(body.script)
+      } catch (e) {
+        return json({ ok: false, error: `Script inválido: ${(e as Error).message}` }, 400)
+      }
+
+      // Validar que el binario exista antes de intentar listar devices: si no
+      // existe, listDevices devolvería [] en silencio y el modal del frontend
+      // se quedaría colgado en "Detectando dispositivos…".
+      try {
+        assertBinaryExists(parsed.binary)
+      } catch (e) {
+        return json({ ok: false, error: (e as Error).message }, 400)
+      }
+
+      // Enumerar devices del backend (--list-devices).
+      const devices = await listDevices(parsed.binary)
+      const meta = parseModelMeta(parsed.model)
+
+      // Resolver el archivo real del modelo (-hf → HF cache, --model → ruta)
+      // para medir su tamaño exacto en disco y leer su arquitectura del header
+      // GGUF (capas, kv_heads, head_dim reales → KV cache exacto).
+      const resolved = resolveModelFile(parsed.model, parsed.modelFile)
+      meta.weightsFileMiB = resolved.sizeMiB
+      meta.weightsFile = resolved.file
+      meta.mmprojSizeMiB = resolved.mmprojSizeMiB
+      // Sobrescribir la arquitectura adivinada con la real del GGUF si se leyó.
+      if (resolved.arch) {
+        if (resolved.arch.layers != null) meta.layers = resolved.arch.layers
+        if (resolved.arch.kvHeads != null) meta.kvHeads = resolved.arch.kvHeads
+        if (resolved.arch.keyLength != null) meta.headDim = resolved.arch.keyLength
+        // Capas de atención (modelos híbridos SSM/Attention): si se detectó,
+        // sobrescribe para que el KV cache se calcule solo sobre esas capas.
+        if (resolved.arch.attentionLayers != null) meta.attentionLayers = resolved.arch.attentionLayers
+      }
+
+      // Params: los que vienen en el body, si no, los del script parseado.
+      const params = {
+        ctxSize: body.params?.ctxSize ?? parsed.ctxSize ?? 8192,
+        ngl: body.params?.ngl ?? parsed.ngl ?? 999,
+        cacheTypeK: body.params?.cacheTypeK ?? parsed.cacheTypeK ?? 'f16',
+        cacheTypeV: body.params?.cacheTypeV ?? parsed.cacheTypeV ?? 'f16',
+        batchSize: body.params?.batchSize ?? parsed.batchSize ?? 512,
+        ubatchSize: body.params?.ubatchSize ?? parsed.ubatchSize ?? 128,
+        flashAttn: body.params?.flashAttn ?? parsed.flashAttn ?? true,
+        device: body.params?.device ?? (parsed.device ? parsed.device.split(',').map((s) => s.trim()).filter(Boolean) : []),
+        tensorSplit: body.params?.tensorSplit ?? (parsed.tensorSplit ? parsed.tensorSplit.split(',').map(Number).filter(Number.isFinite) : null),
+        nCpuMoe: body.params?.nCpuMoe ?? parsed.nCpuMoe ?? 0,
+        cacheReuse: body.params?.cacheReuse ?? parsed.cacheReuse ?? 0,
+        noMmproj: body.params?.noMmproj ?? parsed.noMmproj ?? false,
+      }
+      const priority = body.priority === 'quality' ? 'quality' : 'ctx'
+
+      const estimate = buildEstimateResponse({ meta, devices, params, priority })
+      return json({ ok: true, estimate })
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500)
+    }
   }
 
   // ── Historial ──

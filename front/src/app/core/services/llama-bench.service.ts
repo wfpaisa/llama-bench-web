@@ -9,12 +9,14 @@ import { ApiService } from './api.service';
 import type {
   BenchmarkResponse,
   BenchmarkResult,
+  EstimateRequestResponse,
   GpuInfo,
   LogsResponse,
   OkResponse,
   RamInfo,
   StartResponse,
   StatusResponse,
+  TunedParams,
 } from '../models/types';
 
 /** Parámetros del POST /benchmark. */
@@ -110,5 +112,20 @@ export class LlamaBenchService {
 
   savePromptDefault(prompt: string): Observable<OkResponse> {
     return this.api.post<OkResponse>('/prompt-default', { prompt });
+  }
+
+  // ── Offset de calibración del optimizador (texto plano: MiB con signo) ──
+  getVramOffset(): Observable<string> {
+    return this.api.getText('/vram-offset');
+  }
+
+  saveVramOffset(offsetMiB: number): Observable<OkResponse> {
+    return this.api.post<OkResponse>('/vram-offset', { offset: offsetMiB });
+  }
+
+  // ── Optimizador ──
+  /** Estimación heurística instantánea (no arranca el binario). */
+  estimate(script: string, params: TunedParams, priority: 'ctx' | 'quality'): Observable<EstimateRequestResponse> {
+    return this.api.post<EstimateRequestResponse>('/estimate', { script, params, priority });
   }
 }

@@ -9,6 +9,7 @@
 // actual, así que las closures ven los cambios hechos vía los setters.
 
 import { spawn, type Subprocess } from 'bun'
+import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import type { ParsedScript, LogEntry } from './types.ts'
 import { type ManagedServer, managed, setManaged, status, setStatus, setStatusError } from './state.ts'
@@ -29,6 +30,35 @@ export function binaryRuntimeEnv(binary: string): { cwd: string; env: Record<str
   const existing = env['LD_LIBRARY_PATH'] || ''
   env['LD_LIBRARY_PATH'] = existing ? `${binDir}:${existing}` : binDir
   return { cwd: binDir, env }
+}
+
+/**
+ * Valida que el binario de llama-server referenciado por el script exista en
+ * disco. Lanza un Error con mensaje claro (en español) si no se encuentra,
+ * incluyendo la ruta absoluta para que el usuario sepa qué corregir.
+ *
+ * Resuelve rutas relativas contra el CWD del backend y respeta el PATH cuando
+ * el binario es un nombre simple (p.ej. "llama-server"). Se usa en /estimate y
+ * /start para fallar rápido con un mensaje útil en vez de un ENOENT críptico de
+ * spawn o un devices:[] silencioso.
+ */
+export function assertBinaryExists(binary: string): void {
+  if (!binary) {
+    throw new Error('El script no especifica un binario de llama-server.')
+  }
+  // Ruta con "/" o "./" → resolver contra el CWD del backend.
+  if (binary.includes('/') || binary.startsWith('.')) {
+    const abs = resolve(binary)
+    if (!existsSync(abs)) {
+      throw new Error(`El binario no existe: ${abs}`)
+    }
+    return
+  }
+  // Nombre simple (sin "/") → buscar en el PATH (which).
+  const path = Bun.which(binary)
+  if (!path) {
+    throw new Error(`No se encontró el binario "${binary}" en el PATH.`)
+  }
 }
 
 /** Construye la URL base del server gestionado a partir de host/port. */

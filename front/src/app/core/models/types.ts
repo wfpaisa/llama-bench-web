@@ -26,6 +26,11 @@ export interface ParsedScript {
   temp: number | null;
   topP: number | null;
   topK: number | null;
+  ngl: number | null;
+  flashAttn: boolean;
+  threads: number | null;
+  minP: number | null;
+  repeatPenalty: number | null;
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */
@@ -158,4 +163,90 @@ export interface StartResponse extends OkResponse {
 }
 export interface BenchmarkResponse extends OkResponse {
   result?: BenchmarkResult;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Optimizador de parámetros (espejo de src/types.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Parámetros afinables por el optimizador, expuestos en el diálogo. */
+export interface TunedParams {
+  ctxSize: number;
+  ngl: number;
+  cacheTypeK: string;
+  cacheTypeV: string;
+  batchSize: number;
+  ubatchSize: number;
+  flashAttn: boolean;
+  /** Devices seleccionados (ids del backend). Vacío = todos. */
+  device: string[];
+  /** Reparto entre devices (--tensor-split). null = automático. */
+  tensorSplit: number[] | null;
+  /** --cpu-moe: capas de expertos MoE en CPU. 0 = desactivado. */
+  nCpuMoe: number;
+  /** --cache-reuse: tokens reutilizables del cache anterior. 0 = desactivado. */
+  cacheReuse: number;
+  /** --no-mmproj: si true, no carga el vision projector (ahorra VRAM). */
+  noMmproj: boolean;
+}
+
+/** Desglose heurístico del consumo de VRAM de una configuración. */
+export interface VramBreakdown {
+  perDeviceMiB: number[];
+  totalMiB: number;
+  weightsMiB: number;
+  kvMiB: number;
+  overheadMiB: number;
+  fits: boolean;
+}
+
+/** Metadatos de un modelo deducidos del nombre (-hf / --hf-repo). */
+export interface ModelMeta {
+  raw: string;
+  base: string;
+  quant: string | null;
+  bytesPerParam: number | null;
+  paramsB: number | null;
+  layers: number | null;
+  /**
+   * Número de capas que contribuyen al KV cache (de atención). En modelos
+   * híbridos SSM/Attention (Qwen3.5/3.6, Jamba, Zamba…) solo una fracción de
+   * las capas son de atención; el resto son recurrentes (Mamba/SSM). null =
+   * todas son de atención (modelo denso normal, = layers).
+   */
+  attentionLayers: number | null;
+  kvHeads: number | null;
+  headDim: number | null;
+  /** Tamaño real del .gguf en MiB (medido en disco). null si no se resolvió. */
+  weightsFileMiB: number | null;
+  /** Ruta del archivo .gguf resuelto. null si no se encontró. */
+  weightsFile: string | null;
+  /** Tamaño del mmproj en MiB. null si no hay o no se midió. */
+  mmprojSizeMiB: number | null;
+}
+
+/** Respuesta de POST /estimate. */
+export interface EstimateResponse {
+  devices: LlamaDevice[];
+  totalFreeMiB: number;
+  backend: GpuBackend;
+  modelMeta: ModelMeta;
+  heuristic: VramBreakdown;
+  recommendation: TunedParams;
+}
+
+/** Respuesta de POST /dryfit (VRAM consumida real al cargar el modelo). */
+export interface DryfitResponse {
+  perDevice: DeviceVram[];
+  totalMiB: number | null;
+  loadTimeSeconds: number | null;
+  fits: boolean;
+  error: string | null;
+}
+
+export interface EstimateRequestResponse extends OkResponse {
+  estimate?: EstimateResponse;
+}
+export interface DryfitRequestResponse extends OkResponse {
+  dryfit?: DryfitResponse;
 }

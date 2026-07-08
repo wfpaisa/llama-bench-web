@@ -85,5 +85,14 @@ export function emptyParsedScript(): ParsedScript {
     temp: null,
     topP: null,
     topK: null,
+    ngl: null,
+    flashAttn: false,
+    threads: null,
+    minP: null,
+    repeatPenalty: null,
+    modelFile: null,
+    nCpuMoe: 0,
+    cacheReuse: 0,
+    noMmproj: false,
   }
 }

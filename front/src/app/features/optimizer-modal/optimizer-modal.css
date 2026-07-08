@@ -1,0 +1,403 @@
+:host ::ng-deep .p-dialog {
+  border-radius: 8px;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-800, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+.meta-base {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.reload-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+.reload-btn:hover {
+  background: var(--surface-700, rgba(255, 255, 255, 0.08));
+  color: var(--color-text, #f0efed);
+}
+.badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: var(--surface-700, rgba(255, 255, 255, 0.08));
+  color: var(--color-text-muted, #9b9b96);
+  letter-spacing: 0.02em;
+}
+.badge.real {
+  background: rgba(34, 197, 94, 0.18);
+  color: rgb(134, 239, 172);
+}
+.badge.heuristic {
+  background: rgba(59, 130, 246, 0.18);
+  color: rgb(147, 197, 253);
+}
+
+.muted {
+  color: var(--color-text-muted, #9b9b96);
+}
+.small {
+  font-size: 0.78rem;
+}
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+/* Grid dos columnas: controles | resumen */
+.opt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .opt-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Columna de controles */
+.opt-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.control-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.control-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.ctrl-label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #9b9b96);
+  font-weight: 500;
+}
+.ctrl-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.ctrl-val {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #f0efed);
+}
+.switch-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+:host ::ng-deep .control-block .p-slider {
+  width: 100%;
+}
+
+/* Etiquetas con tooltip: cursor help para sugerir que hay ayuda. */
+.ctrl-label {
+  cursor: help;
+  text-decoration: underline dotted rgba(155, 155, 150, 0.5);
+  text-underline-offset: 3px;
+}
+
+/* Tensor split: botón Auto/Manual */
+.auto-btn {
+  font-size: 0.7rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
+  background: var(--surface-800, rgba(255, 255, 255, 0.04));
+  color: var(--color-text-muted, #9b9b96);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.auto-btn:hover {
+  color: var(--color-text, #f0efed);
+  border-color: var(--color-text-muted, #9b9b96);
+}
+.auto-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: rgb(147, 197, 253);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+.ts-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+.ts-id {
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 4.5rem;
+}
+.ts-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-val {
+  font-size: 0.82rem;
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: right;
+}
+:host ::ng-deep .ts-row .p-slider {
+  flex: 1;
+  min-width: 8rem;
+}
+
+/* Columna de resumen */
+.opt-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.summary-card {
+  padding: 0.85rem;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  background: var(--surface-800, rgba(255, 255, 255, 0.02));
+}
+.summary-card.overflow {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.summary-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+/* Toggle "vram disponible": se agrupa a la derecha con el badge heuristic. */
+.vram-avail-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: help;
+}
+.vram-avail-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted, #9b9b96);
+  text-decoration: underline dotted rgba(155, 155, 150, 0.5);
+  text-underline-offset: 3px;
+}
+:host ::ng-deep .vram-avail-toggle .p-toggleswitch {
+  width: 2.4rem;
+  height: 1.2rem;
+}
+:host ::ng-deep .vram-avail-toggle .p-toggleswitch-slider {
+  border-radius: 9999px;
+}
+.summary-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.big {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.big.red {
+  color: rgb(248, 113, 113);
+}
+.big.green {
+  color: rgb(134, 239, 172);
+}
+
+.usage-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-700, rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+}
+.usage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(34, 197, 94), rgb(132, 204, 22));
+  transition: width 0.2s ease;
+}
+.usage-fill.over {
+  background: linear-gradient(90deg, rgb(239, 68, 68), rgb(248, 113, 113));
+}
+
+/* Barra por device con dos tonos (baseline + modelo) via posicionamiento absoluto. */
+.usage-bar.dev-usage-bar {
+  position: relative;
+}
+.usage-bar.dev-usage-bar .dev-usage-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  transition: left 0.2s ease, width 0.2s ease;
+}
+.usage-fill-baseline {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(155, 155, 150, 0.4);
+  border-right: 1px solid rgba(155, 155, 150, 0.6);
+  transition: width 0.2s ease;
+}
+.usage-pct {
+  margin-top: 0.25rem;
+}
+.load-time {
+  margin-top: 0.3rem;
+}
+
+.breakdown {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--color-border, rgba(255, 255, 255, 0.08));
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.bd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.bd-label {
+  cursor: help;
+  text-decoration: underline dotted rgba(155, 155, 150, 0.5);
+  text-underline-offset: 3px;
+}
+
+/* Fila de calibración: botones de ajuste rápido + valor. */
+.calib-row {
+  align-items: center;
+}
+.calib-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.calib-btn {
+  font-size: 0.68rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
+  background: var(--surface-800, rgba(255, 255, 255, 0.04));
+  color: var(--color-text-muted, #9b9b96);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-variant-numeric: tabular-nums;
+}
+.calib-btn:hover {
+  color: var(--color-text, #f0efed);
+  border-color: var(--color-text-muted, #9b9b96);
+}
+.calib-val {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 5rem;
+  text-align: center;
+  color: var(--color-text, #f0efed);
+}
+.calib-reset {
+  font-size: 0.78rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
+  background: none;
+  color: var(--color-text-muted, #9b9b96);
+  cursor: pointer;
+}
+.calib-reset:hover {
+  color: var(--color-text, #f0efed);
+}
+
+.device-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.bars-title {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dev-bar {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+}
+.dev-bar.overflow {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.dev-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+.dev-id {
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.dev-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dev-used {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.warn-line {
+  color: rgb(248, 113, 113);
+  font-size: 0.82rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+}
+
+/* Footer de acciones */
+.opt-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+}
+.spacer {
+  flex: 1;
+}

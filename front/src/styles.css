@@ -52,6 +52,8 @@
   --color-text: #1a1a18;
   --color-text-muted: #6b6b67;
   --color-accent: #2563eb;
+
+  --p-tooltip-max-width: 30rem;
 }
 
 :root[class='dark'] {
@@ -66,6 +68,8 @@
   --p-tabs-tablist-background: transparent;
   --p-tabs-tabpanel-background: transparent;
   --p-tabs-tabpanel-padding: 1rem 0 0 0;
+
+  --p-tooltip-max-width: 30rem;
 }
 
 /* ---- Box model universal ---- */

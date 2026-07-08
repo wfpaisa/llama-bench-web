@@ -42,9 +42,10 @@ controlando `llama-server` desde el navegador.
   - [Historial](#historial)
   - [Comparación](#comparación)
   - [Gráfico](#gráfico)
+  - [Optimizador de parámetros](#optimizador-de-parámetros)
 - [Arquitectura](#arquitectura)
 - [Hardware objetivo](#hardware-objetivo)
-- [Auto-tuning (futuro)](#auto-tuning-futuro)
+- [Optimizador de parámetros](#optimizador-de-parámetros-1)
 - [Estructura](#estructura)
 
 ---
@@ -138,6 +139,8 @@ Todas las respuestas llevan CORS `Access-Control-Allow-Origin: *` (no usar
 | GET    | `/history`        | `{ results: BenchmarkResult[] }` (máx 200, drop oldest).                          |
 | DELETE | `/history`        | Borra todo el historial.                                                          |
 | DELETE | `/history/:id`    | Borra un resultado por id (URL-encoded).                                          |
+| PATCH  | `/history/:id`    | Actualiza la calificación (1-5 estrellas). Body `{ rating }`.                    |
+| POST   | `/estimate`       | Optimizador: devices + metadatos del modelo + heurística de VRAM. Body `{ script, params?, priority? }`. |
 
 **Body de `POST /benchmark`:**
 
@@ -317,6 +320,45 @@ ctx, tokens generados). La barra del **mejor valor** se pinta de verde
 (según `lowerIsBetter`); tooltip multi-línea en hover con todos los datos del
 modelo. Colores adaptados al tema (lee variables CSS en runtime).
 
+### Optimizador de parámetros
+
+Diálogo (botón **"Optimizar ⚡"** en el editor de script) que precalcula los
+parámetros de `llama-server` según la VRAM disponible, **sin arrancar el
+binario**. Estimación puramente heurística (client-side, instantánea).
+
+- **Sliders**: ctx-size (tope 262144 = `--context-length`), n-gpu-layers,
+  batch-size, μbatch-size, MoE en CPU (`--cpu-moe`), cache-reuse
+  (`--cache-reuse`). Cada uno con tooltip que explica qué mejora / qué reduce /
+  qué afecta y el valor default de `llama-server`.
+- **Selects**: KV cache K/V (`f16`, `q8_0`, `q4_0`, …), devices (multiselect
+  de los devices detectados vía `--list-devices`).
+- **Switches**: flash-attn, no-mmproj (descarta el vision projector → ahorra
+  su VRAM si el modelo es solo de texto).
+- **Tensor-split**: un slider [0,10] por device seleccionado (modo Auto =
+  reparto proporcional a VRAM libre).
+- **Barras de consumo**: una por device (pesos + KV + overhead vs VRAM total),
+  en rojo si desborda. Desglose conceptual (Pesos / KV cache / Overhead) con
+  tooltips explicativos.
+- **Default**: restaura los valores de `llama-server --help`.
+- **Aplicar al script**: reescribe los flags afinados en el editor (copia
+  temporal hasta confirmar; "Cancelar" no toca nada).
+
+**Fórmula de estimación**: `VRAM = pesos + KV cache + overhead`
+
+- **Pesos**: tamaño **real** del `.gguf` en disco (resuelto desde `-hf` → HF
+  cache o `--model` → ruta), ajustado por el offload fraction de `--n-gpu-layers`
+  (`ngl / capas`). Si `ngl < capas`, solo esa fracción de pesos va a VRAM.
+- **KV cache**: `2 × capas × kv_heads × head_dim × ctx × bytes_kv`, donde las
+  capas, KV heads y head_dim se leen del **header GGUF** del archivo (parser
+  binario que extrae `block_count`, `attention.head_count_kv`,
+  `attention.key_length`). `--cache-reuse` reduce el ctx efectivo.
+- **Overhead**: `128 + ubatch × 0.5` MiB. Si `--no-mmproj` está off y hay
+  mmproj detectado, se suma su tamaño al overhead.
+
+La heurística se calcula **client-side** como `computed` (sin HTTP por cada
+cambio de slider) → las barras se actualizan en vivo. La única llamada HTTP al
+abrir es `POST /estimate` (que ejecuta `--list-devices` y resuelve el archivo).
+
 ---
 
 ## Arquitectura
@@ -341,7 +383,8 @@ despacha la API JSON a los módulos. **No sirve archivos estáticos**.
 | `metrics.ts`        | Parsing de métricas desde logs + health-check (`waitForServer`).                  |
 | `benchmark.ts`      | Orquestador del ciclo completo (`runBenchmark`, `finalize`).                      |
 | `history.ts`        | Persistencia JSON (`loadHistory`, `saveResult`, `deleteResult`, cap 200).         |
-| `router.ts`         | HTTP handler: path matching manual + CORS (solo API).                             |
+| `optimizer.ts`      | Heurística de VRAM + parser del header GGUF + resolución de archivo (`-hf`/`--model`). |
+| `router.ts`         | HTTP handler: path matching manual + CORS (solo API, incluye `POST /estimate`).   |
 | `shutdown.ts`       | Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP) → mata el hijo.              |
 
 ### Frontend (`front/`)
@@ -367,6 +410,7 @@ nativo (`@if/@for`), lazy loading de rutas.
 | `features/history-table`    | Tabla de historial (selección, orden, filtros, columnas).         |
 | `features/compare-modal`    | Comparación lado a lado.                                          |
 | `features/chart-modal`      | Gráfico de barras comparativo.                                    |
+| `features/optimizer-modal`  | Optimizador de parámetros (sliders, barras de VRAM, heurística).  |
 
 ### Data flow
 
@@ -461,11 +505,15 @@ se infiere del prefijo del primer device retornado por `--list-devices`.
 
 ---
 
-## Auto-tuning (futuro)
+## Optimizador de parámetros
 
-El diseño está pensado para iterar sobre combinaciones de:
-`tensorSplit`, `ctx`, `cache-type`, `batch` y encontrar automáticamente la
-configuración óptima para RTX 5070 Ti + RX 6600.
+El optimizador (ver [sección de la UI](#optimizador-de-parámetros)) precalcula
+los parámetros de `llama-server` según la VRAM disponible, sin arrancar el
+binario. Lee la arquitectura real del modelo desde el header GGUF (capas, KV
+heads, head_dim) y usa el tamaño exacto del archivo `.gguf` en disco para los
+pesos. La heurística es determinística: `pesos + KV cache + overhead`. Ver
+`src/optimizer.ts` (`readGgufArch`, `resolveModelFile`, `estimateVramMiB`) y
+`front/.../core/utils/vram-estimate.ts` (espejo client-side).
 
 ---
 
@@ -475,10 +523,11 @@ configuración óptima para RTX 5070 Ti + RX 6600.
 .
 ├── src/               # Backend (Bun, API pura)
 │   ├── server.ts      # Entry point: Bun.serve + bootstrap
-│   ├── router.ts      # Handler HTTP (solo API JSON + CORS)
+│   ├── router.ts      # Handler HTTP (solo API JSON + CORS, incluye /estimate)
 │   ├── benchmark.ts   # Orquestador del benchmark completo
 │   ├── server-manager.ts # Gestión del proceso llama-server
 │   ├── devices.ts     # Enumeración de devices del backend (--list-devices)
+│   ├── optimizer.ts   # Heurística de VRAM + parser header GGUF + resolución de archivo
 │   ├── gpu.ts         # Métricas GPU NVIDIA + AMD
 │   ├── mem.ts         # Métricas RAM (/proc/meminfo)
 │   ├── metrics.ts     # Parsing de métricas + health-check
@@ -488,11 +537,14 @@ configuración óptima para RTX 5070 Ti + RX 6600.
 │   ├── config.ts      # Constantes de entorno y paths
 │   ├── state.ts       # Estado global mutable + setters
 │   ├── logs.ts        # Buffer circular de logs
-│   └── types.ts       # Interfaces del dominio
+│   └── types.ts       # Interfaces del dominio (incluye TunedParams, ModelMeta…)
 ├── front/             # Frontend Angular 22 + PrimeNG 21
 │   └── src/app/
-│       ├── core/      # services, state (signals), models, utils
-│       └── features/  # componentes standalone (home, status-bar, …)
+│       ├── core/      # services, state (signals), models, utils, data
+│       │   ├── utils/vram-estimate.ts  # Heurística client-side de VRAM
+│       │   ├── utils/flag-writer.ts    # Reescritura de flags en el script
+│       │   └── data/llama-flags.ts     # Catálogo de ~270 flags
+│       └── features/  # componentes standalone (home, optimizer-modal, …)
 └── data/              # Datos locales (gitignored)
     ├── history.json   # Resultados de benchmarks
     ├── script-default.txt

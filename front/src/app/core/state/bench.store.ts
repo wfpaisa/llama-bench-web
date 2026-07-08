@@ -88,6 +88,7 @@ export class BenchStore {
   readonly sortDir = signal<'asc' | 'desc'>('desc');
   readonly showCompare = signal(false);
   readonly showChart = signal(false);
+  readonly showOptimizer = signal(false);
 
   // ── Logs UI ──
   readonly autoscroll = signal(true);
@@ -355,6 +356,14 @@ export class BenchStore {
   }
   closeChart(): void {
     this.showChart.set(false);
+  }
+
+  // ── Optimizador ──
+  openOptimizer(): void {
+    this.showOptimizer.set(true);
+  }
+  closeOptimizer(): void {
+    this.showOptimizer.set(false);
   }
 }
 

@@ -77,8 +77,9 @@ th {
 }
 
 /* Fila del flag ya presente en el script: borde a la izquierda. */
-:host ::ng-deep .flags-table tbody tr.present td:first-child {
-  box-shadow: inset 3px 0 0 var(--color-accent, #22c55e);
+:host ::ng-deep tr.present td {
+  opacity: 0.5;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .cell-name {

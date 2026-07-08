@@ -106,5 +106,26 @@ export function parseScript(script: string): ParsedScript {
     temp: toNumOrNull(flagValue(argv, '--temp')),
     topP: toNumOrNull(flagValue(argv, '--top-p')),
     topK: toNumOrNull(flagValue(argv, '--top-k')),
+    ngl: toNumOrNull(flagValue(argv, '--n-gpu-layers')) ?? toNumOrNull(flagValue(argv, '-ngl')),
+    flashAttn: hasFlag(argv, '--flash-attn', ['-fa']),
+    threads: toNumOrNull(flagValue(argv, '--threads')) ?? toNumOrNull(flagValue(argv, '-t')),
+    minP: toNumOrNull(flagValue(argv, '--min-p')),
+    repeatPenalty: toNumOrNull(flagValue(argv, '--repeat-penalty')),
+    modelFile: flagValue(argv, '--model') ?? flagValue(argv, '-m'),
+    nCpuMoe: toNumOrNull(flagValue(argv, '--cpu-moe')) ?? 0,
+    cacheReuse: toNumOrNull(flagValue(argv, '--cache-reuse')) ?? 0,
+    noMmproj: hasFlag(argv, '--no-mmproj'),
   }
+}
+
+/**
+ * True si el flag (o alguno de sus aliases) aparece en argv como switch
+ * (sin valor) o como `--flag valor`. Usado para --flash-attn on|off / -fa.
+ */
+export function hasFlag(argv: string[], flag: string, aliases: string[] = []): boolean {
+  const forms = new Set([flag, ...aliases])
+  for (const a of argv) {
+    if (forms.has(a)) return true
+  }
+  return false
 }

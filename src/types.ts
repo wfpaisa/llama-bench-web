@@ -55,6 +55,24 @@ export interface ParsedScript {
   topP: number | null
   /** `--top-k` (sampling). null si no estaba. */
   topK: number | null
+  /** `--n-gpu-layers` (capas offload a GPU). null si no estaba. */
+  ngl: number | null
+  /** `--flash-attn` activado. false si no estaba. */
+  flashAttn: boolean
+  /** `--threads` (-t). null si no estaba. */
+  threads: number | null
+  /** `--min-p` (sampling). null si no estaba. */
+  minP: number | null
+  /** `--repeat-penalty` (sampling). null si no estaba. */
+  repeatPenalty: number | null
+  /** `--model` / `-m` (ruta local al .gguf). null si no estaba. */
+  modelFile: string | null
+  /** `--cpu-moe` (capas MoE en CPU). 0 si no estaba. */
+  nCpuMoe: number
+  /** `--cache-reuse` (tokens reutilizables del cache). 0 si no estaba. */
+  cacheReuse: number
+  /** `--no-mmproj` presente. */
+  noMmproj: boolean
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */
@@ -202,4 +220,120 @@ export interface BenchmarkResult {
   rating?: number | null
   /** Errores encontrados durante el run. */
   errors: string[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Optimizador de parámetros (estimación heurística + dry-fit real)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Parámetros afinables por el optimizador: los que impactan el consumo de VRAM
+ * y/o el rendimiento. El diálogo los expone como sliders/selects y los aplica
+ * al script al confirmar.
+ */
+export interface TunedParams {
+  ctxSize: number
+  ngl: number
+  cacheTypeK: string
+  cacheTypeV: string
+  batchSize: number
+  ubatchSize: number
+  flashAttn: boolean
+  /** Devices seleccionados (ids del backend, p.ej. "Vulkan0,Vulkan1"). Vacío = todos. */
+  device: string[]
+  /** Reparto entre devices (valor de --tensor-split, p.ej. "2,7"). null = automático. */
+  tensorSplit: number[] | null
+  /** --n-cpu-moe: capas de expertos MoE en CPU (offload de expertos). 0 = desactivado. */
+  nCpuMoe: number
+  /** --cache-reuse: tokens del cache anterior que se pueden reutilizar. 0 = desactivado. */
+  cacheReuse: number
+  /** --no-mmproj: si true, no carga el vision projector (ahorra VRAM del mmproj). */
+  noMmproj: boolean
+}
+
+/** Desglose heurístico del consumo de VRAM de una configuración. */
+export interface VramBreakdown {
+  /** Consumo por device (en el orden de los devices seleccionados), en MiB. */
+  perDeviceMiB: number[]
+  /** Suma total estimada en MiB. */
+  totalMiB: number
+  /** MiB de pesos del modelo (params × bytes/quant). */
+  weightsMiB: number
+  /** MiB del KV cache (2 × capas × kvHeads × headDim × ctx × bytesKv). */
+  kvMiB: number
+  /** MiB de overhead (compute buffer, ~proporcional a ubatch). */
+  overheadMiB: number
+  /** True si el consumo total cabe en la VRAM libre disponible. */
+  fits: boolean
+}
+
+/**
+ * Respuesta de POST /estimate: devices disponibles + heurística instantánea +
+ * recomendación automática de parámetros. No arranca el binario.
+ */
+export interface EstimateResponse {
+  devices: LlamaDevice[]
+  /** VRAM total libre de los devices seleccionados (suma). */
+  totalFreeMiB: number
+  /** Backend detectado (cuda/vulkan/…). */
+  backend: GpuBackend
+  /** Metadatos del modelo parseado (familia, params, quant, capas…). */
+  modelMeta: ModelMeta
+  /** Estimación heurística con los parámetros actuales del script. */
+  heuristic: VramBreakdown
+  /** Recomendación automática de parámetros que cabe en la VRAM libre. */
+  recommendation: TunedParams
+}
+
+/**
+ * Respuesta de POST /dryfit: VRAM consumida REAL al arrancar llama-server con
+ * los parámetros indicados (sin enviar request de inferencia, solo cargando el
+ * modelo + reservando el ctx). El servidor se detiene siempre al final.
+ */
+export interface DryfitResponse {
+  /** Consumo real por device (delta de VRAM libre tras cargar el modelo). */
+  perDevice: DeviceVram[]
+  /** Suma del consumo real en MiB. null si no se pudo medir. */
+  totalMiB: number | null
+  /** Tiempo de carga del modelo en segundos. null si no se midió. */
+  loadTimeSeconds: number | null
+  /** True si el consumo real cabe en la VRAM libre. */
+  fits: boolean
+  /** Error si el arranque falló (OOM, modelo inválido, etc.). */
+  error: string | null
+}
+
+/** Metadatos de un modelo deducidos del nombre (-hf / --hf-repo). */
+export interface ModelMeta {
+  /** Texto original (p.ej. "unsloth/Qwen3.6-27B-MTP-GGUF:Q4_K_S"). */
+  raw: string
+  /** Familia/base legible (p.ej. "Qwen3.6"). */
+  base: string
+  /** Cuantización (p.ej. "Q4_K_S"). null si no se deduce. */
+  quant: string | null
+  /** Bytes por parámetro según el quant. null si desconocido. */
+  bytesPerParam: number | null
+  /** Número de parámetros en miles de millones (p.ej. 27). null si no se deduce. */
+  paramsB: number | null
+  /** Número de capas (layers) totales. null si no se deduce de la familia. */
+  layers: number | null
+  /**
+   * Número de capas que contribuyen al KV cache (de atención). En modelos
+   * híbridos SSM/Attention (Qwen3.5/3.6, Jamba, Zamba, MiniMax, Nemotron-H,
+   * Falcon-H1…) solo una fracción de las capas son de atención; el resto son
+   * recurrentes (Mamba/SSM) con estado fijo que no escala con el contexto.
+   * null = todas las capas son de atención (modelo denso normal, = layers).
+   * Se deduce del header GGUF (attention.recurrent_layers o full_attention_interval).
+   */
+  attentionLayers: number | null
+  /** Número de KV heads. null si no se deduce. */
+  kvHeads: number | null
+  /** Dimensión de head (head_dim). null si no se deduce. */
+  headDim: number | null
+  /** Tamaño real del .gguf en MiB (medido en disco). null si no se resolvió. */
+  weightsFileMiB: number | null
+  /** Ruta del archivo .gguf resuelto. null si no se encontró. */
+  weightsFile: string | null
+  /** Tamaño del mmproj (vision projector) en MiB. null si no hay o no se midió. */
+  mmprojSizeMiB: number | null
 }

@@ -23,6 +23,7 @@ import { LastResult } from '../last-result/last-result';
 import { HistoryTable } from '../history-table/history-table';
 import { CompareModal } from '../compare-modal/compare-modal';
 import { ChartModal } from '../chart-modal/chart-modal';
+import { OptimizerModal } from '../optimizer-modal/optimizer-modal';
 import { LogsViewer } from '../logs-viewer/logs-viewer';
 
 /**
@@ -44,6 +45,7 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
     HistoryTable,
     CompareModal,
     ChartModal,
+    OptimizerModal,
     LogsViewer,
   ],
   templateUrl: './home.html',
