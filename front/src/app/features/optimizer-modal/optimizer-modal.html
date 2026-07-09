@@ -29,7 +29,9 @@
         @if (m.attentionLayers != null && m.attentionLayers !== m.layers) {
           <span
             class="muted small"
-            pTooltip="Modelo híbrido SSM/Attention: solo {{ m.attentionLayers }} de {{ m.layers }} capas generan KV cache; las demás son recurrentes (Mamba/SSM) con estado fijo. El KV cache se calcula sobre las capas de atención."
+            pTooltip="Modelo híbrido SSM/Attention: solo {{ m.attentionLayers }} de {{
+              m.layers
+            }} capas generan KV cache; las demás son recurrentes (Mamba/SSM) con estado fijo. El KV cache se calcula sobre las capas de atención."
           >
             {{ m.attentionLayers }} / {{ m.layers }} capas de atención
           </span>
@@ -112,6 +114,28 @@
               [step]="1"
             />
           </div>
+
+          @if (isMoe()) {
+            <div class="control-block">
+              <div class="ctrl-head">
+                <label
+                  class="ctrl-label"
+                  for="moeSlider"
+                  pTooltip="Indica cuántos expertos (experts) se dejan en la CPU para ahorrar VRAM."
+                  >MOE</label
+                >
+                <span class="ctrl-val tabular-nums">{{ params().nCpuMoe }}</span>
+              </div>
+              <p-slider
+                inputId="moeSlider"
+                [ngModel]="params().nCpuMoe"
+                (ngModelChange)="params.set({ ...params(), nCpuMoe: $event })"
+                [min]="0"
+                [max]="64"
+                [step]="1"
+              />
+            </div>
+          }
 
           <div class="control-block">
             <div class="ctrl-head">
@@ -255,26 +279,6 @@
             <div class="ctrl-head">
               <label
                 class="ctrl-label"
-                for="moeSlider"
-                pTooltip="Capas de expertos MoE (Mixture of Experts) que se ejecutan en CPU en vez de GPU. Útil para modelos MoE grandes (p.ej. Qwen3-30B-A3B) que no caben enteros en VRAM: mueve los expertos (la parte más pesada) a la RAM del sistema. Más capas en CPU = menos VRAM usada, pero más lento (los expertos corren en CPU). Default de llama-server: 0 (todos los expertos en GPU)."
-                >MoE en CPU (--cpu-moe)</label
-              >
-              <span class="ctrl-val tabular-nums">{{ params().nCpuMoe }}</span>
-            </div>
-            <p-slider
-              inputId="moeSlider"
-              [ngModel]="params().nCpuMoe"
-              (ngModelChange)="params.set({ ...params(), nCpuMoe: $event })"
-              [min]="0"
-              [max]="64"
-              [step]="1"
-            />
-          </div>
-
-          <div class="control-block">
-            <div class="ctrl-head">
-              <label
-                class="ctrl-label"
                 for="reuseSlider"
                 pTooltip="Cantidad de tokens del cache de la solicitud anterior que el servidor puede reutilizar para la siguiente. Reduce el costo de re-procesar prompts repetitivos (p.ej. en una conversación larga o RAG): solo se paga en VRAM el contexto fresco (ctx-size − cache-reuse). Más alto ahorra KV cache, pero requiere que los prompts tengan prefijos comunes. Default de llama-server: 0 (sin reutilización)."
                 >Cache reuse (--cache-reuse)</label
@@ -324,23 +328,47 @@
         <div class="opt-summary">
           <div class="summary-card" [class.overflow]="overflow()">
             <div class="summary-head">
-              <span class="summary-title">Consumo estimado</span>
+              <span class="summary-title">{{
+                measured()?.totalMiB != null ? 'Consumo medido' : 'Consumo estimado'
+              }}</span>
+              <button
+                type="button"
+                class="calibrate-btn"
+                [class.calibrating]="calibrating()"
+                [disabled]="calibrating()"
+                (click)="calibrate()"
+                pTooltip="Arranca el modelo y mide la VRAM REAL consumida (sin inferencia). Tarda lo que tarda en cargar el modelo (puede ser 30s+). El resultado reemplaza al estimado. Cancelable con el botón Detener de la barra de estado."
+              >
+                <i class="pi {{ calibrating() ? 'pi-spin pi-spinner' : 'pi-bolt' }}"></i>
+                {{ calibrating() ? 'Midiendo…' : 'Calibrar' }}
+              </button>
               <label
                 class="vram-avail-toggle"
                 pTooltip="Cuando está activo, se suma al consumo la VRAM que ya estaba en uso al abrir esta ventana (display server, otras apps, otro modelo cargado…), reflejando la memoria realmente libre para el modelo. Se mide una sola vez al abrir; no se recalcula en vivo."
               >
-                <p-toggleswitch [ngModel]="countUsedVram()" (ngModelChange)="countUsedVram.set($event)" />
+                <p-toggleswitch
+                  [ngModel]="countUsedVram()"
+                  (ngModelChange)="countUsedVram.set($event)"
+                />
                 <span class="vram-avail-label">vram disponible</span>
               </label>
-              <span
-                class="badge heuristic"
-                pTooltip="Peso real del .gguf + KV cache (arquitectura del header GGUF) + overhead de cómputo."
-                >estimado</span
-              >
+              @if (measured()?.totalMiB != null) {
+                <span
+                  class="badge measured"
+                  pTooltip="VRAM consumida real, medida arrancando el modelo (dry-fit)."
+                  >medido</span
+                >
+              } @else {
+                <span
+                  class="badge heuristic"
+                  pTooltip="Peso real del .gguf + KV cache (arquitectura del header GGUF) + overhead de cómputo."
+                  >estimado</span
+                >
+              }
             </div>
             <div class="summary-nums">
               <span class="big {{ overflow() ? 'red' : 'green' }}">{{
-                fmtGB(totalUsedMiB(), 2)
+                fmtGB(displayUsedMiB(), 2)
               }}</span>
               <span class="muted">/ {{ fmtGB(totalCapacityMiB(), 2) }} GB</span>
             </div>
@@ -348,10 +376,14 @@
               <div
                 class="usage-fill"
                 [class.over]="overflow()"
-                [style.width.%]="totalPct() > 100 ? 100 : totalPct()"
+                [style.width.%]="displayPct() > 100 ? 100 : displayPct()"
               ></div>
             </div>
-            <div class="usage-pct muted small tabular-nums">{{ fmt(totalPct(), 0) }}% usado</div>
+            <div class="usage-pct muted small tabular-nums">{{ fmt(displayPct(), 0) }}% usado</div>
+
+            @if (calibError()) {
+              <div class="warn-line">⚠ {{ calibError() }}</div>
+            }
 
             <!-- Desglose heurístico (pesos / KV / overhead) -->
             @if (heuristic(); as h) {
@@ -390,25 +422,31 @@
                     <span class="tabular-nums">{{ fmtGB(baselineUsedMiB(), 2) }} GB</span>
                   </div>
                 }
-                <!-- Calibración manual: offset persistido para alinear la
-                     heurística con el uso real medido. -->
-                <div class="bd-row calib-row">
-                  <span
-                    class="muted small bd-label"
-                    pTooltip="Ajuste manual (en MiB) para calibrar la heurística contra el uso real medido. Positivo suma consumo (si el real fue mayor), negativo lo resta. Se reparte entre los dispositivos y se guarda en data/vram-offset.txt; persiste entre sesiones."
-                    >Calibración</span
-                  >
-                  <div class="calib-controls">
-                    <button type="button" class="calib-btn" (click)="adjustOffset(-500)" title="−500 MiB">−500</button>
-                    <button type="button" class="calib-btn" (click)="adjustOffset(-100)" title="−100 MiB">−100</button>
-                    <span class="calib-val tabular-nums">{{ offsetMiB() >= 0 ? '+' : '' }}{{ offsetMiB() }} MiB</span>
-                    <button type="button" class="calib-btn" (click)="adjustOffset(100)" title="+100 MiB">+100</button>
-                    <button type="button" class="calib-btn" (click)="adjustOffset(500)" title="+500 MiB">+500</button>
-                    @if (offsetMiB() !== 0) {
-                      <button type="button" class="calib-reset" (click)="resetOffset()" title="Reiniciar a 0">⟲</button>
+                @if (measured(); as m) {
+                  @if (m.totalMiB != null) {
+                    <div class="bd-row measured-row">
+                      <span
+                        class="muted small bd-label"
+                        pTooltip="VRAM consumida REAL, medida arrancando el modelo (dry-fit) sin inferencia. Reemplaza al estimado en la barra superior."
+                        >Real (medido)</span
+                      >
+                      <span class="tabular-nums">{{ fmtGB(m.totalMiB, 2) }} GB</span>
+                    </div>
+                    @if (deltaMiB() != null) {
+                      <div class="bd-row delta-row">
+                        <span class="muted small">Calibrado</span>
+                        <span
+                          class="tabular-nums delta-val {{
+                            deltaMiB()! < 0 ? 'delta-neg' : 'delta-pos'
+                          }}"
+                          pTooltip="Diferencia entre lo medido y lo estimado. Negativo = el estimado fue mayor que el real (sobreestimó). Positivo = el real fue mayor (subestimó)."
+                        >
+                          {{ deltaMiB()! >= 0 ? '+' : '' }}{{ fmtGB(deltaMiB()!, 2) }} GB
+                        </span>
+                      </div>
                     }
-                  </div>
-                </div>
+                  }
+                }
               </div>
             }
           </div>
@@ -431,7 +469,9 @@
                     @if (b.baselineMiB > 0) {
                       <div
                         class="usage-fill-baseline"
-                        pTooltip="VRAM ya en uso al abrir (display server, otras apps…): {{ fmtGB(b.baselineMiB, 2) }} GB"
+                        pTooltip="VRAM ya en uso al abrir (display server, otras apps…): {{
+                          fmtGB(b.baselineMiB, 2)
+                        }} GB"
                         [style.left.%]="0"
                         [style.width.%]="baselinePctClamped(b)"
                       ></div>

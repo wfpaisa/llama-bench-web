@@ -10,14 +10,17 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { StorageService } from '../../core/services/storage.service';
+import type { StoredCalibration } from '../../core/services/storage.service';
 import { applyTunedParams, parseParamsFromScript } from '../../core/utils/flag-writer';
 import {
   buildBreakdown,
   totalFreeFor,
   KV_TYPES,
 } from '../../core/utils/vram-estimate';
-import { fmtGB, fmt, backendLabel } from '../../core/utils/format';
+import { fmtGB, fmt, backendLabel, isModelMoe } from '../../core/utils/format';
 import type {
+  DryfitResponse,
   LlamaDevice,
   ModelMeta,
   TunedParams,
@@ -56,7 +59,7 @@ interface DeviceBar {
  * --list-devices + resuelve el archivo del modelo y lee su header GGUF).
  *
  * Controles: ctx-size, n-gpu-layers, batch/ubatch, KV cache K/V, devices,
- * tensor-split (slider por device), --cpu-moe, --cache-reuse, --flash-attn,
+ * tensor-split (slider por device), --n-cpu-moe, --cache-reuse, --flash-attn,
  * --no-mmproj. Botón "Default" restaura los valores de llama-server --help.
  *
  * Estado: copia temporal local (no toca el script del editor hasta "Aplicar").
@@ -81,6 +84,7 @@ export class OptimizerModal {
   protected readonly store = inject(BenchStore);
   private readonly api = inject(LlamaBenchService);
   private readonly messages = inject(MessageService);
+  private readonly storage = inject(StorageService);
 
   protected readonly kvOptions = KV_OPTIONS;
 
@@ -111,19 +115,38 @@ export class OptimizerModal {
    */
   protected readonly countUsedVram = signal(true);
 
+  // ── Calibración real (dry-fit) ──
+  /** True mientras se ejecuta el dry-fit (arrancar el modelo + medir VRAM). */
+  protected readonly calibrating = signal(false);
+  /** Resultado de la medición real (null hasta que se calibra). */
+  protected readonly measured = signal<DryfitResponse | null>(null);
   /**
-   * Offset de calibración manual (MiB, con signo). Ajuste opcional para que la
-   * heurística coincida con el uso real medido: positivo suma consumo (p.ej.
-   * +500 si el real fue mayor), negativo lo resta. Default 0. Se persiste en
-   * data/vram-offset.txt vía el backend; se carga una vez al abrir.
+   * Heurística (breakdown) del momento en que se calibró. Sirve de referencia
+   * para que los sliders muevan las barras por delta respecto a la medición real:
+   *   consumo = medido + (heurística_actual − heurística_al_calibrar)
+   * Así, sin mover nada el consumo = medido; al subir ctx, el delta crece porque
+   * la heurística modela el KV lineal. null si no hay calibración.
    */
-  protected readonly offsetMiB = signal(0);
+  protected readonly heuristicAtCalib = signal<VramBreakdown | null>(null);
+  /** Error de la calibración (OOM, modelo inválido…). null si todo ok. */
+  protected readonly calibError = signal<string | null>(null);
+
+  /**
+   * Clave bajo la que se persiste la calibración en localStorage (el modelo).
+   * Usa meta().raw (el -hf/--model) para que la medición se asocie al modelo y
+   * se descarte automáticamente al cambiar de modelo. '' si aún no se cargó meta.
+   */
+  protected readonly modelKey = computed(() => this.meta()?.raw ?? '');
+
+  /**
+   * True si el modelo es identificable como MoE (Mixture of Experts) por su
+   * nombre. El control --n-cpu-moe solo se muestra cuando aplica: en modelos
+   * densos no tiene sentido offloadear expertos (no los hay).
+   */
+  protected readonly isMoe = computed(() => isModelMoe(this.meta()?.base));
 
   /** True cuando los params ya se sembraron al abrir (evita resembrar en reopen). */
   private seeded = false;
-
-  /** True cuando el offset persistido ya se cargó (evita recargar en reopen). */
-  private offsetLoaded = false;
 
   // ── Derivados (computed, sin HTTP) ──
 
@@ -166,26 +189,46 @@ export class OptimizerModal {
   /** True si tensor-split está en modo automático (null). */
   protected readonly tensorSplitAuto = computed(() => this.params().tensorSplit === null);
 
-  /** Bars por device (de la heurística). */
+  /**
+   * Bars por device. Sin calibración: valor heurístico. Con calibración: el valor
+   * MEDIDO anclado + delta de la heurística desde el momento de calibrar:
+   *   used = medido + (heurística_actual − heurística_al_calibrar)
+   * Así, sin mover sliders el consumo = medido; al subir ctx (que escala el KV
+   * lineal), el delta crece y la barra se mueve, manteniendo la precisión real.
+   *
+   * El baseline (VRAM en uso del display server) se suma siempre que el switch
+   * "vram disponible" esté activo: computeDeviceVram mide solo el delta del
+   * modelo, no el uso previo de la GPU.
+   */
   protected readonly bars = computed<DeviceBar[]>(() => {
     const h = this.heuristic();
     const devices = this.selectedDevices();
     if (!h || devices.length === 0) return [];
     const countBaseline = this.countUsedVram();
     const baseline = this.baselineUsedByDevice();
-    // El offset de calibración se reparte entre los devices proporcionalmente al
-    // consumo del modelo, para que las barras reflejen el ajuste del usuario.
-    const offset = this.offsetMiB();
-    const totalModel = devices.reduce((s, _, i) => s + (h.perDeviceMiB[i] ?? 0), 0) || 1;
+
+    const measured = this.measured();
+    const hAtCalib = this.heuristicAtCalib();
+    const isCalibrated = measured != null && hAtCalib != null;
+    // Mapa id → MiB medidos (para anclar cada device a su valor real).
+    const measuredById = new Map<string, number>();
+    if (measured) {
+      for (const dv of measured.perDevice) {
+        if (dv.usedMiB != null) measuredById.set(dv.device.id, dv.usedMiB);
+      }
+    }
+
     return devices.map((d, i) => {
-      const modelUse = h.perDeviceMiB[i] ?? 0;
-      // Fracción del offset que le toca a este device (0 si el modelo no consume).
-      const offsetShare = offset > 0 ? (modelUse / totalModel) * offset : 0;
-      // Si el offset es negativo, lo descontamos del modelo (clampeado a ≥0).
-      const used = offset < 0 ? Math.max(0, modelUse + (modelUse / totalModel) * offset) : modelUse + offsetShare;
+      const heuristicNow = h.perDeviceMiB[i] ?? 0;
+      let used: number;
+      if (isCalibrated && measuredById.has(d.id)) {
+        // Ancla: valor medido + delta de la heurística desde la calibración.
+        const heuristicThen = hAtCalib.perDeviceMiB[i] ?? 0;
+        used = Math.max(0, (measuredById.get(d.id) ?? 0) + (heuristicNow - heuristicThen));
+      } else {
+        used = heuristicNow;
+      }
       const base = countBaseline ? baseline[d.id] ?? 0 : 0;
-      // % del modelo (+offset) sobre la VRAM TOTAL (no la libre: el modelo puede
-      // usar VRAM que el display-server reporta como ocupada).
       const modelPct = d.totalMiB > 0 ? (used / d.totalMiB) * 100 : 0;
       const basePct = d.totalMiB > 0 ? (base / d.totalMiB) * 100 : 0;
       return {
@@ -194,7 +237,6 @@ export class OptimizerModal {
         baselineMiB: base,
         pct: modelPct,
         totalPct: modelPct + basePct,
-        // Desborda solo si (modelo + baseline) supera la VRAM total del device.
         overflow: used + base > d.totalMiB,
       };
     });
@@ -210,9 +252,10 @@ export class OptimizerModal {
     return this.selectedDevices().reduce((s, d) => s + (baseline[d.id] ?? 0), 0);
   });
 
-  /** Suma del consumo estimado (+ VRAM en uso previo). El offset de calibración
-   * ya está incluido en bars().usedMiB (repartido por device), así que no se
-   * suma aparte aquí para evitar doble conteo. */
+  /** Suma del consumo estimado (+ VRAM en uso previo si el switch está activo).
+   * Cuando hay medición, bars().usedMiB ya viene del dry-fit (sin baseline, pues
+   * computeDeviceVram mide solo el delta del modelo), así que se le suma el
+   * baseline igual que al heurístico para reflejar la VRAM realmente ocupada. */
   protected readonly totalUsedMiB = computed(() => {
     const modelUse = this.bars().reduce((s, b) => s + b.usedMiB, 0);
     return modelUse + this.baselineUsedMiB();
@@ -224,18 +267,47 @@ export class OptimizerModal {
   );
 
   /**
-   * % global usado vs la CAPACIDAD TOTAL de los devices (no la libre). El modelo
-   * puede usar VRAM que el SO/display-server reporta como "ocupada", así que el
-   * tope real es la VRAM total de la GPU, no el free del momento.
+   * Consumo a mostrar en la barra grande: cuando hay medición, bars() ya refleja
+   * el valor medido por device y totalUsedMiB() lo suma (+ baseline si el switch
+   * está activo). Si no hay medición, es el heurístico. Así la barra grande y las
+   * de por-device quedan consistentes entre sí.
    */
-  protected readonly totalPct = computed(() => {
+  protected readonly displayUsedMiB = computed(() => this.totalUsedMiB());
+
+  /**
+   * % global a mostrar vs la CAPACIDAD TOTAL de los devices (no la libre). El
+   * modelo puede usar VRAM que el SO/display-server reporta como "ocupada", así
+   * que el tope real es la VRAM total de la GPU, no el free del momento.
+   */
+  protected readonly displayPct = computed(() => {
     const cap = this.totalCapacityMiB();
     if (cap <= 0) return 0;
-    return (this.totalUsedMiB() / cap) * 100;
+    return (this.displayUsedMiB() / cap) * 100;
   });
 
   /** True si la config excede la VRAM total de los devices. */
-  protected readonly overflow = computed(() => this.totalUsedMiB() > this.totalCapacityMiB() && this.totalCapacityMiB() > 0);
+  protected readonly overflow = computed(
+    () => this.displayUsedMiB() > this.totalCapacityMiB() && this.totalCapacityMiB() > 0,
+  );
+
+  /** Consumo del modelo según la heurística, SIN el baseline (solo modelo).
+   * Se calcula directo del breakdown para no mezclar con la medición (bars()
+   * cambia cuando hay medición). Sirve para comparar contra el valor medido. */
+  protected readonly heuristicModelMiB = computed(() => {
+    const h = this.heuristic();
+    if (!h) return 0;
+    return h.totalMiB;
+  });
+
+  /**
+   * Diferencia entre lo medido y lo estimado (MiB). null si no hay medición.
+   * Positivo = el real fue mayor que el estimado (la heurística subestimó).
+   */
+  protected readonly deltaMiB = computed(() => {
+    const m = this.measured();
+    if (!m || m.totalMiB == null) return null;
+    return m.totalMiB - this.heuristicModelMiB();
+  });
 
   /** Tope del slider de ctx: límite físico del binario (--context-length). */
   protected readonly ctxMax = CTX_MAX;
@@ -260,7 +332,12 @@ export class OptimizerModal {
         untracked(() => this.loadDevices());
       } else {
         this.seeded = false;
-        this.offsetLoaded = false;
+        // Al cerrar, limpiar los signals (la medición persiste en localStorage
+        // keyed por modelo y se restaura al reabrir, si el modelo no cambió).
+        this.measured.set(null);
+        this.heuristicAtCalib.set(null);
+        this.calibError.set(null);
+        this.calibrating.set(false);
       }
     });
   }
@@ -300,6 +377,14 @@ export class OptimizerModal {
             baseline[d.id] = Math.max(0, d.totalMiB - d.freeMiB);
           }
           this.baselineUsedByDevice.set(baseline);
+          // Restaurar la calibración persistida para este modelo (si la hay).
+          // Se guarda keyed por meta.raw → se descarta al cambiar de modelo.
+          // Incluye la heurística del momento de calibrar, para que los sliders
+          // muevan las barras por delta sobre la medición real.
+          const saved = this.storage.loadCalibration(resp.estimate.modelMeta.raw);
+          this.measured.set(saved?.measured ?? null);
+          this.heuristicAtCalib.set(saved?.heuristic ?? null);
+          this.calibError.set(null);
           if (resp.estimate.devices.length === 0) {
             this.loadError.set('No se detectaron dispositivos. Revisá el binario en el script.');
           }
@@ -312,20 +397,6 @@ export class OptimizerModal {
         this.loadError.set(e.message);
       },
     });
-    // Cargar el offset de calibración persistido (data/vram-offset.txt).
-    // Es independiente del /estimate, va en paralelo y no afecta el loading.
-    if (!this.offsetLoaded) {
-      this.offsetLoaded = true;
-      this.api.getVramOffset().subscribe({
-        next: (raw) => {
-          const n = parseInt(raw.trim(), 10);
-          this.offsetMiB.set(Number.isFinite(n) ? n : 0);
-        },
-        error: () => {
-          /* sin offset guardado → 0 (default) */
-        },
-      });
-    }
   }
 
   // ── Acciones ──
@@ -361,9 +432,14 @@ export class OptimizerModal {
     this.store.closeOptimizer();
   }
 
-  /** Recargar devices (p.ej. si cambió el binario en el script). */
+  /** Recargar devices (p.ej. si cambió el binario o el modelo en el script). */
   protected reloadDevices(): void {
     this.seeded = false;
+    // Limpia los signals; loadDevices restaurará la calibración del modelo actual
+    // desde localStorage (si el modelo no cambió, es la misma; si cambió, otra o ninguna).
+    this.measured.set(null);
+    this.heuristicAtCalib.set(null);
+    this.calibError.set(null);
     this.loadDevices();
   }
 
@@ -390,25 +466,50 @@ export class OptimizerModal {
     }
   }
 
-  // ── Offset de calibración (ajuste manual persistido) ──
+  // ── Calibración real (dry-fit) ──
 
   /**
-   * Suma un delta (MiB) al offset de calibración y lo persiste en el backend.
-   * Usado por los botones +500/−400/etc. del campo de calibración. El offset
-   * puede ser negativo. Se guarda en data/vram-offset.txt para sobrevivir recargas.
+   * Arranca el modelo del script actual y mide la VRAM real consumida (sin
+   * inferencia). El backend detiene el servidor al final siempre. Tarda lo que
+   * tarda en cargar el modelo (puede ser 30s+ en modelos grandes).
+   *
+   * El resultado reemplaza al estimado en la barra principal. Se puede cancelar
+   * con "Detener" (POST /benchmark/stop aborta el dry-fit, mismo controller).
    */
-  protected adjustOffset(deltaMiB: number): void {
-    const next = this.offsetMiB() + deltaMiB;
-    this.offsetMiB.set(next);
-    this.api.saveVramOffset(next).subscribe({
-      error: () => this.messages.add({ severity: 'warn', summary: 'No se pudo guardar la calibración', life: 3000 }),
+  protected calibrate(): void {
+    if (this.calibrating()) return;
+    this.calibrating.set(true);
+    this.measured.set(null);
+    this.heuristicAtCalib.set(null);
+    this.calibError.set(null);
+    const script = this.store.script();
+    const key = this.modelKey();
+    // Capturar la heurística actual (con los params del momento) como referencia:
+    // los sliders moverán las barras por delta respecto a esta + la medición real.
+    const hAtCalib = this.heuristic();
+    this.api.dryfit(script).subscribe({
+      next: (resp) => {
+        if (resp.ok && resp.dryfit) {
+          if (resp.dryfit.error) {
+            this.calibError.set(resp.dryfit.error);
+          } else {
+            this.measured.set(resp.dryfit);
+            this.heuristicAtCalib.set(hAtCalib);
+            // Persistir medición + heurística de referencia keyed por modelo.
+            if (key && hAtCalib) {
+              const calibration: StoredCalibration = { measured: resp.dryfit, heuristic: hAtCalib };
+              this.storage.saveCalibration(key, calibration);
+            }
+          }
+        } else {
+          this.calibError.set(resp.error ?? 'No se pudo calibrar.');
+        }
+      },
+      error: (e: Error) => {
+        this.calibError.set(e.message);
+      },
+      complete: () => this.calibrating.set(false),
     });
-  }
-
-  /** Resetea el offset a 0 y lo persiste. */
-  protected resetOffset(): void {
-    this.offsetMiB.set(0);
-    this.api.saveVramOffset(0).subscribe({ error: () => {} });
   }
 
   // ── Helpers de la barra de device (dos tonos: baseline + modelo) ──

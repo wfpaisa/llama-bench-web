@@ -20,11 +20,6 @@ export const SCRIPT_FILE = join(DATA_DIR, 'script-default.txt')
 // Prompt de benchmark por defecto guardado desde la UI.
 export const PROMPT_FILE = join(DATA_DIR, 'prompt-default.txt')
 
-// Offset de calibración manual del optimizador (en MiB, puede ser negativo).
-// Ajuste opcional del usuario para corregir la heurística de VRAM contra el uso
-// real medido. Persistido como texto plano (un entero con signo).
-export const VRAM_OFFSET_FILE = join(DATA_DIR, 'vram-offset.txt')
-
 // Límite del historial persistido.
 export const HISTORY_CAP = 200
 

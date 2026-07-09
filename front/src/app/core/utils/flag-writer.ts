@@ -10,7 +10,7 @@
 //   --ctx-size, --n-gpu-layers, --cache-type-k, --cache-type-v,
 //   --batch-size, --ubatch-size, --flash-attn (switch),
 //   --device (coma-separado), --tensor-split (coma-separado),
-//   --cpu-moe, --cache-reuse, --no-mmproj (switch).
+//   --n-cpu-moe, --cache-reuse, --no-mmproj (switch).
 
 import type { TunedParams } from '../models/types';
 
@@ -168,7 +168,7 @@ export function parseParamsFromScript(script: string): TunedParams {
       .map((s) => s.trim())
       .filter(Boolean),
     tensorSplit: tensorSplit && tensorSplit.length ? tensorSplit : null,
-    nCpuMoe: flagNum(tokens, '--cpu-moe') ?? 0,
+    nCpuMoe: flagNum(tokens, '--n-cpu-moe', ['--cpu-moe']) ?? 0,
     cacheReuse: flagNum(tokens, '--cache-reuse') ?? 0,
     noMmproj: flagSwitch(tokens, '--no-mmproj'),
   };
@@ -205,11 +205,13 @@ export function applyTunedParams(script: string, params: TunedParams): string {
   } else {
     tokens = removeFlag(tokens, '--tensor-split');
   }
-  // --cpu-moe: si 0, quitar el flag; si >0, setearlo.
+  // --n-cpu-moe: si 0, quitar el flag; si >0, setearlo. Se limpia también el
+  // --cpu-moe viejo por si quedó de una versión anterior (no son el mismo flag).
+  tokens = removeFlag(tokens, '--cpu-moe');
   if (params.nCpuMoe > 0) {
-    tokens = setFlagValue(tokens, '--cpu-moe', String(params.nCpuMoe));
+    tokens = setFlagValue(tokens, '--n-cpu-moe', String(params.nCpuMoe));
   } else {
-    tokens = removeFlag(tokens, '--cpu-moe');
+    tokens = removeFlag(tokens, '--n-cpu-moe');
   }
   // --cache-reuse: si 0, quitar; si >0, setearlo.
   if (params.cacheReuse > 0) {

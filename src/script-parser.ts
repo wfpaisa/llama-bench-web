@@ -112,7 +112,7 @@ export function parseScript(script: string): ParsedScript {
     minP: toNumOrNull(flagValue(argv, '--min-p')),
     repeatPenalty: toNumOrNull(flagValue(argv, '--repeat-penalty')),
     modelFile: flagValue(argv, '--model') ?? flagValue(argv, '-m'),
-    nCpuMoe: toNumOrNull(flagValue(argv, '--cpu-moe')) ?? 0,
+    nCpuMoe: toNumOrNull(flagValue(argv, '--n-cpu-moe')) ?? toNumOrNull(flagValue(argv, '--cpu-moe')) ?? 0,
     cacheReuse: toNumOrNull(flagValue(argv, '--cache-reuse')) ?? 0,
     noMmproj: hasFlag(argv, '--no-mmproj'),
   }

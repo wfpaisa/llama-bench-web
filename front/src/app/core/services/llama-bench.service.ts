@@ -9,6 +9,7 @@ import { ApiService } from './api.service';
 import type {
   BenchmarkResponse,
   BenchmarkResult,
+  DryfitRequestResponse,
   EstimateRequestResponse,
   GpuInfo,
   LogsResponse,
@@ -114,18 +115,18 @@ export class LlamaBenchService {
     return this.api.post<OkResponse>('/prompt-default', { prompt });
   }
 
-  // ── Offset de calibración del optimizador (texto plano: MiB con signo) ──
-  getVramOffset(): Observable<string> {
-    return this.api.getText('/vram-offset');
-  }
-
-  saveVramOffset(offsetMiB: number): Observable<OkResponse> {
-    return this.api.post<OkResponse>('/vram-offset', { offset: offsetMiB });
-  }
-
   // ── Optimizador ──
   /** Estimación heurística instantánea (no arranca el binario). */
   estimate(script: string, params: TunedParams, priority: 'ctx' | 'quality'): Observable<EstimateRequestResponse> {
     return this.api.post<EstimateRequestResponse>('/estimate', { script, params, priority });
+  }
+
+  /**
+   * Calibración real (dry-fit): arranca llama-server con el script, espera a
+   * que el modelo cargue, mide la VRAM real consumida y detiene el servidor.
+   * No envía inferencia. Tarda lo que tarda en cargar el modelo (puede ser 30s+).
+   */
+  dryfit(script: string): Observable<DryfitRequestResponse> {
+    return this.api.post<DryfitRequestResponse>('/dryfit', { script });
   }
 }

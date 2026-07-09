@@ -67,7 +67,7 @@ export interface ParsedScript {
   repeatPenalty: number | null
   /** `--model` / `-m` (ruta local al .gguf). null si no estaba. */
   modelFile: string | null
-  /** `--cpu-moe` (capas MoE en CPU). 0 si no estaba. */
+  /** `--n-cpu-moe` (capas cuyos expertos MoE van a CPU). 0 si no estaba. */
   nCpuMoe: number
   /** `--cache-reuse` (tokens reutilizables del cache). 0 si no estaba. */
   cacheReuse: number

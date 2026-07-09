@@ -12,8 +12,8 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
 import {
-  backendLabel,
   backendSeverity,
+  computeBackendLabel,
   deviceVramLine,
   deviceVramRows,
   fmt,
@@ -73,6 +73,7 @@ export interface ColumnGroupMeta {
  */
 const DEFAULT_VISIBLE = [
   'model',
+  'backend',
   'ctx',
   'batch',
   'cache',
@@ -95,6 +96,7 @@ const COLUMN_DEFS: HistoryColumn[] = [
   { key: 'date', header: 'Fecha' },
   { key: 'rating', header: '★ Calificación' },
   { key: 'model', header: 'Modelo' },
+  { key: 'backend', header: 'Backend' },
   { key: 'ctx', header: 'ctx' },
   { key: 'batch', header: 'batch' },
   { key: 'cache', header: 'cache' },
@@ -331,9 +333,12 @@ export class HistoryTable {
   protected totalVramTxt(r: BenchmarkResult): string {
     return totalDeviceVramTxt(r);
   }
-  /** Etiqueta del backend (CUDA/Vulkan/…); '' si no se detectó. */
+  /**
+   * Etiqueta del backend (CUDA/Vulkan/…; "CUDA + CPU" si hay expertos MoE en
+   * CPU). '' si no se detectó backend ni uso de CPU (no se renderiza el tag).
+   */
   protected backend(r: BenchmarkResult): string {
-    return backendLabel(r.backend);
+    return computeBackendLabel(r.backend, r.config?.nCpuMoe);
   }
   /** Severidad (color) del tag del backend, según el backend de cómputo. */
   protected backendSeverity(b: BenchmarkResult['backend']) {

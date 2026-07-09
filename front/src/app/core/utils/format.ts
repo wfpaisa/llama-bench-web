@@ -150,6 +150,27 @@ export function backendLabel(b: GpuBackend | null | undefined): string {
 }
 
 /**
+ * Etiqueta compuesta del backend de cómputo para el tag del historial.
+ *
+ * Combina el backend principal con el uso de CPU cuando aplica:
+ *  - Backend GPU (cuda/vulkan/…) sin MoE en CPU  → "CUDA", "Vulkan", …
+ *  - Backend CPU puro                              → "CPU"
+ *  - Backend GPU con expertos MoE en CPU (nCpuMoe>0) → "CUDA + CPU"
+ *    (el cómputo principal va en GPU pero parte de los expertos corren en CPU).
+ *
+ * Devuelve '' si no hay backend detectado ni uso de CPU (no se renderiza el tag).
+ */
+export function computeBackendLabel(
+  b: GpuBackend | null | undefined,
+  nCpuMoe: number | null | undefined,
+): string {
+  const main = backendLabel(b);
+  const usesCpu = (nCpuMoe ?? 0) > 0;
+  if (!main) return usesCpu ? 'CPU' : '';
+  return usesCpu ? `${main} + CPU` : main;
+}
+
+/**
  * Severidad (color) del p-tag del backend para pintarlo dentro de la celda
  * del modelo. Convención cromática:
  *   cuda   → success (verde)   — backend nativo/recomendado en NVIDIA
@@ -355,6 +376,24 @@ export function parseModel(m: string | null | undefined): ParsedModel | null {
     }
   }
   return { base, size, quant, mtp: hasMtp };
+}
+
+// Patrones que delatan un modelo MoE (Mixture of Experts):
+//   - Token de activos "A3B" (p.ej. "35B-A3B"): total-activos de un MoE.
+//   - "MoE" explícito en el nombre.
+//   - Familias conocidas: Mixtral (NxNB), DeepSeek-MoE, GR/MoE, Qwen3-MoE…
+// Es una heurística de nombre: puede dar falsos negativos en modelos sin el
+// sufijo, pero evita mostrar el control --n-cpu-moe en modelos densos.
+const MOE_RE = /A\d+B|MoE|Mixtral|\d+x\d+B|GR\d+|OLMoE|SmolLM2?-MoE/i
+
+/**
+ * True si el nombre del modelo es identificable como MoE (Mixture of Experts).
+ * Usa el `base` del ModelMeta (familia + tamaño, sin quant). Sirve para mostrar
+ * el control --n-cpu-moe solo cuando aplica.
+ */
+export function isModelMoe(base: string | null | undefined): boolean {
+  if (!base) return false
+  return MOE_RE.test(base)
 }
 
 /**

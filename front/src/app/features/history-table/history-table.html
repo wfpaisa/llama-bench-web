@@ -151,6 +151,13 @@
             </div>
           </th>
         }
+        @if (colVisible('backend')) {
+          <th
+            title="Backend de cómputo (cuda/vulkan/…). Incluye '+ CPU' cuando hay expertos MoE en CPU (--n-cpu-moe)."
+          >
+            <div class="column-name">Backend</div>
+          </th>
+        }
         @if (colVisible('ctx')) {
           <th [pSortableColumn]="'config.ctxSize'" title="Tamaño de contexto (--ctx-size)">
             <div class="column-name">ctx <p-sortIcon field="config.ctxSize" /></div>
@@ -311,14 +318,20 @@
                   <p-tag value="MTP" severity="warn" />
                 }
               }
-              @if (backend(r); as b) {
-                <p-tag
-                  [value]="b"
-                  [severity]="backendSeverity(r.backend)"
-                  [title]="'Backend de cómputo: ' + b"
-                />
-              }
             </span>
+          </td>
+        }
+        @if (colVisible('backend')) {
+          <td>
+            @if (backend(r); as b) {
+              <p-tag
+                [value]="b"
+                [severity]="backendSeverity(r.backend)"
+                [title]="'Backend de cómputo: ' + b"
+              />
+            } @else {
+              <span class="muted">—</span>
+            }
           </td>
         }
         @if (colVisible('ctx')) {

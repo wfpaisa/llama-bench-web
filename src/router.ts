@@ -14,9 +14,10 @@ import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
 import { clearHistory, deleteResult, ensureDataDir, loadHistory, setRating } from './history.ts'
 import { getLogBuffer, systemLog } from './logs.ts'
-import { SCRIPT_FILE, PROMPT_FILE, VRAM_OFFSET_FILE } from './config.ts'
+import { SCRIPT_FILE, PROMPT_FILE } from './config.ts'
 import { listDevices } from './devices.ts'
 import { parseModelMeta, buildEstimateResponse, resolveModelFile } from './optimizer.ts'
+import { runDryfit } from './dryfit.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -100,35 +101,6 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
   }
 
-  // ── Offset de calibración del optimizador (MiB, con signo) ──
-  // Ajuste manual del usuario para que la heurística de VRAM coincida con el
-  // uso real medido. Se persiste como texto plano (un entero). Default: 0.
-  if (path === '/vram-offset' && req.method === 'GET') {
-    try {
-      const content = await readFile(VRAM_OFFSET_FILE, 'utf8')
-      const n = parseInt(content.trim(), 10)
-      return new Response(String(Number.isFinite(n) ? n : 0), {
-        headers: { 'Content-Type': 'text/plain', ...CORS },
-      })
-    } catch {
-      return new Response('0', { headers: { 'Content-Type': 'text/plain', ...CORS } })
-    }
-  }
-  if (path === '/vram-offset' && req.method === 'POST') {
-    try {
-      const body = await req.json()
-      const n = Number(body?.offset)
-      if (!Number.isFinite(n)) {
-        return json({ ok: false, error: "'offset' debe ser un número (MiB)." }, 400)
-      }
-      // Truncar a entero (el offset es siempre MiB enteros desde la UI).
-      await ensureDataDir()
-      await writeFile(VRAM_OFFSET_FILE, String(Math.trunc(n)), 'utf8')
-      return json({ ok: true })
-    } catch (e) {
-      return json({ ok: false, error: (e as Error).message }, 500)
-    }
-  }
   if (path === '/start' && req.method === 'POST') {
     if (managed) return json({ ok: false, error: 'Ya hay un servidor corriendo.' }, 409)
     let script: string
@@ -211,6 +183,34 @@ export async function handleRequest(req: Request): Promise<Response> {
       return json({ ok: true })
     }
     return json({ ok: false, error: 'No hay un benchmark en ejecución.' }, 404)
+  }
+
+  // ── Calibración real del optimizador (dry-fit) ──
+  // Arranca llama-server con el script, espera a que el modelo cargue, mide la
+  // VRAM real consumida (delta de --list-devices) y detiene el servidor. NO
+  // envía inferencia. Mismo guard de concurrencia que /benchmark (ocupa el
+  // mismo puerto 8080 y reusa el benchAbortController → /benchmark/stop cancela).
+  // El dryfit NO lanza en errores esperados: devuelve { ok:true, dryfit:{error} }
+  // para que el frontend muestre el error inline; solo 500 en excepciones raras.
+  if (path === '/dryfit' && req.method === 'POST') {
+    if (benchmarkRunning) return json({ ok: false, error: 'Ya hay un benchmark o calibración corriendo.' }, 409)
+    if (managed) return json({ ok: false, error: 'Detén el servidor manual antes de calibrar.' }, 409)
+    setBenchmarkRunning(true)
+    let script = ''
+    try {
+      const body = await req.json().catch(() => ({}))
+      if (typeof body?.script === 'string') script = body.script
+    } catch {
+      /* script vacío → runDryfit devuelve error de parseo */
+    }
+    try {
+      const dryfit = await runDryfit(script)
+      return json({ ok: true, dryfit })
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500)
+    } finally {
+      setBenchmarkRunning(false)
+    }
   }
 
   // ── Optimizador: estimación heurística (sin arrancar el binario) ──

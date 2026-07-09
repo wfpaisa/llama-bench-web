@@ -31,6 +31,14 @@ export interface ParsedScript {
   threads: number | null;
   minP: number | null;
   repeatPenalty: number | null;
+  /** `--model` / `-m` (ruta local al .gguf). null si no estaba. */
+  modelFile: string | null;
+  /** `--n-cpu-moe` (capas cuyos expertos MoE van a CPU). 0 si no estaba. */
+  nCpuMoe: number;
+  /** `--cache-reuse` (tokens reutilizables del cache). 0 si no estaba. */
+  cacheReuse: number;
+  /** `--no-mmproj` presente. */
+  noMmproj: boolean;
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */
@@ -182,7 +190,7 @@ export interface TunedParams {
   device: string[];
   /** Reparto entre devices (--tensor-split). null = automático. */
   tensorSplit: number[] | null;
-  /** --cpu-moe: capas de expertos MoE en CPU. 0 = desactivado. */
+  /** --n-cpu-moe: capas cuyos expertos MoE van a CPU. 0 = desactivado. */
   nCpuMoe: number;
   /** --cache-reuse: tokens reutilizables del cache anterior. 0 = desactivado. */
   cacheReuse: number;

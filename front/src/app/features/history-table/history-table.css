@@ -107,12 +107,11 @@
   .model-name {
     font-size: 0.85rem;
   }
-
-  p-tag {
-    font-size: 0.7rem;
-    padding: 0.1rem 0.3rem;
-    font-weight: 400;
-  }
+}
+p-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  font-weight: 400;
 }
 
 .row-actions {
