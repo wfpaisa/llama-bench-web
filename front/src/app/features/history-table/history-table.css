@@ -108,6 +108,7 @@
     font-size: 0.85rem;
   }
 }
+
 p-tag {
   font-size: 0.7rem;
   padding: 0.1rem 0.3rem;
@@ -292,4 +293,8 @@ td {
     flex: 1;
     overflow: auto;
   }
+}
+
+tr:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
 }

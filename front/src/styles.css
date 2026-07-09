@@ -70,6 +70,8 @@
   --p-tabs-tabpanel-padding: 1rem 0 0 0;
 
   --p-tooltip-max-width: 30rem;
+
+  --p-datatable-row-striped-background: rgba(0, 0, 0, 0.05);
 }
 
 /* ---- Box model universal ---- */
