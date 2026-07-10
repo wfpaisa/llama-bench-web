@@ -96,17 +96,16 @@ export async function runDryfit(script: string): Promise<DryfitResponse> {
       ])
     } catch (e) {
       if (controller.signal.aborted) throw new Error('Calibración cancelada por el usuario.')
-      return dryfitError(
-        `El servidor no arrancó: ${(e as Error).message}. ` +
-          'Revisá el script, su formato y los flags (binario, modelo, rutas, comillas, continuaciones \\).',
-      )
+      return dryfitError(`El servidor no arrancó: ${(e as Error).message}. ` + 'Revisá el script, su formato y los flags (binario, modelo, rutas, comillas, continuaciones \\).')
     }
     checkAbort()
 
-    // 4) Sleep corto: "server is listening" puede aparecer antes de que los
-    //    slots terminen de reservar el KV cache. Esperamos para que la lectura
-    //    final de VRAM incluya el ctx completo.
-    await sleep(500)
+    // 4) Sleep de estabilización: "server is listening" puede aparecer antes
+    //    de que los slots terminen de reservar el KV cache, y además el
+    //    backend (CUDA/Vulkan) sigue reservando memoria perezosamente (pools,
+    //    page-in de pesos mmap) durante unos segundos más. Esperamos 4.5s para
+    //    que la lectura final de VRAM capte el consumo asentado real.
+    await sleep(4500)
     checkAbort()
 
     // 5) Lectura final de VRAM con el modelo cargado + delta contra baseline.

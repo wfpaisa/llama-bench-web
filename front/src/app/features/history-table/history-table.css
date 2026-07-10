@@ -243,6 +243,18 @@ td {
   font-size: 0.75rem;
 }
 
+/* Celda '#' (número de fila): al hacer hover muestra el script usado como
+   tooltip. Cursor pointer para indicar que hay contenido interactivo. */
+.row-id {
+  cursor: help;
+  span {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+
 /* Celda de calificación: el p-rating ocupa poco espacio y las estrellas son
    clickeables directamente en la celda. */
 .rating-cell :host ::ng-deep .p-rating,
@@ -261,10 +273,9 @@ td {
    ancho de la ventana (full-bleed), pero permanece en su sitio del flujo.
    Técnica de márgenes negativos basada en vw para no tocar el layout de .home. */
 :host ::ng-deep .card.is-fullwidth {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  border-radius: 0;
+  width: calc(100vw - 2rem);
+  margin-left: calc(50% - (50vw - 1rem));
+  margin-right: calc(50% - (50vw - 1rem));
 }
 
 /* Maximizada: overlay full-screen con scroll interno propio. La tabla

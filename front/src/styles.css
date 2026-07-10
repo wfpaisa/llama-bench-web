@@ -282,3 +282,14 @@ pre {
 .small {
   font-size: 0.78rem;
 }
+
+/* Tooltip que muestra el script usado al hacer hover sobre el '#' de cada fila
+   de la tabla de historial. Vive en un overlay global (fuera del host), por
+   eso se define acá y no en el CSS del componente. */
+.script-tooltip .p-tooltip-text {
+  max-width: 40rem;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}

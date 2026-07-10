@@ -290,7 +290,17 @@
             title="Seleccionar para comparar"
           />
         </td>
-        <td class="num">{{ i + 1 }}</td>
+        <td
+          class="num row-id"
+          [pTooltip]="r.config?.script || null"
+          tooltipPosition="right"
+          [autoHide]="false"
+          [hideDelay]="500"
+          tooltipStyleClass="script-tooltip"
+          [escape]="false"
+        >
+          <span>{{ i + 1 }}</span>
+        </td>
         @if (colVisible('date')) {
           <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
         }
