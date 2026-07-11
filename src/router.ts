@@ -12,7 +12,7 @@ import { readGpuStats } from './gpu.ts'
 import { readRamStats } from './mem.ts'
 import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
-import { clearHistory, deleteResult, ensureDataDir, loadHistory, setRating } from './history.ts'
+import { clearHistory, deleteResult, deleteResults, ensureDataDir, loadHistory, setRating } from './history.ts'
 import { getLogBuffer, systemLog } from './logs.ts'
 import { SCRIPT_FILE, PROMPT_FILE } from './config.ts'
 import { listDevices } from './devices.ts'
@@ -296,6 +296,20 @@ export async function handleRequest(req: Request): Promise<Response> {
     const id = decodeURIComponent(path.slice('/history/'.length))
     await deleteResult(id)
     return json({ ok: true })
+  }
+  // POST /history/delete  body: { ids: string[] }
+  if (path === '/history/delete' && req.method === 'POST') {
+    try {
+      const body = await req.json()
+      const ids: unknown[] = body?.ids
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return json({ ok: false, error: 'ids debe ser un array no vacío.' }, 400)
+      }
+      await deleteResults(ids.map(String))
+      return json({ ok: true })
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500)
+    }
   }
 
   // ── Calificación de un resultado (1-5 estrellas) ──

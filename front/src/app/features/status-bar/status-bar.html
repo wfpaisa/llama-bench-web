@@ -1,6 +1,8 @@
 <div class="status-bar">
-  <span class="dot" [class]="status().status" [title]="status().status"></span>
-  <span class="status-text">{{ label() }}</span>
+  <div class="status-main">
+    <span class="dot" [class]="status().status" [title]="status().status"></span>
+    <span class="status-text">{{ label() }}</span>
+  </div>
   @if (meta()) {
     <span class="status-meta">{{ meta() }}</span>
   }

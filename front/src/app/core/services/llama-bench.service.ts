@@ -98,6 +98,11 @@ export class LlamaBenchService {
     return this.api.delete<OkResponse>('/history');
   }
 
+  /** Elimina múltiples resultados por ids. */
+  deleteSelected(ids: string[]): Observable<OkResponse> {
+    return this.api.post<OkResponse>('/history/delete', { ids });
+  }
+
   // ── Defaults (texto plano) ──
   getScriptDefault(): Observable<string> {
     return this.api.getText('/script-default');

@@ -14,9 +14,16 @@ import { BenchStore } from '../../core/state/bench.store';
     `
       .status-bar {
         display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.1rem;
+        font-size: 0.875rem;
+        width: 14rem;
+      }
+      .status-main {
+        display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.875rem;
       }
       .dot {
         width: 10px;
@@ -52,7 +59,11 @@ import { BenchStore } from '../../core/state/bench.store';
       }
       .status-meta {
         color: var(--color-text-muted);
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
       }
     `,
   ],

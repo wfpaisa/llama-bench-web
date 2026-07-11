@@ -33,11 +33,12 @@
         (onClick)="chart()"
       />
       <p-button
-        label="Limpiar todo"
+        label="Eliminar seleccionados"
         icon="pi pi-trash"
         severity="danger"
         [text]="true"
-        (onClick)="clearAll($event)"
+        [disabled]="store.selectedCount() < 1"
+        (onClick)="deleteSelected($event)"
       />
     </div>
   </div>

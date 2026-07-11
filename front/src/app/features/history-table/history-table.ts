@@ -509,19 +509,31 @@ export class HistoryTable {
     this.store.openChart();
   }
 
-  protected clearAll(event: Event): void {
+  protected deleteSelected(event: Event): void {
+    const ids = [...this.store.selected()];
+    const count = ids.length;
     this.confirm.confirm({
       target: event.target as EventTarget,
-      message: '¿Borrar todo el historial de benchmarks?',
-      header: 'Zona de peligro',
-      icon: 'pi pi-exclamation-triangle',
-      acceptButtonProps: { label: 'Borrar todo', severity: 'danger' },
+      message: count === 1
+        ? '¿Eliminar el resultado seleccionado del historial?'
+        : `¿Eliminar ${count} resultados seleccionados del historial?`,
+      icon: 'pi pi-info-circle',
+      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
       accept: () => {
-        this.api.clearHistory().subscribe({
+        this.api.deleteSelected(ids).subscribe({
           next: () => {
-            this.store.setHistory([]);
-            this.messages.add({ severity: 'success', summary: 'Historial limpiado.', life: 2600 });
+            for (const id of ids) this.store.toggleSelected(id, false);
+            this.api.getHistory().subscribe({
+              next: (h) => this.store.setHistory(h.results || []),
+            });
+            this.messages.add({
+              severity: 'success',
+              summary: count === 1
+                ? 'Resultado eliminado.'
+                : `${count} resultados eliminados.`,
+              life: 2600,
+            });
           },
           error: (e: Error) =>
             this.messages.add({

@@ -34,6 +34,14 @@ export async function deleteResult(id: string): Promise<void> {
   await writeFile(HISTORY_FILE, JSON.stringify(next, null, 2))
 }
 
+/** Borra múltiples resultados por ids (un solo rewrite). */
+export async function deleteResults(ids: string[]): Promise<void> {
+  const set = new Set(ids)
+  const all = await loadHistory()
+  const next = all.filter((r) => !set.has(r.id))
+  await writeFile(HISTORY_FILE, JSON.stringify(next, null, 2))
+}
+
 /**
  * Actualiza la calificación (1-5 estrellas) de un resultado por id.
  * `rating` null elimina la calificación. Devuelve false si el id no existe.

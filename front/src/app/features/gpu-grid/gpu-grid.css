@@ -1,81 +1,113 @@
-/* GpuGrid: grupos compactos para el header con chip de marca + barras verticales.
-   El alto se limita al del header (--header-h, 3rem). Sin encabezado ni botón:
-   vive en el top bar y se refresca vía polling del store. */
+/* GpuGrid: filas horizontales compactas para el header (3rem de alto).
+   Layout por fila: [icono] [barra + valor] [barra + valor]
+   Todo en una sola línea, sin apilar verticalmente. */
 
 .gpu-grid {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  /* Separación generosa entre grupos (GPU / RAM). */
-  gap: 1.5rem;
-  margin-right: 1rem;
+  gap: 0.75rem;
+  margin-right: 0.25rem;
 }
 
-.gpu {
+/* Fila individual: icono a la izquierda, barras+valores a la derecha. */
+.metric-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   min-width: 0;
+  margin: 0 1rem;
+  align-items: flex-start;
+
+  .bars {
+    display: flex;
+    flex-direction: column;
+    align-content: flex-start;
+    align-items: start;
+  }
 }
 
-/* Chip de marca: cuadrado de 3rem con el icono en color de texto sobre
-   fondo (background) del color de texto, tipo badge. */
+/* Chip de marca: cuadrado pequeño con icono inline. */
 .chip {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 2rem;
+  height: 2rem;
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 3px;
+  padding: 0.1rem;
 
   > svg {
-    width: 1.6rem;
-    height: 1.6rem;
-    /* El icono se invierte sobre el fondo sólido. */
-    fill: var(--color-bg);
+    display: block;
   }
 }
 
-/* Contenedor de barras verticales: ocupa el alto del header. */
-.vbars {
+.chip-nvidia {
+  background: rgba(118, 185, 0, 0.5);
+  color: #fff;
+}
+
+.chip-amd {
+  background: rgba(237, 28, 36, 0.5);
+  color: #fff;
+}
+
+.chip-ram {
+  /* background: var(--p-blue-500); */
+  background: rgba(0, 122, 255, 0.5);
+  color: #fff;
+}
+
+/* Grupo barra + valor alineados horizontalmente. */
+.bar-group {
   display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  /* Alto reducido un 20% respecto al header (3rem → 2.4rem). */
-  height: 2rem;
-  box-sizing: border-box;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
-/* Cada barra vertical: track + relleno que crece de abajo a arriba.
-   Doble de gruesa que la versión anterior (5.6px → ~11px). */
-.vbar {
-  position: relative;
-  width: 0.5rem;
-  height: 100%;
+/* Grupo más compacto para la barra de Util. */
+.bar-group-sm {
+  min-width: 3rem;
+}
+
+/* Track de barra horizontal. */
+.hbar-track {
+  width: 6rem;
+  height: 0.5rem;
   background: var(--p-neutral-700);
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
+  flex-shrink: 0;
+}
 
-  > span {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    transition: height 0.3s ease;
-  }
+/* Relleno con transición suave. */
+.hbar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
 
-  &.green > span {
-    background: var(--p-green-500);
-  }
+.hbar-fill.green {
+  background: var(--p-green-500);
+}
 
-  &.yellow > span {
-    background: var(--p-amber-400);
-  }
+.hbar-fill.yellow {
+  background: var(--p-amber-400);
+}
 
-  &.red > span {
-    background: var(--p-red-500);
-  }
+.hbar-fill.red {
+  background: var(--p-red-500);
+}
+
+/* Valor en GB al final de la barra. */
+.metric-value {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .muted {
