@@ -597,7 +597,7 @@ export class HistoryTable {
       accept: () => {
         this.api.deleteSelected(ids).subscribe({
           next: () => {
-            for (const id of ids) this.store.toggleSelected(id, false);
+            this.store.selectMany(ids, false);
             this.api.getHistory().subscribe({
               next: (h) => this.store.setHistory(h.results || []),
             });
