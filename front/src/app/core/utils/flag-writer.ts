@@ -8,7 +8,7 @@
 //
 // Flags gestionados por applyTunedParams / parseParamsFromScript:
 //   --ctx-size, --n-gpu-layers, --cache-type-k, --cache-type-v,
-//   --batch-size, --ubatch-size, --flash-attn (switch),
+//   --batch-size, --ubatch-size, --flash-attn on/off,
 //   --device (coma-separado), --tensor-split (coma-separado),
 //   --n-cpu-moe, --cache-reuse, --no-mmproj (switch).
 
@@ -85,7 +85,7 @@ export function setFlagValue(tokens: string[], flag: string, value: string): str
 
 /**
  * Setea un flag switch (booleano). Si value es true, asegura que el flag esté.
- * Si es false, lo elimina. Para --flash-attn on/off se usa on/off como valor.
+ * Si es false, lo elimina (junto con su valor si tiene uno).
  */
 export function setFlagSwitch(tokens: string[], flag: string, value: boolean): string[] {
   const out = [...tokens];
@@ -94,7 +94,12 @@ export function setFlagSwitch(tokens: string[], flag: string, value: boolean): s
     if (idx === -1) out.push(flag);
     return out;
   }
-  if (idx !== -1) out.splice(idx, 1);
+  if (idx !== -1) {
+    // Eliminar también el valor siguiente si no es otra flag.
+    const next = out[idx + 1];
+    if (next && !next.startsWith('-')) out.splice(idx, 2);
+    else out.splice(idx, 1);
+  }
   return out;
 }
 
@@ -134,10 +139,18 @@ function flagNum(tokens: string[], flag: string, aliases: string[] = []): number
   return Number.isFinite(n) ? n : null;
 }
 
-/** True si un flag switch (sin valor) está presente. */
+/** True si un flag switch (sin valor) está presente, o si tiene valor "on". */
 function flagSwitch(tokens: string[], flag: string, aliases: string[] = []): boolean {
   const forms = new Set([flag, ...aliases]);
-  return tokens.some((t) => forms.has(t));
+  for (let i = 0; i < tokens.length; i++) {
+    if (forms.has(tokens[i])) {
+      const next = tokens[i + 1];
+      // Si tiene valor "off", no cuenta como activado.
+      if (next === 'off') return false;
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -182,7 +195,7 @@ export function parseParamsFromScript(script: string): TunedParams {
  * - ngl → --n-gpu-layers
  * - cacheTypeK/V → --cache-type-k/--cache-type-v
  * - batchSize/ubatchSize → --batch-size/--ubatch-size
- * - flashAttn → --flash-attn (switch)
+ * - flashAttn → --flash-attn on (value flag); false → elimina
  * - device[] → --device (join por coma); [] = elimina el flag
  * - tensorSplit[] → --tensor-split (join por coma); null = elimina el flag
  */
@@ -194,7 +207,11 @@ export function applyTunedParams(script: string, params: TunedParams): string {
   tokens = setFlagValue(tokens, '--cache-type-v', params.cacheTypeV);
   tokens = setFlagValue(tokens, '--batch-size', String(params.batchSize));
   tokens = setFlagValue(tokens, '--ubatch-size', String(params.ubatchSize));
-  tokens = setFlagSwitch(tokens, '--flash-attn', params.flashAttn);
+  // --flash-attn on/off: se escribe como flag con valor.
+  tokens = removeFlag(tokens, '--flash-attn');
+  if (params.flashAttn) {
+    tokens = setFlagValue(tokens, '--flash-attn', 'on');
+  }
   if (params.device.length > 0) {
     tokens = setFlagValue(tokens, '--device', params.device.join(','));
   } else {
