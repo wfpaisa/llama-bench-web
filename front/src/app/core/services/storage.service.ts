@@ -69,6 +69,14 @@ export class StorageService {
   saveSort(value: SortState): void {
     this.set(KEYS.sort, JSON.stringify(value));
   }
+  /** Borra el sort persistido (estado "sin orden" de la tabla de historial). */
+  clearSort(): void {
+    try {
+      localStorage.removeItem(KEYS.sort);
+    } catch {
+      /* ignore */
+    }
+  }
 
   // ── Max Tokens (valor + habilitado) ──
   loadMaxTokens(): number | null {

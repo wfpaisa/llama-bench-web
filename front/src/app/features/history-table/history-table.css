@@ -55,13 +55,13 @@
   border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
 }
 .group-swatch.col-gen {
-  background: color-mix(in srgb, var(--p-primary-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-primary-500), transparent 80%);
 }
 .group-swatch.col-read {
-  background: color-mix(in srgb, var(--p-purple-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-purple-500), transparent 80%);
 }
 .group-swatch.col-draft {
-  background: color-mix(in srgb, var(--p-orange-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-orange-500), transparent 80%);
 }
 .group-swatch.col-general {
   background: transparent;
@@ -140,15 +140,15 @@ th .column-name {
    - Draft (naranja): draft acc / gen dr / acc dr / gen tk / acc tk. */
 :host ::ng-deep th.col-gen,
 :host ::ng-deep td.col-gen {
-  background: color-mix(in srgb, var(--p-primary-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-primary-500), transparent 96%);
 }
 :host ::ng-deep th.col-read,
 :host ::ng-deep td.col-read {
-  background: color-mix(in srgb, var(--p-purple-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-purple-500), transparent 96%);
 }
 :host ::ng-deep th.col-draft,
 :host ::ng-deep td.col-draft {
-  background: color-mix(in srgb, var(--p-orange-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-orange-500), transparent 96%);
 }
 
 /* Ítem del listado del multiselect de columnas: icono + nombre + tinte de
@@ -170,16 +170,16 @@ th .column-name {
   flex-shrink: 0;
 }
 :host ::ng-deep .column-item .item-swatch.col-gen {
-  background: color-mix(in srgb, var(--p-primary-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-primary-500), transparent 80%);
 }
 :host ::ng-deep .column-item .item-swatch.col-read {
-  background: color-mix(in srgb, var(--p-purple-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-purple-500), transparent 80%);
 }
 :host ::ng-deep .column-item .item-swatch.col-draft {
-  background: color-mix(in srgb, var(--p-orange-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-orange-500), transparent 80%);
 }
 :host ::ng-deep .column-item .item-swatch.col-general {
-  background: color-mix(in srgb, var(--p-surface-400, #94a3b8), transparent 90%);
+  background: color-mix(in srgb, var(--p-surface-400, #94a3b8), transparent 80%);
 }
 
 /* Header de cada grupo dentro del panel del multiselect: icono + label con el
@@ -195,16 +195,16 @@ th .column-name {
   border-radius: 4px;
 }
 :host ::ng-deep .group-header.col-gen {
-  background: color-mix(in srgb, var(--p-primary-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-primary-500), transparent 80%);
 }
 :host ::ng-deep .group-header.col-read {
-  background: color-mix(in srgb, var(--p-purple-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-purple-500), transparent 80%);
 }
 :host ::ng-deep .group-header.col-draft {
-  background: color-mix(in srgb, var(--p-orange-500), transparent 90%);
+  background: color-mix(in srgb, var(--p-orange-500), transparent 80%);
 }
 :host ::ng-deep .group-header.col-general {
-  background: color-mix(in srgb, var(--p-surface-400, #94a3b8), transparent 90%);
+  background: color-mix(in srgb, var(--p-surface-400, #94a3b8), transparent 80%);
 }
 
 /* Layout automático: cada columna toma el ancho de su contenido o de su

@@ -54,9 +54,10 @@
     [showGridlines]="true"
     [globalFilterFields]="['modelBase']"
     size="small"
+    [customSort]="true"
     [sortField]="store.sortCol()"
-    [sortOrder]="store.sortDir() === 'asc' ? 1 : -1"
-    (sort)="onSort($event)"
+    [sortOrder]="sortOrderNum()"
+    (sortFunction)="onSort($event)"
     stripedRows
   >
     <ng-template #caption>

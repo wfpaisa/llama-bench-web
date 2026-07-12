@@ -84,8 +84,8 @@ export class BenchStore {
    * 'timestamp', 'generationTokensPerSecond', 'config.ctxSize', …), que es lo
    * que PrimeNG resuelve con `resolveFieldData` para su sort interno.
    */
-  readonly sortCol = signal('timestamp');
-  readonly sortDir = signal<'asc' | 'desc'>('desc');
+  readonly sortCol = signal<string | null>('timestamp');
+  readonly sortDir = signal<'asc' | 'desc' | null>('desc');
   readonly showCompare = signal(false);
   readonly showChart = signal(false);
   readonly showOptimizer = signal(false);
@@ -161,7 +161,14 @@ export class BenchStore {
     // El filtrado por modelo lo maneja PrimeNG (p-columnFilter), no se persiste.
     effect(() => this.storage.saveScript(this.script()));
     effect(() => this.storage.savePrompt(this.prompt()));
-    effect(() => this.storage.saveSort({ col: this.sortCol(), dir: this.sortDir() }));
+    // Si no hay sort activo (3er clic), lo limpiamos del storage para que al
+    // recargar no se restaure ningún orden.
+    effect(() => {
+      const col = this.sortCol();
+      const dir = this.sortDir();
+      if (col && dir) this.storage.saveSort({ col, dir });
+      else this.storage.clearSort();
+    });
     effect(() => this.storage.saveMaxTokens(this.maxTokens()));
     effect(() => this.storage.saveMaxTokensEnabled(this.maxTokensEnabled()));
   }

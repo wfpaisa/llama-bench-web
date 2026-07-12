@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -7,6 +7,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService, SelectItemGroup, SortEvent } from 'primeng/api';
+import { Table } from 'primeng/table';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -188,6 +189,20 @@ export class HistoryTable {
   protected readonly fmt = fmt;
   protected readonly modelOptions = this.store.modelOptions;
 
+  /** Referencia al p-table (#dt): para resetear el sort interno al llegar al
+   *  3er clic (estado "sin orden") y refrescar los iconos de las columnas. */
+  protected readonly table = viewChild<Table>('dt');
+
+  /**
+   * `sortOrder` numérico que espera el binding `[sortOrder]` del p-table:
+   * 1 (asc), -1 (desc) o 0 (sin orden). Cuando es 0 y `sortField` es null la
+   * tabla no aplica sort y los iconos quedan en estado neutral.
+   */
+  protected readonly sortOrderNum = computed<number>(() => {
+    const d = this.store.sortDir();
+    return d === 'asc' ? 1 : d === 'desc' ? -1 : 0;
+  });
+
   // ── Columnas visibles (selector) ──
 
   /** Catálogo plano completo de columnas (para colVisible / selectedColumns). */
@@ -268,28 +283,82 @@ export class HistoryTable {
   }
 
   /**
-   * Side-effect del sort de la p-table: PrimeNG ya reordenó `[value]`
-   * internamente; aquí solo persistimos el estado (columna + dirección) en el
-   * store para poder restaurarlo al recargar la página. No tocamos los datos:
-   * el orden es responsabilidad de la tabla.
+   * Máquina de sort de 3 estados por columna (patrón removableSort):
+   *   asc → desc → (sin orden) → asc → …
+   * Con `customSort=true`, PrimeNG delega el orden en este handler vía
+   * `(sortFunction)` y NO reordena `[value]` por su cuenta. El orden real lo
+   * aplica el `computed` `tableData` según `sortCol`/`sortDir` del store, así
+   * que aquí solo avanzamos la máquina de estados y dejamos que la reactividad
+   * propague el nuevo orden a la tabla.
+   *
+   * El 3er estado (sin orden) limpia el sort interno de la p-table
+   * (`_sortField`/`_sortOrder`) y refresca los iconos de las columnas vía
+   * `tableService.onSort(null)`, sin tocar los filtros (a diferencia de
+   * `dt.reset()`, que además los borra).
+   *
+   * Guard de idempotencia: `sortFunction` se dispara tanto por clic del
+   * usuario como por la propagación reactiva de `[sortField]`/`[sortOrder]`
+   * cuando el store cambia. Si el evento coincide exactamente con el estado
+   * actual del store, es la re-emisión y se ignora (evita bucles y que un
+   * mismo clic cuente doble).
    */
   protected onSort(event: SortEvent | Event): void {
-    const { field, order } = event as SortEvent;
-    if (field && order) {
+    const { field } = event as SortEvent;
+    if (!field) return;
+    const curCol = this.store.sortCol();
+    const curDir = this.store.sortDir();
+
+    // Re-emisión reactiva: el evento refleja el estado ya aplicado → ignorar.
+    if (field === curCol && (event as SortEvent).order === (curDir === 'asc' ? 1 : curDir === 'desc' ? -1 : 0)) {
+      return;
+    }
+
+    if (field === curCol && curDir === 'asc') {
+      // 2do clic sobre la misma columna → descendente.
+      this.store.sortDir.set('desc');
+    } else if (field === curCol && curDir === 'desc') {
+      // 3er clic sobre la misma columna → sin orden.
+      this.store.sortCol.set(null);
+      this.store.sortDir.set(null);
+      this.clearTableSort();
+    } else {
+      // Columna nueva (o veníamos de "sin orden") → empieza en ascendente.
       this.store.sortCol.set(field);
-      this.store.sortDir.set(order === 1 ? 'asc' : 'desc');
+      this.store.sortDir.set('asc');
     }
   }
 
   /**
+   * Limpia el estado de sort interno de la p-table (iconos + `_sortField`/
+   * `_sortOrder`) para reflejar el estado "sin orden". Se difiere una microtask
+   * para que corra tras el ciclo de change detection que propagó los bindings
+   * `[sortField]`/`[sortOrder]` a null.
+   */
+  private clearTableSort(): void {
+    queueMicrotask(() => {
+      const dt = this.table();
+      if (!dt) return;
+      dt._sortField = null;
+      dt._sortOrder = dt.defaultSortOrder;
+      dt.tableService.onSort(null);
+    });
+  }
+
+  /**
    * Datos para la tabla: historial visible con campos aplanados que necesita el
-   * template/PrimeNG:
+   * template/PrimeNG, ORDENADOS según `sortCol`/`sortDir` del store.
    *  - `modelBase`: por el que filtra el p-columnFilter (matchMode "in").
    *  - `totalVramMiB`: suma de VRAM usada (devices del backend o GPUs legacy)
    *    para que la columna "Total VRAM" pueda ordenarse con un `field` real.
+   *
+   * Como la tabla usa `customSort`, PrimeNG NO reordena `[value]`; el orden lo
+   * aplicamos aquí con un comparador equivalente al interno de PrimeNG
+   * (null-safe + `localeCompare` para strings), que además soporta campos
+   * anidados con notación punto (`config.ctxSize`). Si no hay sort activo
+   * (3er estado), se conserva el orden natural (inserción del historial).
    */
-  protected readonly tableData = computed<HistoryRow[]>(() =>
-    this.store.visibleHistory().map((r) => {
+  protected readonly tableData = computed<HistoryRow[]>(() => {
+    const rows = this.store.visibleHistory().map((r) => {
       const dv = r.deviceVram;
       const totalVramMiB =
         dv && dv.length > 0
@@ -300,8 +369,13 @@ export class HistoryTable {
         modelBase: modelBase(r.config?.model) ?? '',
         totalVramMiB,
       };
-    }),
-  );
+    });
+    const col = this.store.sortCol();
+    const dir = this.store.sortDir();
+    if (!col || !dir) return rows;
+    const order = dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => order * compareField(a, b, col));
+  });
 
   // ── Helpers de celda ──
 
@@ -546,4 +620,35 @@ export class HistoryTable {
       },
     });
   }
+}
+
+/**
+ * Resuelve un campo anidado con notación punto (p.ej. `config.ctxSize`) sobre
+ * un objeto. Equivalente al `resolveFieldData` interno de PrimeNG, replicado
+ * aquí para no depender de una API no exportada.
+ */
+function resolveFieldPath(obj: unknown, path: string): unknown {
+  if (obj == null) return undefined;
+  let cur: any = obj;
+  for (const part of path.split('.')) {
+    if (cur == null) return undefined;
+    cur = cur[part];
+  }
+  return cur;
+}
+
+/**
+ * Comparador equivalente al interno de PrimeNG para el sort de una columna:
+ * null-safe (los nulos van primero) y `localeCompare` para strings, comparación
+ * numérica nativa para el resto. Devuelve -1/0/1 (sin multiplicar por el
+ * orden; el llamador lo aplica).
+ */
+function compareField<T>(a: T, b: T, field: string): number {
+  const v1: any = resolveFieldPath(a, field);
+  const v2: any = resolveFieldPath(b, field);
+  if (v1 == null && v2 != null) return -1;
+  if (v1 != null && v2 == null) return 1;
+  if (v1 == null && v2 == null) return 0;
+  if (typeof v1 === 'string' && typeof v2 === 'string') return v1.localeCompare(v2);
+  return v1 < v2 ? -1 : v1 > v2 ? 1 : 0;
 }
