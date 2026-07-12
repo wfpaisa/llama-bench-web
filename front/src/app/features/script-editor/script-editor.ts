@@ -118,6 +118,12 @@ export class ScriptEditor {
   protected readonly infoFlag = signal<LlamaFlag | null>(null);
   protected readonly infoVisible = signal(false);
 
+  /** Visibilidad del diálogo fullscreen de la tabla de flags. */
+  protected readonly fullscreenVisible = signal(false);
+  protected toggleFullscreen(): void {
+    this.fullscreenVisible.set(true);
+  }
+
   constructor() {
     // Cuando el script cambia externamente (p.ej. "apply" desde el historial),
     // reflejarlo en el textarea.

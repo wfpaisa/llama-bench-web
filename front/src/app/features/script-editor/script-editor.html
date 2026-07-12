@@ -69,9 +69,6 @@
         #dt
         [value]="flagsList()"
         dataKey="long"
-        [rows]="15"
-        [rowsPerPageOptions]="[15, 30, 50, 100, 200]"
-        [paginator]="true"
         [showGridlines]="true"
         [globalFilterFields]="['name', 'long', 'short', 'category']"
         [scrollable]="true"
@@ -103,6 +100,14 @@
               }
             </p-inputgroup>
             <span class="muted small count" size="small">{{ flagsList().length }} flags</span>
+            <p-button
+              icon="pi pi-expand"
+              label="Pantalla completa"
+              size="small"
+              [text]="true"
+              (onClick)="toggleFullscreen()"
+              pTooltip="Expandir tabla a pantalla completa"
+            />
           </div>
         </ng-template>
 
@@ -232,6 +237,151 @@
     </div>
   </div>
 </section>
+
+<!-- Diálogo fullscreen de la tabla de flags -->
+<p-dialog
+  [(visible)]="fullscreenVisible"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="true"
+  header="Catálogo de flags — {{ flagsList().length }} flags"
+  [style]="{ width: '90vw', maxWidth: '80rem', height: '90vh' }"
+  [maximizable]="true"
+>
+  <p-table
+    #dtFs
+    [value]="flagsList()"
+    dataKey="long"
+    [showGridlines]="true"
+    [globalFilterFields]="['name', 'long', 'short', 'category']"
+    [scrollable]="true"
+    scrollHeight="100%"
+    size="small"
+  >
+    <ng-template #header>
+      <tr>
+        <th style="width: 3rem"></th>
+        <th style="width: 3rem"></th>
+        <th style="min-width: 12rem">
+          <div class="th-filter">
+            Nombre
+            <p-columnFilter
+              type="text"
+              field="name"
+              display="menu"
+              placeholder="Nombre…"
+              ariaLabel="Filtrar por nombre"
+            />
+          </div>
+        </th>
+        <th style="min-width: 8rem">
+          <div class="th-filter">
+            Flag larga
+            <p-columnFilter
+              type="text"
+              field="long"
+              display="menu"
+              placeholder="p.ej. ctx…"
+              ariaLabel="Filtrar por flag larga"
+            />
+          </div>
+        </th>
+        <th style="min-width: 5rem">
+          <div class="th-filter">
+            Corta
+            <p-columnFilter
+              type="text"
+              field="short"
+              display="menu"
+              placeholder="-c"
+              ariaLabel="Filtrar por flag corta"
+            />
+          </div>
+        </th>
+        <th title="Categoría">
+          <div class="th-filter">
+            Cat
+            <p-columnFilter
+              field="category"
+              matchMode="in"
+              display="menu"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+            >
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-multiselect
+                  [ngModel]="value"
+                  [options]="categoryOptions()"
+                  placeholder="Todas"
+                  (onChange)="filter($event.value)"
+                  style="min-width: 12rem"
+                  [panelStyle]="{ minWidth: '14rem' }"
+                />
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-f>
+      <tr [class.present]="flagPresent().has(f.long)">
+        <td class="cell-actions">
+          @if (!flagPresent().has(f.long)) {
+            <p-button
+              icon="pi pi-arrow-left"
+              size="small"
+              severity="success"
+              [text]="true"
+              (onClick)="addToScript(f)"
+            />
+          }
+        </td>
+
+        <td class="cell-actions">
+          <p-button
+            icon="pi pi-info-circle"
+            [text]="true"
+            size="small"
+            pTooltip="Info"
+            (onClick)="openInfo(f)"
+          />
+        </td>
+
+        <td class="cell-name">
+          <div class="flag-name">{{ f.name }}</div>
+          @if (f.defaultValue) {
+            <div class="flag-default">
+              default: <code>{{ f.defaultValue }}</code>
+            </div>
+          } @else {
+            <div class="flag-default muted">switch</div>
+          }
+        </td>
+        <td class="cell-code">
+          <code>{{ f.long }}</code>
+        </td>
+        <td class="cell-code">
+          @if (f.short) {
+            <code>{{ f.short }}</code>
+          } @else {
+            <span class="muted">—</span>
+          }
+        </td>
+        <td>
+          <p-tag [value]="f.category" [severity]="getCategorySeverity(f.category)" />
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-dialog>
 
 <!-- Diálogo de descripción de un flag -->
 <p-dialog
