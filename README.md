@@ -3,13 +3,12 @@
 Utilidad web para hacer benchmark de modelos locales con **llama.cpp**,
 controlando `llama-server` desde el navegador.
 
-<details>
-<summary>Click to toggle screenshots</summary>
-
 ![img1](screen-shot/b1.png)
-![img1](screen-shot/b2.png)
-
-</details>
+![img2](screen-shot/b2.png)
+![img3](screen-shot/b3.png)
+![img4](screen-shot/b4.png)
+![img5](screen-shot/b5.png)
+![img6](screen-shot/b6.png)
 
 ---
 
@@ -122,24 +121,24 @@ Variables de entorno:
 Todas las respuestas llevan CORS `Access-Control-Allow-Origin: *` (no usar
 `withCredentials` desde el frontend). Preflight `OPTIONS` → 204.
 
-| Método | Ruta              | Descripción                                                                       |
-| ------ | ----------------- | --------------------------------------------------------------------------------- |
-| GET    | `/status`         | Estado del proceso: `{ status, pid, startedAt, url, error }`.                     |
-| POST   | `/start`          | Inicia `llama-server` manual. Body `{ script }`. 409 si ya hay uno corriendo.     |
-| POST   | `/stop`           | Detiene el servidor: SIGTERM (SIGKILL tras 8s si no muere).                       |
-| GET    | `/logs?since=N`   | Logs incrementales desde el cursor `N`: `{ entries, cursor }`.                    |
-| POST   | `/logs/clear`     | Vacía el buffer de logs en memoria.                                               |
-| GET    | `/gpu`            | Métricas en vivo: `{ gpus: GpuInfo[], ram: RamInfo }` (NVIDIA + AMD + RAM).       |
-| POST   | `/benchmark`      | Ejecuta el benchmark completo. 409 si ya hay benchmark o servidor manual activo.  |
-| POST   | `/benchmark/stop` | Aborta el benchmark en curso vía `AbortController`. 404 si no hay.                |
-| GET    | `/script-default` | Script por defecto guardado (texto plano). 404 si no existe.                      |
-| POST   | `/script-default` | Guarda `{ script }`.                                                              |
-| GET    | `/prompt-default` | Prompt por defecto (texto plano); si no existe, devuelve el built-in (nunca 404). |
-| POST   | `/prompt-default` | Guarda `{ prompt }`.                                                              |
-| GET    | `/history`        | `{ results: BenchmarkResult[] }` (máx 200, drop oldest).                          |
-| DELETE | `/history`        | Borra todo el historial.                                                          |
-| DELETE | `/history/:id`    | Borra un resultado por id (URL-encoded).                                          |
-| PATCH  | `/history/:id`    | Actualiza la calificación (1-5 estrellas). Body `{ rating }`.                    |
+| Método | Ruta              | Descripción                                                                                              |
+| ------ | ----------------- | -------------------------------------------------------------------------------------------------------- |
+| GET    | `/status`         | Estado del proceso: `{ status, pid, startedAt, url, error }`.                                            |
+| POST   | `/start`          | Inicia `llama-server` manual. Body `{ script }`. 409 si ya hay uno corriendo.                            |
+| POST   | `/stop`           | Detiene el servidor: SIGTERM (SIGKILL tras 8s si no muere).                                              |
+| GET    | `/logs?since=N`   | Logs incrementales desde el cursor `N`: `{ entries, cursor }`.                                           |
+| POST   | `/logs/clear`     | Vacía el buffer de logs en memoria.                                                                      |
+| GET    | `/gpu`            | Métricas en vivo: `{ gpus: GpuInfo[], ram: RamInfo }` (NVIDIA + AMD + RAM).                              |
+| POST   | `/benchmark`      | Ejecuta el benchmark completo. 409 si ya hay benchmark o servidor manual activo.                         |
+| POST   | `/benchmark/stop` | Aborta el benchmark en curso vía `AbortController`. 404 si no hay.                                       |
+| GET    | `/script-default` | Script por defecto guardado (texto plano). 404 si no existe.                                             |
+| POST   | `/script-default` | Guarda `{ script }`.                                                                                     |
+| GET    | `/prompt-default` | Prompt por defecto (texto plano); si no existe, devuelve el built-in (nunca 404).                        |
+| POST   | `/prompt-default` | Guarda `{ prompt }`.                                                                                     |
+| GET    | `/history`        | `{ results: BenchmarkResult[] }` (máx 200, drop oldest).                                                 |
+| DELETE | `/history`        | Borra todo el historial.                                                                                 |
+| DELETE | `/history/:id`    | Borra un resultado por id (URL-encoded).                                                                 |
+| PATCH  | `/history/:id`    | Actualiza la calificación (1-5 estrellas). Body `{ rating }`.                                            |
 | POST   | `/estimate`       | Optimizador: devices + metadatos del modelo + heurística de VRAM. Body `{ script, params?, priority? }`. |
 
 **Body de `POST /benchmark`:**
@@ -368,24 +367,24 @@ abrir es `POST /estimate` (que ejecuta `--list-devices` y resuelve el archivo).
 Servidor HTTP modular sin frameworks. `server.ts` es el entry point; el router
 despacha la API JSON a los módulos. **No sirve archivos estáticos**.
 
-| Módulo              | Responsabilidad                                                                   |
-| ------------------- | --------------------------------------------------------------------------------- |
-| `server.ts`         | Entry point: bootstrap, `Bun.serve`, shutdown handlers.                           |
-| `config.ts`         | Constantes de entorno y paths (`PORT`, `DATA_DIR`, `HISTORY_FILE`, caps).         |
-| `state.ts`          | Estado global mutable (`managed`, `status`, `logBuffer`, …) + setters.            |
-| `types.ts`          | Interfaces del dominio (`BenchmarkResult`, `GpuInfo`, `ParsedScript`, …).         |
-| `logs.ts`           | Buffer circular de logs (`pushLog`, `systemLog`).                                 |
-| `script-parser.ts`  | Tokenizado/parseo del script (`tokenizeScript`, `parseScript`, `flagValue`).      |
-| `server-manager.ts` | Gestión del proceso (`startServer`, `stopServer`, `urlFor`, ready/exit).          |
-| `gpu.ts`            | Métricas GPU NVIDIA (`nvidia-smi`) + AMD (sysfs) + `subtractGpuBaseline`.         |
-| `mem.ts`            | Métricas RAM (`/proc/meminfo`) + `subtractRamBaseline`.                           |
-| `devices.ts`        | Enumeración de devices del backend (`--list-devices`), detección de backend/VRAM. |
-| `metrics.ts`        | Parsing de métricas desde logs + health-check (`waitForServer`).                  |
-| `benchmark.ts`      | Orquestador del ciclo completo (`runBenchmark`, `finalize`).                      |
-| `history.ts`        | Persistencia JSON (`loadHistory`, `saveResult`, `deleteResult`, cap 200).         |
+| Módulo              | Responsabilidad                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `server.ts`         | Entry point: bootstrap, `Bun.serve`, shutdown handlers.                                |
+| `config.ts`         | Constantes de entorno y paths (`PORT`, `DATA_DIR`, `HISTORY_FILE`, caps).              |
+| `state.ts`          | Estado global mutable (`managed`, `status`, `logBuffer`, …) + setters.                 |
+| `types.ts`          | Interfaces del dominio (`BenchmarkResult`, `GpuInfo`, `ParsedScript`, …).              |
+| `logs.ts`           | Buffer circular de logs (`pushLog`, `systemLog`).                                      |
+| `script-parser.ts`  | Tokenizado/parseo del script (`tokenizeScript`, `parseScript`, `flagValue`).           |
+| `server-manager.ts` | Gestión del proceso (`startServer`, `stopServer`, `urlFor`, ready/exit).               |
+| `gpu.ts`            | Métricas GPU NVIDIA (`nvidia-smi`) + AMD (sysfs) + `subtractGpuBaseline`.              |
+| `mem.ts`            | Métricas RAM (`/proc/meminfo`) + `subtractRamBaseline`.                                |
+| `devices.ts`        | Enumeración de devices del backend (`--list-devices`), detección de backend/VRAM.      |
+| `metrics.ts`        | Parsing de métricas desde logs + health-check (`waitForServer`).                       |
+| `benchmark.ts`      | Orquestador del ciclo completo (`runBenchmark`, `finalize`).                           |
+| `history.ts`        | Persistencia JSON (`loadHistory`, `saveResult`, `deleteResult`, cap 200).              |
 | `optimizer.ts`      | Heurística de VRAM + parser del header GGUF + resolución de archivo (`-hf`/`--model`). |
-| `router.ts`         | HTTP handler: path matching manual + CORS (solo API, incluye `POST /estimate`).   |
-| `shutdown.ts`       | Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP) → mata el hijo.              |
+| `router.ts`         | HTTP handler: path matching manual + CORS (solo API, incluye `POST /estimate`).        |
+| `shutdown.ts`       | Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP) → mata el hijo.                   |
 
 ### Frontend (`front/`)
 
