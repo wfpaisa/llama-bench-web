@@ -260,7 +260,7 @@ td {
 /* Celda '#' (número de fila): al hacer hover muestra el script usado como
    tooltip. Cursor pointer para indicar que hay contenido interactivo. */
 .row-id {
-  width: 2.5rem;
+  width: 2rem;
   text-align: center;
   span {
     opacity: 0.5;
