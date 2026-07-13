@@ -16,28 +16,28 @@
           <p-button
             label="Formatear"
             icon="pi pi-replay"
-            [text]="true"
+            [outlined]="true"
             size="small"
             (onClick)="format()"
           />
           <p-button
             label="Guardar"
             icon="pi pi-save"
-            [text]="true"
+            [outlined]="true"
             size="small"
             (onClick)="saveDefault($event)"
           />
           <p-button
             label="Obtener guardado"
             icon="pi pi-refresh"
-            [text]="true"
+            [outlined]="true"
             size="small"
             (onClick)="restoreDefault($event)"
           />
           <p-button
             label="Optimizar"
             icon="pi pi-bolt"
-            [text]="true"
+            [outlined]="true"
             size="small"
             pTooltip="Precalcular parámetros según la VRAM disponible"
             (onClick)="store.openOptimizer()"
@@ -51,6 +51,8 @@
             severity="success"
             [disabled]="running() || store.benchRunning()"
             (onClick)="start()"
+            size="large"
+            [outlined]="true"
           />
           <p-button
             label="Stop"
@@ -58,6 +60,8 @@
             severity="danger"
             [disabled]="!running()"
             (onClick)="stop()"
+            size="large"
+            [outlined]="true"
           />
         </div>
       </div>
@@ -112,7 +116,7 @@
               icon="pi pi-expand"
               label="Pantalla completa"
               size="small"
-              [text]="true"
+              [outlined]="true"
               (onClick)="toggleFullscreen()"
               pTooltip="Expandir tabla a pantalla completa"
             />

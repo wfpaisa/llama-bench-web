@@ -5,6 +5,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   flex-wrap: wrap;
+  margin-bottom: 0.5rem;
 }
 
 .buttons {
@@ -254,7 +255,6 @@ td {
 /* Celda '#' (número de fila): al hacer hover muestra el script usado como
    tooltip. Cursor pointer para indicar que hay contenido interactivo. */
 .row-id {
-  cursor: help;
   span {
     background: rgba(255, 255, 255, 0.1);
     padding: 0.1rem 0.3rem;

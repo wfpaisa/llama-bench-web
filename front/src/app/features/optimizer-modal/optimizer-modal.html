@@ -500,6 +500,7 @@
           label="Default"
           icon="pi pi-replay"
           severity="secondary"
+          [outlined]="true"
           (onClick)="resetToDefaults()"
           pTooltip="Restablece todos los campos a los valores por defecto de llama-server"
         />
@@ -507,13 +508,14 @@
         <p-button
           label="Cancelar"
           severity="secondary"
-          [text]="true"
+          [outlined]="true"
           (onClick)="store.closeOptimizer()"
         />
         <p-button
           label="Aplicar al script"
           icon="pi pi-check"
           severity="success"
+          [outlined]="true"
           (onClick)="applyToScript()"
         />
       </div>

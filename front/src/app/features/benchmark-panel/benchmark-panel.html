@@ -20,21 +20,21 @@
     <div class="prompt-actions">
       <p-button
         label="Guardar"
-        [text]="true"
+        [outlined]="true"
         size="small"
         icon="pi pi-save"
         (onClick)="savePromptDefault($event)"
       />
       <p-button
         label="Obtener guardado"
-        [text]="true"
+        [outlined]="true"
         size="small"
         icon="pi pi-refresh"
         (onClick)="restorePromptDefault($event)"
       />
       <p-button
         label="Restablecer"
-        [text]="true"
+        [outlined]="true"
         size="small"
         icon="pi pi-undo"
         (onClick)="resetPrompt($event)"
@@ -76,11 +76,18 @@
         label="Benchmark"
         icon="pi pi-bolt"
         severity="success"
+        [outlined]="true"
         [disabled]="running() || store.benchRunning()"
         (onClick)="run()"
       />
       @if (store.benchRunning()) {
-        <p-button label="Detener" icon="pi pi-stop" severity="danger" (onClick)="stop()" />
+        <p-button
+          label="Detener"
+          icon="pi pi-stop"
+          severity="danger"
+          [outlined]="true"
+          (onClick)="stop()"
+        />
       }
       @if (store.benchState()) {
         <span class="muted small">{{ store.benchState() }}</span>

@@ -7,31 +7,34 @@
       <p-button
         [label]="maximizeLabel()"
         [icon]="maximizeIcon()"
-        severity="secondary"
-        [text]="true"
+        [outlined]="true"
         (onClick)="toggleMaximize()"
+        size="small"
       />
       <p-button
         label="Comparar"
         icon="pi pi-arrows-h"
-        [text]="true"
+        [outlined]="true"
         [disabled]="store.selectedCount() < 2"
         (onClick)="compare()"
+        size="small"
       />
       <p-button
         label="Chart"
         icon="pi pi-chart-bar"
-        [text]="true"
+        [outlined]="true"
         [disabled]="store.selectedCount() < 1"
         (onClick)="chart()"
+        size="small"
       />
       <p-button
         label="Eliminar seleccionados"
         icon="pi pi-trash"
         severity="danger"
-        [text]="true"
+        [outlined]="true"
         [disabled]="store.selectedCount() < 1"
         (onClick)="deleteSelected($event)"
+        size="small"
       />
     </div>
   </div>
@@ -106,6 +109,9 @@
           />
         </th>
         <th style="min-width: 2.5rem" title="Número de fila">#</th>
+        @if (colVisible('actions')) {
+          <th style="width: 5rem"></th>
+        }
         @if (colVisible('date')) {
           <th [pSortableColumn]="'timestamp'" title="Fecha y hora del benchmark">
             <div class="column-name">Fecha <p-sortIcon field="timestamp" /></div>
@@ -270,9 +276,6 @@
             <div class="column-name">RAM <p-sortIcon field="ramUsedMiB" /></div>
           </th>
         }
-        @if (colVisible('actions')) {
-          <th style="width: 5rem"></th>
-        }
       </tr>
     </ng-template>
 
@@ -286,17 +289,35 @@
             title="Seleccionar para comparar"
           />
         </td>
-        <td
-          class="num row-id"
-          [pTooltip]="r.config?.script || null"
-          tooltipPosition="right"
-          [autoHide]="false"
-          [hideDelay]="500"
-          tooltipStyleClass="script-tooltip"
-          [escape]="false"
-        >
+        <td class="num row-id">
           <span>{{ i + 1 }}</span>
         </td>
+        @if (colVisible('actions')) {
+          <td>
+            <div class="row-actions">
+              @if (hasScript(r.config)) {
+                <p-button
+                  icon="pi pi-code"
+                  [text]="true"
+                  size="small"
+                  [pTooltip]="r.config?.script || null"
+                  tooltipPosition="right"
+                  [autoHide]="false"
+                  [hideDelay]="500"
+                  tooltipStyleClass="script-tooltip"
+                  [escape]="false"
+                />
+                <p-button
+                  icon="pi pi-file-arrow-up"
+                  [text]="true"
+                  size="small"
+                  (onClick)="apply(r)"
+                  pTooltip="Cargar script en editor"
+                />
+              }
+            </div>
+          </td>
+        }
         @if (colVisible('date')) {
           <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
         }
@@ -433,28 +454,6 @@
         }
         @if (colVisible('ram')) {
           <td class="num">{{ r.ramUsedMiB | fmtGb: 2 }}<small class="stime">GB</small></td>
-        }
-        @if (colVisible('actions')) {
-          <td>
-            <div class="row-actions">
-              @if (hasScript(r.config)) {
-                <p-button
-                  icon="pi pi-arrow-up-left"
-                  [text]="true"
-                  size="small"
-                  (onClick)="apply(r)"
-                  pTooltip="Cargar script en editor"
-                />
-              }
-              <p-button
-                icon="pi pi-times"
-                [text]="true"
-                severity="danger"
-                size="small"
-                (onClick)="remove($event, r)"
-              />
-            </div>
-          </td>
         }
       </tr>
     </ng-template>
