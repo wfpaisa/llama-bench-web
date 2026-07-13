@@ -260,22 +260,14 @@ export class HistoryTable {
 
   // ── Modos de visualización de la card (estado efímero, no persistido) ──
 
-  /** Full width: la card sale del contenedor de 1400px y ocupa 100vw (en flujo). */
-  protected readonly fullWidth = signal(true);
   /** Maximizada: la card se vuelve overlay full-screen con scroll interno. */
   protected readonly maximized = signal(false);
 
-  protected readonly fullWidthLabel = computed(() =>
-    this.fullWidth() ? 'Ancho normal' : 'Full width',
-  );
   protected readonly maximizeLabel = computed(() => (this.maximized() ? 'Reducir' : 'Maximizar'));
   protected readonly maximizeIcon = computed(() =>
     this.maximized() ? 'pi pi-window-minimize' : 'pi pi-window-maximize',
   );
 
-  protected toggleFullWidth(): void {
-    this.fullWidth.update((v) => !v);
-  }
   protected toggleMaximize(): void {
     this.maximized.update((v) => !v);
   }

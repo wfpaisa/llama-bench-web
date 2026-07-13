@@ -269,15 +269,6 @@ td {
 
 /* ── Modos de visualización de la card ── */
 
-/* Full width: la card sale del contenedor de 1400px de .home y ocupa todo el
-   ancho de la ventana (full-bleed), pero permanece en su sitio del flujo.
-   Técnica de márgenes negativos basada en vw para no tocar el layout de .home. */
-:host ::ng-deep .card.is-fullwidth {
-  width: calc(100vw - 2rem);
-  margin-left: calc(50% - (50vw - 1rem));
-  margin-right: calc(50% - (50vw - 1rem));
-}
-
 /* Maximizada: overlay full-screen con scroll interno propio. La tabla
    scrollea dentro del overlay; el resto de la página queda intacto debajo. */
 :host ::ng-deep .card.is-maximized {
