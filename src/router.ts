@@ -319,17 +319,17 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
   }
 
-  // ── Calificación de un resultado (1-5 estrellas) ──
+  // ── Calificación de un resultado (1-10 estrellas) ──
   // PATCH /history/:id  body: { rating: number | null }
   if (path.startsWith('/history/') && req.method === 'PATCH') {
     const id = decodeURIComponent(path.slice('/history/'.length))
     try {
       const body = await req.json()
       const rating = body?.rating
-      // null explícito = "sin calificar"; number entre 0 y 5 (0 = sin calificar).
+      // null explícito = "sin calificar"; number entre 0 y 10 (0 = sin calificar).
       const normalized = rating == null ? null : typeof rating === 'number' && Number.isFinite(rating) ? rating : Number(rating)
-      if (normalized !== null && (typeof normalized !== 'number' || normalized < 0 || normalized > 5)) {
-        return json({ ok: false, error: 'rating debe estar entre 0 y 5.' }, 400)
+      if (normalized !== null && (typeof normalized !== 'number' || normalized < 0 || normalized > 10)) {
+        return json({ ok: false, error: 'rating debe estar entre 0 y 10.' }, 400)
       }
       const ok = await setRating(id, normalized)
       if (!ok) return json({ ok: false, error: 'Resultado no encontrado.' }, 404)

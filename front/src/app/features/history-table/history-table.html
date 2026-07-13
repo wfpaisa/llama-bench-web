@@ -122,7 +122,7 @@
           <th
             [pSortableColumn]="'rating'"
             style="min-width: 8rem"
-            title="Calificación (1-5 estrellas). Clic para ordenar."
+            title="Calificación (1-10 estrellas). Clic para ordenar."
           >
             <div class="column-name">★ <p-sortIcon field="rating" /></div>
           </th>
@@ -310,7 +310,7 @@
           <td class="rating-cell">
             <p-rating
               [ngModel]="r.rating ?? 0"
-              [stars]="5"
+              [stars]="10"
               (ngModelChange)="onRatingChange(r, $event)"
             />
           </td>

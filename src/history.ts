@@ -50,8 +50,8 @@ export async function setRating(id: string, rating: number | null): Promise<bool
   const all = await loadHistory()
   const idx = all.findIndex((r) => r.id === id)
   if (idx === -1) return false
-  // Validar rango 1-5 (o null para "sin calificar").
-  const valid = rating == null || (Number.isFinite(rating) && rating >= 0 && rating <= 5)
+  // Validar rango 1-10 (o null para "sin calificar").
+  const valid = rating == null || (Number.isFinite(rating) && rating >= 0 && rating <= 10)
   if (!valid) return false
   all[idx] = { ...all[idx], rating: rating ?? null }
   await writeFile(HISTORY_FILE, JSON.stringify(all, null, 2))
