@@ -70,7 +70,7 @@
         [value]="flagsList()"
         dataKey="long"
         [showGridlines]="true"
-        [globalFilterFields]="['name', 'long', 'short', 'category']"
+        [globalFilterFields]="['name', 'long', 'short', 'category', 'description', 'originalDescription']"
         [scrollable]="true"
         scrollHeight="30rem"
         showGridlines
@@ -115,16 +115,15 @@
         <ng-template #header>
           <tr>
             <th style="width: 3rem"></th>
-            <th style="width: 3rem"></th>
-            <th style="min-width: 12rem">
+            <th style="min-width: 5rem">
               <div class="th-filter">
-                Nombre
+                Corta
                 <p-columnFilter
                   type="text"
-                  field="name"
+                  field="short"
                   display="menu"
-                  placeholder="Nombre…"
-                  ariaLabel="Filtrar por nombre"
+                  placeholder="-c"
+                  ariaLabel="Filtrar por flag corta"
                 />
               </div>
             </th>
@@ -140,15 +139,39 @@
                 />
               </div>
             </th>
-            <th style="min-width: 5rem">
+            <th style="min-width: 12rem">
               <div class="th-filter">
-                Corta
+                Nombre
                 <p-columnFilter
                   type="text"
-                  field="short"
+                  field="name"
                   display="menu"
-                  placeholder="-c"
-                  ariaLabel="Filtrar por flag corta"
+                  placeholder="Nombre…"
+                  ariaLabel="Filtrar por nombre"
+                />
+              </div>
+            </th>
+            <th style="min-width: 16rem">
+              <div class="th-filter">
+                ¿Para qué sirve?
+                <p-columnFilter
+                  type="text"
+                  field="description"
+                  display="menu"
+                  placeholder="Descripción…"
+                  ariaLabel="Filtrar por descripción"
+                />
+              </div>
+            </th>
+            <th style="min-width: 16rem">
+              <div class="th-filter">
+                Texto original (EN)
+                <p-columnFilter
+                  type="text"
+                  field="originalDescription"
+                  display="menu"
+                  placeholder="Original…"
+                  ariaLabel="Filtrar por texto original"
                 />
               </div>
             </th>
@@ -161,7 +184,7 @@
             (click)="toggleCategory(f.category)"
             [class.collapsed]="!isCategoryExpanded(f.category)"
           >
-            <td colspan="5">
+            <td colspan="6">
               <i
                 class="pi"
                 [class.pi-chevron-down]="isCategoryExpanded(f.category)"
@@ -188,14 +211,16 @@
                 }
               </td>
 
-              <td class="cell-actions">
-                <p-button
-                  icon="pi pi-info-circle"
-                  [text]="true"
-                  size="small"
-                  pTooltip="Info"
-                  (onClick)="openInfo(f)"
-                />
+              <td class="cell-code">
+                @if (f.short) {
+                  <code>{{ f.short }}</code>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+
+              <td class="cell-code">
+                <code>{{ f.long }}</code>
               </td>
 
               <td class="cell-name">
@@ -208,12 +233,12 @@
                   <div class="flag-default muted">switch</div>
                 }
               </td>
-              <td class="cell-code">
-                <code>{{ f.long }}</code>
-              </td>
-              <td class="cell-code">
-                @if (f.short) {
-                  <code>{{ f.short }}</code>
+
+              <td class="cell-desc">{{ f.description }}</td>
+
+              <td class="cell-original">
+                @if (f.originalDescription) {
+                  {{ f.originalDescription }}
                 } @else {
                   <span class="muted">—</span>
                 }
@@ -224,7 +249,7 @@
 
         <ng-template #emptymessage>
           <tr>
-            <td colspan="5" class="empty muted">Ningún flag coincide con el filtro.</td>
+            <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -247,7 +272,7 @@
     [value]="flagsList()"
     dataKey="long"
     [showGridlines]="true"
-    [globalFilterFields]="['name', 'long', 'short', 'category']"
+    [globalFilterFields]="['name', 'long', 'short', 'category', 'description', 'originalDescription']"
     [scrollable]="true"
     scrollHeight="100%"
     size="small"
@@ -257,16 +282,15 @@
     <ng-template #header>
       <tr>
         <th style="width: 3rem"></th>
-        <th style="width: 3rem"></th>
-        <th style="min-width: 12rem">
+        <th style="min-width: 5rem">
           <div class="th-filter">
-            Nombre
+            Corta
             <p-columnFilter
               type="text"
-              field="name"
+              field="short"
               display="menu"
-              placeholder="Nombre…"
-              ariaLabel="Filtrar por nombre"
+              placeholder="-c"
+              ariaLabel="Filtrar por flag corta"
             />
           </div>
         </th>
@@ -282,15 +306,39 @@
             />
           </div>
         </th>
-        <th style="min-width: 5rem">
+        <th style="min-width: 12rem">
           <div class="th-filter">
-            Corta
+            Nombre
             <p-columnFilter
               type="text"
-              field="short"
+              field="name"
               display="menu"
-              placeholder="-c"
-              ariaLabel="Filtrar por flag corta"
+              placeholder="Nombre…"
+              ariaLabel="Filtrar por nombre"
+            />
+          </div>
+        </th>
+        <th style="min-width: 16rem">
+          <div class="th-filter">
+            ¿Para qué sirve?
+            <p-columnFilter
+              type="text"
+              field="description"
+              display="menu"
+              placeholder="Descripción…"
+              ariaLabel="Filtrar por descripción"
+            />
+          </div>
+        </th>
+        <th style="min-width: 16rem">
+          <div class="th-filter">
+            Texto original (EN)
+            <p-columnFilter
+              type="text"
+              field="originalDescription"
+              display="menu"
+              placeholder="Original…"
+              ariaLabel="Filtrar por texto original"
             />
           </div>
         </th>
@@ -303,7 +351,7 @@
         (click)="toggleCategory(f.category)"
         [class.collapsed]="!isCategoryExpanded(f.category)"
       >
-        <td colspan="5">
+        <td colspan="6">
           <i
             class="pi"
             [class.pi-chevron-down]="isCategoryExpanded(f.category)"
@@ -330,14 +378,16 @@
             }
           </td>
 
-          <td class="cell-actions">
-            <p-button
-              icon="pi pi-info-circle"
-              [text]="true"
-              size="small"
-              pTooltip="Info"
-              (onClick)="openInfo(f)"
-            />
+          <td class="cell-code">
+            @if (f.short) {
+              <code>{{ f.short }}</code>
+            } @else {
+              <span class="muted">—</span>
+            }
+          </td>
+
+          <td class="cell-code">
+            <code>{{ f.long }}</code>
           </td>
 
           <td class="cell-name">
@@ -350,12 +400,12 @@
               <div class="flag-default muted">switch</div>
             }
           </td>
-          <td class="cell-code">
-            <code>{{ f.long }}</code>
-          </td>
-          <td class="cell-code">
-            @if (f.short) {
-              <code>{{ f.short }}</code>
+
+          <td class="cell-desc">{{ f.description }}</td>
+
+          <td class="cell-original">
+            @if (f.originalDescription) {
+              {{ f.originalDescription }}
             } @else {
               <span class="muted">—</span>
             }
@@ -366,40 +416,8 @@
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="5" class="empty muted">Ningún flag coincide con el filtro.</td>
+        <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
       </tr>
     </ng-template>
   </p-table>
-</p-dialog>
-
-<!-- Diálogo de descripción de un flag -->
-<p-dialog
-  [header]="infoFlag()?.name ?? ''"
-  [(visible)]="infoVisible"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [style]="{ width: '48rem' }"
->
-  @if (infoFlag(); as f) {
-    <div class="info-body">
-      <div class="info-codes">
-        <code>{{ f.long }}</code>
-        @if (f.short) {
-          <code class="muted">{{ f.short }}</code>
-        }
-        @if (f.aliases?.length) {
-          <span class="muted">{{ f.aliases.join(', ') }}</span>
-        }
-      </div>
-      <div class="info-default">
-        @if (f.defaultValue) {
-          Valor por defecto: <code>{{ f.defaultValue }}</code>
-        } @else {
-          <span class="muted">Switch (sin valor)</span>
-        }
-      </div>
-      <p class="info-desc">{{ f.description }}</p>
-    </div>
-  }
 </p-dialog>

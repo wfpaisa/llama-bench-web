@@ -62,13 +62,10 @@
   opacity: 0.65;
 }
 .small {
-  font-size: 0.78rem;
 }
 
 /* Header de columna: etiqueta + disparador de filtro en línea. */
 th {
-  font-size: 0.85rem;
-
   .th-filter {
     display: flex;
     align-items: center;
@@ -90,12 +87,11 @@ th {
   td {
     background-color: var(--p-surface-800, #1f2937);
     font-weight: 600;
-    font-size: 0.85rem;
     padding: 0.5rem 0.65rem;
 
     > i.pi {
       margin-right: 0.5rem;
-      font-size: 0.75rem;
+
       opacity: 0.8;
     }
   }
@@ -108,7 +104,7 @@ th {
     margin-left: 0.5rem;
     padding: 0 0.4rem;
     border-radius: 0.4rem;
-    font-size: 0.7rem;
+
     font-weight: 500;
     background-color: rgba(255, 255, 255, 0.1);
     color: var(--p-text-muted-color, inherit);
@@ -121,11 +117,9 @@ th {
 
 .flag-name {
   font-weight: 500;
-  font-size: 0.85rem;
 }
 
 .flag-default {
-  font-size: 0.7rem;
   margin-top: 0.1rem;
 
   code {
@@ -135,8 +129,19 @@ th {
 
 .cell-code code {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
   white-space: nowrap;
+}
+
+.cell-desc {
+  line-height: 1.45;
+  max-width: 28rem;
+}
+
+.cell-original {
+  font-style: italic;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  max-width: 28rem;
 }
 
 .cell-actions {
@@ -148,37 +153,4 @@ th {
   text-align: center;
   padding: 1.5rem;
   opacity: 0.7;
-}
-
-/* ── Diálogo de info ── */
-
-.info-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.info-codes {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  align-items: center;
-
-  code {
-    font-family: var(--font-mono);
-  }
-}
-
-.info-default {
-  font-size: 0.85rem;
-
-  code {
-    font-family: var(--font-mono);
-  }
-}
-
-.info-desc {
-  margin: 0;
-  line-height: 1.55;
-  font-size: 0.9rem;
 }

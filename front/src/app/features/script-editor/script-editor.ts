@@ -143,10 +143,6 @@ export class ScriptEditor {
     return present;
   });
 
-  /** Flag seleccionado para mostrar en el diálogo de info. */
-  protected readonly infoFlag = signal<LlamaFlag | null>(null);
-  protected readonly infoVisible = signal(false);
-
   /** Visibilidad del diálogo fullscreen de la tabla de flags. */
   protected readonly fullscreenVisible = signal(false);
   protected toggleFullscreen(): void {
@@ -195,12 +191,6 @@ export class ScriptEditor {
     this.search.set('');
     this.collapsedCategories.set(new Set());
     this.table()?.clear();
-  }
-
-  /** Abre el diálogo de info con la descripción del flag. */
-  openInfo(f: LlamaFlag): void {
-    this.infoFlag.set(f);
-    this.infoVisible.set(true);
   }
 
   /** Inserta el flag en el script actual (no lo pisa si ya existe). */
