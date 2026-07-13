@@ -333,13 +333,21 @@
         @if (colVisible('model')) {
           <td>
             <span class="model-cell" [title]="r.config?.model ?? ''">
+              @if (parsed(r.config?.model); as p) {
+                @if (p.org) {
+                  <span class="model-org">{{ p.org }}/</span>
+                }
+              }
               <span class="model-name">{{ modelBaseName(r.config?.model) }}</span>
               @if (parsed(r.config?.model); as p) {
                 @if (p.size) {
                   <p-tag [value]="p.size" severity="info" />
                 }
+                @for (tag of p.tags; track tag) {
+                  <p-tag [value]="tag" severity="secondary" />
+                }
                 @if (p.quant) {
-                  <p-tag [value]="p.quant" severity="secondary" />
+                  <p-tag [value]="p.quant" />
                 }
                 @if (p.mtp) {
                   <p-tag value="MTP" severity="warn" />
@@ -384,20 +392,22 @@
           </td>
         }
         @if (colVisible('genTps')) {
-          <td class="num col-gen gen-tps-cell" [class.best]="isBestGen(r)">
-            <span>
-              @if (r.generationTokensPerSecond != null) {
-                {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
-              }
-            </span>
+          <td class="num col-gen" [class.best]="isBestGen(r)">
+            <div class="gen-tps-cell">
+              <span>
+                @if (r.generationTokensPerSecond != null) {
+                  {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
+                }
+              </span>
 
-            @if (r.config?.specDraftNMax != null) {
-              <p-tag
-                [value]="'MTP: ' + r.config.specDraftNMax"
-                severity="warn"
-                pTooltip="Drafts máximos por token (--spec-draft-n-max)"
-              />
-            }
+              @if (r.config?.specDraftNMax != null) {
+                <p-tag
+                  [value]="'MTP: ' + r.config.specDraftNMax"
+                  severity="warn"
+                  pTooltip="Drafts máximos por token (--spec-draft-n-max)"
+                />
+              }
+            </div>
           </td>
         }
         @if (colVisible('promptTokens')) {

@@ -294,3 +294,12 @@ pre {
   font-size: 0.75rem;
   line-height: 1.4;
 }
+
+.p-disabled,
+.p-component:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}

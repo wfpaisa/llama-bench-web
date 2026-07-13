@@ -318,12 +318,14 @@ export function formatScript(text: string): string {
   return parts.join(' \\\n');
 }
 
-/** Modelo partido en { base, size, quant, mtp } para los badges. */
+/** Modelo partido en { base, size, quant, mtp, tags, org } para los badges. */
 export interface ParsedModel {
   base: string;
   size: string | null;
   quant: string | null;
   mtp: boolean;
+  tags: string[];
+  org: string | null;
 }
 
 // Patrones para partir el nombre del modelo en piezas (badges).
@@ -331,14 +333,38 @@ const SIZE_RE = /^(\d+B(?:-A\d+B)?|MoE|A\d+B)$/i;
 const QUANT_RE = /^(UD-)?(I?Q\d[_A-Z0-9]*|IQ\d[_A-Z0-9]*|F16|F32|BF16|FP16|FP8|TQ\d[_A-Z0-9]*)$/i;
 
 /**
- * Parte un nombre de modelo en { base, size, quant, mtp }.
- *   "Qwen3.6-35B-A3B-UD-Q4_K_S" → { base:"Qwen3.6", size:"35B-A3B", quant:"UD-Q4_K_S", mtp:false }
- *   "Modelo-7B-MTP"             → { base:"Modelo", size:"7B", quant:null, mtp:true }
+ * Parte un nombre de modelo en { base, size, quant, mtp, tags }.
+ *   "Qwen3.6-35B-A3B-UD-Q4_K_S"       → { base:"Qwen3.6", size:"35B-A3B", quant:"UD-Q4_K_S", mtp:false, tags:[] }
+ *   "gemma-4-26B-A4B-it-qat-GGUF"     → { base:"gemma-4", size:"26B-A4B", quant:null, mtp:false, tags:["IT","QAT"] }
+ *   "Modelo-7B-MTP"                   → { base:"Modelo", size:"7B", quant:null, mtp:true, tags:[] }
  */
+// Sufijos que se reconocen como tags del modelo (no son quant ni ruido).
+const KNOWN_TAGS = new Set([
+  'it',
+  'sft',
+  'dpo',
+  'orpo',
+  'kto',
+  'qat',
+  'awq',
+  'gguf',
+  'lora',
+  'rlhf',
+  'rm',
+  'chat',
+  'instruct',
+  'pretrain',
+  'finetune',
+  'ft',
+  'flash',
+]);
+
 export function parseModel(m: string | null | undefined): ParsedModel | null {
   if (!m) return null;
   const full = modelBase(m) ?? m;
   const hasMtp = /MTP/i.test(full);
+  // Org: primer segmento antes de '/' (p.ej. "unsloth").
+  const org = m.includes('/') ? m.split('/')[0] : null;
   // Sufijo de quant tras ':' (p.ej. "Qwen...:UD-Q4_K_S").
   let quant: string | null = null;
   let body = full;
@@ -364,7 +390,21 @@ export function parseModel(m: string | null | undefined): ParsedModel | null {
       break;
     }
   }
-  const baseEnd = sizeStart >= 0 ? sizeStart : 1;
+  // Determinar donde termina el base name.
+  let baseEnd: number;
+  if (sizeStart >= 0) {
+    baseEnd = sizeStart;
+  } else {
+    // Sin size: el base abarca hasta el primer tag/quant reconocido.
+    let firstNonBase = parts.length;
+    for (let i = 1; i < parts.length; i++) {
+      if (KNOWN_TAGS.has(parts[i].toLowerCase()) || QUANT_RE.test(parts[i])) {
+        firstNonBase = i;
+        break;
+      }
+    }
+    baseEnd = firstNonBase;
+  }
   const base = parts.slice(0, baseEnd).join('-') || body;
   // Quant por sufijo si no vino en ':'.
   if (!quant) {
@@ -375,7 +415,15 @@ export function parseModel(m: string | null | undefined): ParsedModel | null {
       }
     }
   }
-  return { base, size, quant, mtp: hasMtp };
+  // Extraer tags reconocidos entre size y quant.
+  const tags: string[] = [];
+  const tagStart = sizeEnd >= 0 ? sizeEnd + 1 : baseEnd;
+  for (let i = tagStart; i < parts.length; i++) {
+    if (KNOWN_TAGS.has(parts[i].toLowerCase())) {
+      tags.push(parts[i].toUpperCase());
+    }
+  }
+  return { base, size, quant, mtp: hasMtp, tags, org };
 }
 
 // Patrones que delatan un modelo MoE (Mixture of Experts):

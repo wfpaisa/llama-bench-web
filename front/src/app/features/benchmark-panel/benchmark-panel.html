@@ -79,6 +79,7 @@
         [outlined]="true"
         [disabled]="running() || store.benchRunning()"
         (onClick)="run()"
+        size="large"
       />
       @if (store.benchRunning()) {
         <p-button

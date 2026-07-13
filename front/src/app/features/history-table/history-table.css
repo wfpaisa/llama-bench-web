@@ -103,7 +103,7 @@
 
 /* Fila seleccionada. */
 :host ::ng-deep tr.selected td {
-  background: var(--p-primary-900) !important;
+  background: rgba(7, 48, 95, 0.4) !important;
 }
 
 /* Celda de modelo con tags. */
@@ -112,6 +112,11 @@
   align-items: center;
   gap: 0.25rem;
   flex-wrap: wrap;
+
+  .model-org {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
 
   .model-name {
     font-size: 0.85rem;
@@ -255,10 +260,10 @@ td {
 /* Celda '#' (número de fila): al hacer hover muestra el script usado como
    tooltip. Cursor pointer para indicar que hay contenido interactivo. */
 .row-id {
+  width: 2.5rem;
+  text-align: center;
   span {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.1rem 0.3rem;
-    border-radius: 0.25rem;
+    opacity: 0.5;
     font-size: 0.75rem;
   }
 }
