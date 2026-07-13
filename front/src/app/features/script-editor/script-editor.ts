@@ -14,35 +14,34 @@ import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { Table, TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { formatScript } from '../../core/utils/format';
-import { addFlagToScript, flagForms, LLAMA_FLAGS, LlamaFlag } from '../../core/data/llama-flags';
+import {
+  addFlagToScript,
+  flagForms,
+  FlagCategory,
+  LLAMA_FLAGS,
+  LlamaFlag,
+} from '../../core/data/llama-flags';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 
-/** Severidad de p-tag por categoría de flag (para diferenciarlas visualmente). */
-const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
-  común: 'info',
-  muestreo: 'success',
-  especulativo: 'warn',
-  servidor: null,
-};
+/** Orden establecido en que se muestran las categorías como row groups. */
+const CATEGORY_ORDER: FlagCategory[] = ['común', 'muestreo', 'especulativo', 'servidor'];
 
 /**
  * ScriptEditor: edición del script de llama-server (fuente de verdad).
  * Layout en dos columnas:
  *  - Columna UNO: CodeMirror (bash) con el script + acciones (formatear, default, play/stop).
- *  - Columna DOS: p-table con todas las flags conocidas, con búsqueda global
- *    (en el caption) + filtros por columna (multiselect para categoría, texto
- *    para nombre/flag larga/corta). Cada fila con botón "info" (abre diálogo con
- *    descripción) y "agregar" (inserta el flag en el script). El filtrado lo
- *    hace PrimeNG nativamente (p-columnFilter + filterGlobal).
+ *  - Columna DOS: p-table con todas las flags conocidas, agrupadas por categoría
+ *    (rowGroupMode subheader expandible). Búsqueda global en el caption + filtros
+ *    por columna (texto para nombre/flag larga/corta). Cada fila con botón "info"
+ *    (abre diálogo con descripción) y "agregar" (inserta el flag en el script).
+ *    El filtrado lo hace PrimeNG nativamente (p-columnFilter + filterGlobal).
  */
 @Component({
   selector: 'app-script-editor',
@@ -55,9 +54,7 @@ const CATEGORY_SEVERITY: Record<string, 'info' | 'success' | 'warn' | null> = {
     InputTextModule,
     IconFieldModule,
     InputIconModule,
-    MultiSelectModule,
     TableModule,
-    TagModule,
     InputGroupModule,
     InputGroupAddonModule,
     CodeEditor,
@@ -81,18 +78,50 @@ export class ScriptEditor {
   /** Referencia a la p-table para poder limpiar filtros / buscar globalmente. */
   protected readonly table = viewChild<Table>('dt');
 
-  /** Catálogo completo de flags mostrado en la tabla. */
-  protected readonly flagsList = signal<LlamaFlag[]>(LLAMA_FLAGS);
+  /**
+   * Catálogo completo de flags mostrado en la tabla, ordenado por categoría.
+   * El orden es requisito de `rowGroupMode="subheader"` para que las filas de un
+   * mismo grupo queden contiguas.
+   */
+  protected readonly flagsList = computed<LlamaFlag[]>(() => {
+    const rank = new Map<FlagCategory, number>();
+    CATEGORY_ORDER.forEach((c, i) => rank.set(c, i));
+    return [...LLAMA_FLAGS].sort(
+      (a, b) => (rank.get(a.category) ?? 99) - (rank.get(b.category) ?? 99),
+    );
+  });
 
   /** Texto de la búsqueda global (caption). */
   protected readonly search = signal('');
 
-  /** Categorías únicas para el multiselect de filtro (orden del catálogo). */
-  protected readonly categoryOptions = computed<string[]>(() => {
-    const seen = new Set<string>();
-    for (const f of this.flagsList()) seen.add(f.category);
-    return [...seen];
-  });
+  /** Categorías con su grupo colapsado (oculto) en la tabla. Vacío = todo expandido. */
+  protected readonly collapsedCategories = signal<Set<FlagCategory>>(
+    new Set(CATEGORY_ORDER),
+  );
+
+  /**
+   * Cuando hay búsqueda activa, ignoramos el estado colapsado para que los
+   * resultados siempre sean visibles (si no, quedarían ocultos tras un header
+   * plegado y el usuario no los vería).
+   */
+  protected readonly isCategoryExpanded = (cat: FlagCategory): boolean => {
+    if (this.search().trim()) return true;
+    return !this.collapsedCategories().has(cat);
+  };
+
+  /** Cuenta cuántos flags hay por categoría (badge del group header). */
+  protected readonly categoryCount = (cat: FlagCategory): number =>
+    this.flagsList().filter((f) => f.category === cat).length;
+
+  /** Alterna la expansión de un grupo de categoría. */
+  toggleCategory(cat: FlagCategory): void {
+    this.collapsedCategories.update((set) => {
+      const next = new Set(set);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
 
   /**
    * Set de flags (por flag larga) que ya están presentes en el script actual.
@@ -161,14 +190,10 @@ export class ScriptEditor {
 
   // ── Catálogo de flags ──
 
-  /** Severidad de p-tag para una categoría de flag. */
-  getCategorySeverity(category: string): 'info' | 'success' | 'warn' | null {
-    return CATEGORY_SEVERITY[category] ?? null;
-  }
-
-  /** Limpia todos los filtros de la tabla (columnas + búsqueda global). */
+  /** Limpia todos los filtros de la tabla (búsqueda global) y restaura expansión. */
   clearFlags(): void {
     this.search.set('');
+    this.collapsedCategories.set(new Set());
     this.table()?.clear();
   }
 

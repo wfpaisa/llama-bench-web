@@ -82,6 +82,39 @@ th {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* ── Row group header (categoría expandible) ── */
+:host ::ng-deep tr.flag-group-header {
+  cursor: pointer;
+  user-select: none;
+
+  td {
+    background-color: var(--p-surface-800, #1f2937);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.65rem;
+
+    > i.pi {
+      margin-right: 0.5rem;
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+  }
+
+  .flag-group-title {
+    text-transform: capitalize;
+  }
+
+  .flag-group-count {
+    margin-left: 0.5rem;
+    padding: 0 0.4rem;
+    border-radius: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--p-text-muted-color, inherit);
+  }
+}
+
 .cell-name {
   vertical-align: top;
 }

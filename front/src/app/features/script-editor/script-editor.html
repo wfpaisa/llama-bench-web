@@ -63,7 +63,7 @@
       </div>
     </div>
 
-    <!-- Columna DOS: tabla de flags -->
+    <!-- Columna DOS: tabla de flags (agrupada por categoría, expandible) -->
     <div class="col col-flags">
       <p-table
         #dt
@@ -75,6 +75,8 @@
         scrollHeight="30rem"
         showGridlines
         size="small"
+        rowGroupMode="subheader"
+        groupRowsBy="category"
       >
         <ng-template #caption>
           <div class="flags-toolbar">
@@ -82,7 +84,6 @@
               <p-inputgroup-addon><i class="pi pi-search"></i></p-inputgroup-addon>
               <input
                 pInputText
-                placeholder="Vote"
                 placeholder="Buscar flags…"
                 [ngModel]="search()"
                 (ngModelChange)="search.set($event); dt.filterGlobal($event, 'contains')"
@@ -151,86 +152,79 @@
                 />
               </div>
             </th>
-            <th title="Categoría">
-              <div class="th-filter">
-                Cat
-                <p-columnFilter
-                  field="category"
-                  matchMode="in"
-                  display="menu"
-                  [showMatchModes]="false"
-                  [showOperator]="false"
-                  [showAddButton]="false"
-                >
-                  <ng-template #filter let-value let-filter="filterCallback">
-                    <p-multiselect
-                      [ngModel]="value"
-                      [options]="categoryOptions()"
-                      placeholder="Todas"
-                      (onChange)="filter($event.value)"
-                      style="min-width: 12rem"
-                      [panelStyle]="{ minWidth: '14rem' }"
-                    />
-                  </ng-template>
-                </p-columnFilter>
-              </div>
-            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template #groupheader let-f>
+          <tr
+            class="flag-group-header"
+            (click)="toggleCategory(f.category)"
+            [class.collapsed]="!isCategoryExpanded(f.category)"
+          >
+            <td colspan="5">
+              <i
+                class="pi"
+                [class.pi-chevron-down]="isCategoryExpanded(f.category)"
+                [class.pi-chevron-right]="!isCategoryExpanded(f.category)"
+              ></i>
+              <span class="flag-group-title">{{ f.category }}</span>
+              <span class="flag-group-count">{{ categoryCount(f.category) }}</span>
+            </td>
           </tr>
         </ng-template>
 
         <ng-template #body let-f>
-          <tr [class.present]="flagPresent().has(f.long)">
-            <td class="cell-actions">
-              @if (!flagPresent().has(f.long)) {
+          @if (isCategoryExpanded(f.category)) {
+            <tr [class.present]="flagPresent().has(f.long)">
+              <td class="cell-actions">
+                @if (!flagPresent().has(f.long)) {
+                  <p-button
+                    icon="pi pi-arrow-left"
+                    size="small"
+                    severity="success"
+                    [text]="true"
+                    (onClick)="addToScript(f)"
+                  />
+                }
+              </td>
+
+              <td class="cell-actions">
                 <p-button
-                  icon="pi pi-arrow-left"
-                  size="small"
-                  severity="success"
+                  icon="pi pi-info-circle"
                   [text]="true"
-                  (onClick)="addToScript(f)"
+                  size="small"
+                  pTooltip="Info"
+                  (onClick)="openInfo(f)"
                 />
-              }
-            </td>
+              </td>
 
-            <td class="cell-actions">
-              <p-button
-                icon="pi pi-info-circle"
-                [text]="true"
-                size="small"
-                pTooltip="Info"
-                (onClick)="openInfo(f)"
-              />
-            </td>
-
-            <td class="cell-name">
-              <div class="flag-name">{{ f.name }}</div>
-              @if (f.defaultValue) {
-                <div class="flag-default">
-                  default: <code>{{ f.defaultValue }}</code>
-                </div>
-              } @else {
-                <div class="flag-default muted">switch</div>
-              }
-            </td>
-            <td class="cell-code">
-              <code>{{ f.long }}</code>
-            </td>
-            <td class="cell-code">
-              @if (f.short) {
-                <code>{{ f.short }}</code>
-              } @else {
-                <span class="muted">—</span>
-              }
-            </td>
-            <td>
-              <p-tag [value]="f.category" [severity]="getCategorySeverity(f.category)" />
-            </td>
-          </tr>
+              <td class="cell-name">
+                <div class="flag-name">{{ f.name }}</div>
+                @if (f.defaultValue) {
+                  <div class="flag-default">
+                    default: <code>{{ f.defaultValue }}</code>
+                  </div>
+                } @else {
+                  <div class="flag-default muted">switch</div>
+                }
+              </td>
+              <td class="cell-code">
+                <code>{{ f.long }}</code>
+              </td>
+              <td class="cell-code">
+                @if (f.short) {
+                  <code>{{ f.short }}</code>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+            </tr>
+          }
         </ng-template>
 
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
+            <td colspan="5" class="empty muted">Ningún flag coincide con el filtro.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -257,6 +251,8 @@
     [scrollable]="true"
     scrollHeight="100%"
     size="small"
+    rowGroupMode="subheader"
+    groupRowsBy="category"
   >
     <ng-template #header>
       <tr>
@@ -298,86 +294,79 @@
             />
           </div>
         </th>
-        <th title="Categoría">
-          <div class="th-filter">
-            Cat
-            <p-columnFilter
-              field="category"
-              matchMode="in"
-              display="menu"
-              [showMatchModes]="false"
-              [showOperator]="false"
-              [showAddButton]="false"
-            >
-              <ng-template #filter let-value let-filter="filterCallback">
-                <p-multiselect
-                  [ngModel]="value"
-                  [options]="categoryOptions()"
-                  placeholder="Todas"
-                  (onChange)="filter($event.value)"
-                  style="min-width: 12rem"
-                  [panelStyle]="{ minWidth: '14rem' }"
-                />
-              </ng-template>
-            </p-columnFilter>
-          </div>
-        </th>
+      </tr>
+    </ng-template>
+
+    <ng-template #groupheader let-f>
+      <tr
+        class="flag-group-header"
+        (click)="toggleCategory(f.category)"
+        [class.collapsed]="!isCategoryExpanded(f.category)"
+      >
+        <td colspan="5">
+          <i
+            class="pi"
+            [class.pi-chevron-down]="isCategoryExpanded(f.category)"
+            [class.pi-chevron-right]="!isCategoryExpanded(f.category)"
+          ></i>
+          <span class="flag-group-title">{{ f.category }}</span>
+          <span class="flag-group-count">{{ categoryCount(f.category) }}</span>
+        </td>
       </tr>
     </ng-template>
 
     <ng-template #body let-f>
-      <tr [class.present]="flagPresent().has(f.long)">
-        <td class="cell-actions">
-          @if (!flagPresent().has(f.long)) {
+      @if (isCategoryExpanded(f.category)) {
+        <tr [class.present]="flagPresent().has(f.long)">
+          <td class="cell-actions">
+            @if (!flagPresent().has(f.long)) {
+              <p-button
+                icon="pi pi-arrow-left"
+                size="small"
+                severity="success"
+                [text]="true"
+                (onClick)="addToScript(f)"
+              />
+            }
+          </td>
+
+          <td class="cell-actions">
             <p-button
-              icon="pi pi-arrow-left"
-              size="small"
-              severity="success"
+              icon="pi pi-info-circle"
               [text]="true"
-              (onClick)="addToScript(f)"
+              size="small"
+              pTooltip="Info"
+              (onClick)="openInfo(f)"
             />
-          }
-        </td>
+          </td>
 
-        <td class="cell-actions">
-          <p-button
-            icon="pi pi-info-circle"
-            [text]="true"
-            size="small"
-            pTooltip="Info"
-            (onClick)="openInfo(f)"
-          />
-        </td>
-
-        <td class="cell-name">
-          <div class="flag-name">{{ f.name }}</div>
-          @if (f.defaultValue) {
-            <div class="flag-default">
-              default: <code>{{ f.defaultValue }}</code>
-            </div>
-          } @else {
-            <div class="flag-default muted">switch</div>
-          }
-        </td>
-        <td class="cell-code">
-          <code>{{ f.long }}</code>
-        </td>
-        <td class="cell-code">
-          @if (f.short) {
-            <code>{{ f.short }}</code>
-          } @else {
-            <span class="muted">—</span>
-          }
-        </td>
-        <td>
-          <p-tag [value]="f.category" [severity]="getCategorySeverity(f.category)" />
-        </td>
-      </tr>
+          <td class="cell-name">
+            <div class="flag-name">{{ f.name }}</div>
+            @if (f.defaultValue) {
+              <div class="flag-default">
+                default: <code>{{ f.defaultValue }}</code>
+              </div>
+            } @else {
+              <div class="flag-default muted">switch</div>
+            }
+          </td>
+          <td class="cell-code">
+            <code>{{ f.long }}</code>
+          </td>
+          <td class="cell-code">
+            @if (f.short) {
+              <code>{{ f.short }}</code>
+            } @else {
+              <span class="muted">—</span>
+            }
+          </td>
+        </tr>
+      }
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
+        <td colspan="5" class="empty muted">Ningún flag coincide con el filtro.</td>
       </tr>
     </ng-template>
   </p-table>
