@@ -70,7 +70,14 @@
         [value]="flagsList()"
         dataKey="long"
         [showGridlines]="true"
-        [globalFilterFields]="['name', 'long', 'short', 'category', 'description', 'originalDescription']"
+        [globalFilterFields]="[
+          'name',
+          'long',
+          'short',
+          'category',
+          'description',
+          'originalDescription',
+        ]"
         [scrollable]="true"
         scrollHeight="30rem"
         showGridlines
@@ -264,7 +271,7 @@
   [draggable]="true"
   [resizable]="true"
   header="Catálogo de flags — {{ flagsList().length }} flags"
-  [style]="{ width: '90vw', maxWidth: '80rem', height: '90vh' }"
+  [style]="{ width: '90vw', maxWidth: '120rem', height: '90vh' }"
   [maximizable]="true"
 >
   <p-table
@@ -272,7 +279,14 @@
     [value]="flagsList()"
     dataKey="long"
     [showGridlines]="true"
-    [globalFilterFields]="['name', 'long', 'short', 'category', 'description', 'originalDescription']"
+    [globalFilterFields]="[
+      'name',
+      'long',
+      'short',
+      'category',
+      'description',
+      'originalDescription',
+    ]"
     [scrollable]="true"
     scrollHeight="100%"
     size="small"

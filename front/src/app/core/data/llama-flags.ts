@@ -3,10 +3,10 @@
 // nombre legible, flag larga (forma canónica), flag corta (si existe), aliases
 // extra, valor por defecto (tal cual lo muestra el help), descripción en español
 // y categoría (para el filtro). Las descripciones explican para qué sirve, qué
-// mejora y qué efecto tiene sobre el servidor / el rendimiento.
+// mejora y qué efecto tiene sobre el Servidor / el rendimiento.
 
 /** Categorías de flags (para el filtro por grupo). */
-export type FlagCategory = 'común' | 'muestreo' | 'especulativo' | 'servidor';
+export type FlagCategory = 'Común' | 'Muestreo' | 'Especulativo' | 'Servidor';
 
 /** Una entrada del catálogo de flags. */
 export interface LlamaFlag {
@@ -32,10 +32,10 @@ export interface LlamaFlag {
  * Catálogo completo de flags de `llama-server`, agrupado por categoría.
  * Ordenado dentro de cada grupo de lo más usado a lo más específico.
  *
- * La categoría "común" agrupa los flags que aparecen en casi todos los scripts
- * reales (modelo, capas, contexto, batch, flash-attn, muestreo básico, jinja,
- * métricas, speculative decoding, etc.). Las categorías "muestreo",
- * "especulativo" y "servidor" contienen el resto de flags más específicas.
+ * La categoría "Común" agrupa los flags que aparecen en casi todos los scripts
+ * reales (modelo, capas, contexto, batch, flash-attn, Muestreo básico, jinja,
+ * métricas, speculative decoding, etc.). Las categorías "Muestreo",
+ * "Especulativo" y "Servidor" contienen el resto de flags más específicas.
  */
 export const LLAMA_FLAGS: LlamaFlag[] = [
   // ════════════════════ PARÁMETROS COMUNES ════════════════════
@@ -45,7 +45,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-m',
     defaultValue: null,
     originalDescription: 'model path to load',
-    category: 'común',
+    category: 'Común',
     description:
       'Ruta al archivo de modelo GGUF en disco a cargar en memoria. Es la forma tradicional de cargar modelos locales, alternativa a --hf-repo.',
   },
@@ -56,7 +56,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['-hfr'],
     defaultValue: null,
     originalDescription: 'Hugging Face model repository',
-    category: 'común',
+    category: 'Común',
     description:
       'Repositorio de Hugging Face del que descargar/usar el modelo (se cachea en ~/.cache/huggingface). Acepta sufijo de cuantización (p.ej. :Q4_K_M). Descarga el mmproj automáticamente si existe (usa --no-mmproj para evitarlo).',
   },
@@ -66,7 +66,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-hff',
     defaultValue: null,
     originalDescription: 'Hugging Face model file',
-    category: 'común',
+    category: 'Común',
     description:
       'Archivo concreto del repositorio de Hugging Face. Si se indica, sobreescribe la cuantización elegida en --hf-repo.',
   },
@@ -76,7 +76,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-hft',
     defaultValue: null,
     originalDescription: 'Hugging Face access token',
-    category: 'común',
+    category: 'Común',
     description:
       'Token de acceso de Hugging Face para repositorios privados o con rate-limit. Por defecto toma el valor de la variable de entorno HF_TOKEN.',
   },
@@ -86,7 +86,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-dr',
     defaultValue: null,
     originalDescription: 'Docker Hub model repository',
-    category: 'común',
+    category: 'Común',
     description:
       'Repositorio de Docker Hub con el modelo (formato [repo/]modelo[:quant], default ai/:latest). Alternativa a --hf-repo/--model.',
   },
@@ -96,7 +96,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-mu',
     defaultValue: null,
     originalDescription: 'model download url',
-    category: 'común',
+    category: 'Común',
     description: 'URL directa desde la que descargar el modelo (en vez de ruta local).',
   },
   {
@@ -106,7 +106,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--gpu-layers'],
     defaultValue: 'auto',
     originalDescription: 'max number of layers to store in VRAM',
-    category: 'común',
+    category: 'Común',
     description:
       'Cantidad de capas del modelo que se descargan a la VRAM. Puede ser un número exacto, "auto" o "all". Subir este valor mejora drásticamente la velocidad de inferencia (la GPU es mucho más rápida que la CPU) pero consume más VRAM.',
   },
@@ -116,7 +116,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-c',
     defaultValue: '0',
     originalDescription: 'size of the prompt context',
-    category: 'común',
+    category: 'Común',
     description:
       'Cantidad máxima de tokens del contexto (prompt + generación). 0 = tomado del modelo. Más contexto permite conversaciones/RAG más largos pero consume VRAM proporcionalmente (cache KV).',
   },
@@ -127,7 +127,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--predict'],
     defaultValue: '-1',
     originalDescription: 'number of tokens to predict',
-    category: 'común',
+    category: 'Común',
     description:
       'Número de tokens a generar en la respuesta. -1 = infinito (hasta EOS o límite de contexto). Útil para acotar la longitud máxima de salida.',
   },
@@ -137,7 +137,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-b',
     defaultValue: '2048',
     originalDescription: 'logical maximum batch size',
-    category: 'común',
+    category: 'Común',
     description:
       'Máximo tamaño de batch lógico para el procesamiento del prompt (prompt eval). Valores más grandes aceleran el procesamiento de prompts largos pero usan más memoria temporal.',
   },
@@ -147,7 +147,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ub',
     defaultValue: '512',
     originalDescription: 'physical maximum batch size',
-    category: 'común',
+    category: 'Común',
     description:
       'Máximo tamaño de batch físico enviado al backend de compute durante el prompt eval. Suele alinearse con -b o ser menor. Aumentar mejora el throughput del prompt eval si hay VRAM de sobra.',
   },
@@ -157,7 +157,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     originalDescription: 'number of tokens to keep from the initial prompt',
-    category: 'común',
+    category: 'Común',
     description:
       'Cantidad de tokens del prompt inicial que se conservan al hacer context-shift. 0 = ninguno, -1 = todos. Útil para preservar el system prompt en conversaciones largas.',
   },
@@ -167,7 +167,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-t',
     defaultValue: '-1',
     originalDescription: 'number of CPU threads to use during generation (default: -1)',
-    category: 'común',
+    category: 'Común',
     description:
       'Número de threads de CPU usados durante la generación. -1 = automático. Ideal = cantidad de núcleos físicos; excederlo suele bajar el rendimiento.',
   },
@@ -177,7 +177,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-tb',
     defaultValue: 'igual que --threads',
     originalDescription: 'number of threads to use during batch and prompt processing',
-    category: 'común',
+    category: 'Común',
     description:
       'Número de threads de CPU usados durante el procesamiento de batch y prompt. Puede diferir de --threads porque el batch tiene más paralelismo disponible.',
   },
@@ -187,7 +187,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     originalDescription: 'threads used to process HTTP requests',
-    category: 'común',
+    category: 'Común',
     description:
       'Número de threads dedicados a procesar las peticiones HTTP entrantes (-1 = automático).',
   },
@@ -197,7 +197,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-fa',
     defaultValue: 'auto',
     originalDescription: 'set Flash Attention use',
-    category: 'común',
+    category: 'Común',
     description:
       'Controla Flash Attention (on/off/auto). Mejora la velocidad y reduce el consumo de memoria de la atención, especialmente con contextos grandes. Muy recomendado cuando la GPU lo soporta.',
   },
@@ -207,7 +207,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ctk',
     defaultValue: 'f16',
     originalDescription: 'KV cache data type for K',
-    category: 'común',
+    category: 'Común',
     description:
       'Tipo de dato de la cache de claves (key). f16 es por defecto y de mayor calidad. Valores: f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1. Cuantizar reduce el consumo de VRAM con pérdida leve de calidad.',
   },
@@ -217,7 +217,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ctv',
     defaultValue: 'f16',
     originalDescription: 'KV cache data type for V',
-    category: 'común',
+    category: 'Común',
     description:
       'Tipo de dato de la cache de valores (value). Mismas opciones que -ctk. Cuantizar V suele perjudar más la calidad que K; combinar -ctk q8_0 -ctv q8_0 es un buen balance VRAM/calidad.',
   },
@@ -227,7 +227,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-dev',
     defaultValue: null,
     originalDescription: 'comma-separated list of devices to use for offloading',
-    category: 'común',
+    category: 'Común',
     description:
       'Lista de dispositivos (separados por coma) para offload, p.ej. CUDA0,Vulkan0. none = no hacer offload. Usa --list-devices para ver los disponibles.',
   },
@@ -237,7 +237,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'print list of available devices and exit',
-    category: 'común',
+    category: 'Común',
     description: 'Imprime la lista de dispositivos disponibles y termina.',
   },
   {
@@ -246,7 +246,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-sm',
     defaultValue: 'layer',
     originalDescription: 'how to split the model across multiple GPUs',
-    category: 'común',
+    category: 'Común',
     description:
       'Cómo dividir el modelo entre varias GPUs: none (una GPU), layer (por capas, default), row (por filas, paralelo) o tensor (experimental). layer suele dar el mejor balance para multi-GPU.',
   },
@@ -256,7 +256,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ts',
     defaultValue: null,
     originalDescription: 'fraction of model to offload to each GPU',
-    category: 'común',
+    category: 'Común',
     description:
       'Fracción del modelo que se reparte entre GPUs, lista separada por coma (p.ej. 3,1 = 75%/25%). Útil para distribuir un modelo grande entre GPUs de distinto tamaño.',
   },
@@ -266,7 +266,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-mg',
     defaultValue: '0',
     originalDescription: 'the GPU to use for the model',
-    category: 'común',
+    category: 'Común',
     description:
       'GPU usada para el modelo (con split-mode=none) o para resultados intermedios y KV (con split-mode=row).',
   },
@@ -276,7 +276,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-cmoe',
     defaultValue: null,
     originalDescription: 'keep all Mixture of Experts weights in the CPU',
-    category: 'común',
+    category: 'Común',
     description: 'Mantiene todos los pesos de Mixture of Experts (MoE) en la CPU en vez de la GPU.',
   },
   {
@@ -285,7 +285,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ncmoe',
     defaultValue: null,
     originalDescription: 'keep MoE weights of first N layers in CPU',
-    category: 'común',
+    category: 'Común',
     description: 'Mantiene los pesos MoE de las primeras N capas en la CPU (offload parcial).',
   },
   {
@@ -295,7 +295,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-mmap'],
     defaultValue: 'enabled',
     originalDescription: 'whether to memory-map model',
-    category: 'común',
+    category: 'Común',
     description:
       'Si se mapea el modelo en memoria (mmap). mmap reduce el uso de RAM y acelera el arranque; --no-mmap puede mejorar la latencia cuando sobra RAM.',
   },
@@ -305,7 +305,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'false',
     originalDescription: 'force system to keep model in RAM',
-    category: 'común',
+    category: 'Común',
     description:
       'Bloquea el modelo en RAM evitando swap (mejora la consistencia de latencia). Requiere permisos (RLIMIT_MEMLOCK / CAP_IPC_LOCK).',
   },
@@ -316,7 +316,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-log-prefix'],
     defaultValue: null,
     originalDescription: 'Enable prefix in log messages',
-    category: 'común',
+    category: 'Común',
     description: 'Habilita (o --no-log-prefix deshabilita) el prefijo en los mensajes de log.',
   },
   // ── Muestreo básico (presente en casi todos los scripts) ──
@@ -327,9 +327,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--temp'],
     defaultValue: '0.80',
     originalDescription: 'temperature',
-    category: 'común',
+    category: 'Común',
     description:
-      'Temperatura de muestreo. Valores altos = respuestas más creativas/aleatorias; valores bajos = más deterministas y enfocadas. Típico: 0.6-0.9.',
+      'Temperatura de Muestreo. Valores altos = respuestas más creativas/aleatorias; valores bajos = más deterministas y enfocadas. Típico: 0.6-0.9.',
   },
   {
     name: 'top-k',
@@ -337,7 +337,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '40',
     originalDescription: 'top-k sampling',
-    category: 'común',
+    category: 'Común',
     description: 'Muestreo top-k: considera solo los K tokens más probables (0 = deshabilitado).',
   },
   {
@@ -346,7 +346,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.95',
     originalDescription: 'top-p sampling',
-    category: 'común',
+    category: 'Común',
     description:
       'Muestreo nucleus: selecciona el conjunto mínimo de tokens cuya probabilidad acumulada supera p (1.0 = deshabilitado).',
   },
@@ -356,7 +356,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.05',
     originalDescription: 'min-p sampling',
-    category: 'común',
+    category: 'Común',
     description:
       'Descarta tokens con probabilidad menor a min-p · (prob del token más probable) (0.0 = off).',
   },
@@ -366,7 +366,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '1.00',
     originalDescription: 'penalize repeat sequence of tokens',
-    category: 'común',
+    category: 'Común',
     description:
       'Penaliza secuencias repetidas de tokens. >1 reduce repeticiones. 1.0 = deshabilitado. Típico: 1.1-1.3.',
   },
@@ -377,7 +377,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'none',
     originalDescription: 'types of speculative decoding to use',
-    category: 'común',
+    category: 'Común',
     description:
       'Lista (separada por coma) de tipos de speculative decoding: none, draft-simple, draft-eagle3, draft-mtp, ngram-simple, ngram-map-k, ngram-map-k4v, ngram-mod, ngram-cache.',
   },
@@ -388,7 +388,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--draft-max', '--draft', '--draft-n'],
     defaultValue: '3',
     originalDescription: 'number of tokens to draft for speculative decoding',
-    category: 'común',
+    category: 'Común',
     description:
       'Número máximo de tokens que el borrador propone por paso. Valores más altos pueden aumentar la aceleración si la tasa de aceptación es alta, pero suben el coste por paso.',
   },
@@ -400,7 +400,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-jinja'],
     defaultValue: 'enabled',
     originalDescription: 'whether to use jinja template engine for chat',
-    category: 'común',
+    category: 'Común',
     description:
       'Usa el motor de plantillas Jinja nativo del modelo. Habilita tool-calling y razonamiento avanzado siguiendo la plantilla Jinja del GGUF.',
   },
@@ -410,7 +410,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'sets additional params for the json template parser',
-    category: 'común',
+    category: 'Común',
     description: 'Parámetros extra para el parser de plantilla JSON (objeto JSON válido).',
   },
   {
@@ -419,7 +419,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     originalDescription: 'min chunk size to attempt reusing from the cache',
-    category: 'común',
+    category: 'Común',
     description:
       'Tamaño mínimo de chunk para reutilizar de la caché vía KV shifting (requiere prompt caching). 0 = deshabilitado.',
   },
@@ -430,7 +430,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-mmproj', '--no-mmproj-auto'],
     defaultValue: 'enabled',
     originalDescription: 'whether to use multimodal projector file automatically',
-    category: 'común',
+    category: 'Común',
     description:
       'Si se usa el proyector multimodal cuando está disponible (útil con -hf). --no-mmproj lo desactiva.',
   },
@@ -440,7 +440,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'disabled',
     originalDescription: 'enable prometheus compatible metrics endpoint',
-    category: 'común',
+    category: 'Común',
     description: 'Habilita el endpoint de métricas compatible con Prometheus.',
   },
 
@@ -452,7 +452,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--top-nsigma'],
     defaultValue: '-1.00',
     originalDescription: 'top-n-sigma sampling',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Muestreo top-n-sigma: corta los tokens por debajo de n desviaciones estándar (-1 = off).',
   },
@@ -463,7 +463,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--typical'],
     defaultValue: '1.00',
     originalDescription: 'locally typical sampling',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Muestreo localmente típico (parámetro p). 1.0 = deshabilitado.',
   },
   {
@@ -472,7 +472,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     originalDescription: 'xtc probability',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Probabilidad de XTC (eXclude Top Choices), que descarta el token más probable (0.0 = off).',
   },
@@ -482,7 +482,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.10',
     originalDescription: 'xtc threshold',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Umbral de XTC: solo aplica XTC si el token top supera esta probabilidad (1.0 = off).',
   },
@@ -492,7 +492,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-s',
     defaultValue: '-1',
     originalDescription: 'RNG seed',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Semilla del generador aleatorio. -1 = semilla aleatoria. Fijar la semilla hace la salida reproducible.',
   },
@@ -502,7 +502,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'penalties;dry;top_n_sigma;top_k;typ_p;top_p;min_p;xtc;temperature',
     originalDescription: 'samplers used for generation in order',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Orden (separado por ;) de los samplers aplicados durante la generación.',
   },
   {
@@ -512,7 +512,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--sampler-seq'],
     defaultValue: 'edskypmxt',
     originalDescription: 'simplified sequence for samplers',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Secuencia simplificada de samplers (una letra por sampler).',
   },
   {
@@ -521,7 +521,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '64',
     originalDescription: 'last n tokens to consider for penalize',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Últimos N tokens considerados para penalizar repeticiones (0 = off, -1 = ctx completo).',
   },
@@ -531,7 +531,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     originalDescription: 'repeat alpha presence penalty',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Penalización de presencia (alpha): fomenta hablar de temas nuevos. 0.0 = deshabilitado.',
   },
@@ -541,7 +541,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     originalDescription: 'repeat alpha frequency penalty',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Penalización de frecuencia (alpha): fomenta no repetir las mismas palabras. 0.0 = deshabilitado.',
   },
@@ -551,7 +551,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     originalDescription: 'set DRY sampling multiplier',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Multiplicador del sampler DRY (anti-repetición suave). 0.0 = deshabilitado.',
   },
   {
@@ -560,7 +560,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '1.75',
     originalDescription: 'set DRY sampling base value',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Valor base del sampler DRY.',
   },
   {
@@ -569,7 +569,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '2',
     originalDescription: 'set allowed length for DRY sampling',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Longitud permitida para el sampler DRY antes de penalizar.',
   },
   {
@@ -578,7 +578,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     originalDescription: 'set DRY penalty for the last n tokens',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Penalización DRY sobre los últimos N tokens (0 = off, -1 = contexto completo).',
   },
   {
@@ -587,7 +587,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'add sequence breaker for DRY sampling',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Añade un sequence breaker para DRY (limpia los defaults \\n, :, ", *). Usa "none" para ninguno.',
   },
@@ -597,7 +597,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1.00',
     originalDescription: 'adaptive-p: select tokens near this probability',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'adaptive-p: selecciona tokens cercanos a esta probabilidad (negativo = deshabilitado).',
   },
@@ -607,7 +607,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.90',
     originalDescription: 'adaptive-p: decay rate for target adaptation',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'adaptive-p: tasa de decaimiento de la adaptación del objetivo (0.0-0.99).',
   },
   {
@@ -616,7 +616,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.00',
     originalDescription: 'dynamic temperature range',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Rango de temperatura dinámica (0.0 = deshabilitado).',
   },
   {
@@ -625,7 +625,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '1.00',
     originalDescription: 'dynamic temperature exponent',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Exponente de la temperatura dinámica.',
   },
   {
@@ -634,7 +634,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     originalDescription: 'use Mirostat sampling',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Muestreo Mirostat (0 = off, 1 = Mirostat, 2 = Mirostat 2.0). Ignora top-k/top-p/typical.',
   },
@@ -644,7 +644,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0.10',
     originalDescription: 'Mirostat learning rate',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Tasa de aprendizaje de Mirostat (parámetro eta).',
   },
   {
@@ -653,7 +653,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '5.00',
     originalDescription: 'Mirostat target entropy',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Entropía objetivo de Mirostat (parámetro tau).',
   },
   {
@@ -662,7 +662,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-l',
     defaultValue: null,
     originalDescription: 'modifies the likelihood of token appearing',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'Modifica la probabilidad de un token, p.ej. --logit-bias 15043+1 aumenta " Hello". Formato TOKEN_ID(+/-)BIAS.',
   },
@@ -672,7 +672,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'ignore end of stream token and continue generating',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Ignora el token de fin de stream y sigue generando.',
   },
   {
@@ -681,7 +681,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'BNF-like grammar to constrain generations',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Gramática tipo BNF que constriñe la generación (ver ejemplos en grammars/).',
   },
   {
@@ -690,7 +690,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'file to read grammar from',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Archivo del que leer la gramática que constriñe la generación.',
   },
   {
@@ -699,7 +699,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-j',
     defaultValue: null,
     originalDescription: 'JSON schema to constrain generations',
-    category: 'muestreo',
+    category: 'Muestreo',
     description:
       'JSON Schema que constriñe la generación a JSON válido (p.ej. {} para cualquier objeto).',
   },
@@ -709,7 +709,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-jf',
     defaultValue: null,
     originalDescription: 'File containing a JSON schema',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Archivo con un JSON Schema que constriñe la generación.',
   },
   {
@@ -718,7 +718,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-bs',
     defaultValue: 'disabled',
     originalDescription: 'enable backend sampling',
-    category: 'muestreo',
+    category: 'Muestreo',
     description: 'Habilita el sampling en el backend (experimental).',
   },
 
@@ -730,7 +730,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-model'],
     defaultValue: null,
     originalDescription: 'draft model for speculative decoding',
-    category: 'especulativo',
+    category: 'Especulativo',
     description:
       'Modelo borrador pequeño para speculative decoding. Propone tokens que el modelo grande verifica en lote; con buena tasa de aceptación aumenta mucho los tokens/seg de generación.',
   },
@@ -741,7 +741,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-hf', '-hfrd'],
     defaultValue: null,
     originalDescription: 'Same as --hf-repo, but for the draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Igual que --hf-repo pero para el modelo borrador de speculative decoding.',
   },
   {
@@ -751,7 +751,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--draft-min', '--draft-n-min'],
     defaultValue: '0',
     originalDescription: 'minimum number of draft tokens to use',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Número mínimo de tokens del borrador a usar en speculative decoding.',
   },
   {
@@ -761,7 +761,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-p-min'],
     defaultValue: '0.00',
     originalDescription: 'minimum speculative decoding probability',
-    category: 'especulativo',
+    category: 'Especulativo',
     description:
       'Probabilidad mínima aceptada (greedy) para seguir confiando en el borrador. Si un token cae por debajo, se detiene la propuesta.',
   },
@@ -772,7 +772,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-p-split'],
     defaultValue: '0.10',
     originalDescription: 'speculative decoding split probability',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Probabilidad de split para speculative decoding.',
   },
   {
@@ -782,7 +782,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-ngl', '--gpu-layers-draft'],
     defaultValue: 'auto',
     originalDescription: 'max draft model layers to store in VRAM',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Número máximo de capas del modelo borrador en VRAM (número, auto o all).',
   },
   {
@@ -792,7 +792,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-device'],
     defaultValue: null,
     originalDescription: 'devices to use for offloading the draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Lista de dispositivos (coma) para offload del modelo borrador.',
   },
   {
@@ -802,7 +802,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-threads'],
     defaultValue: 'igual que --threads',
     originalDescription: 'number of threads for draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Threads de CPU para la generación del modelo borrador.',
   },
   {
@@ -812,7 +812,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-threads-batch'],
     defaultValue: 'igual que --threads-draft',
     originalDescription: 'threads for batch processing of draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Threads de CPU para el batch/prompt del modelo borrador.',
   },
   {
@@ -822,7 +822,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-cpu-mask'],
     defaultValue: 'igual que --cpu-mask',
     originalDescription: 'Draft model CPU affinity mask',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Máscara de afinidad de CPU para el modelo borrador.',
   },
   {
@@ -832,7 +832,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-cpu-range'],
     defaultValue: null,
     originalDescription: 'Ranges of CPUs for affinity draft',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Rango de CPUs (lo-hi) para afinidad del modelo borrador.',
   },
   {
@@ -842,7 +842,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-cpu-strict'],
     defaultValue: 'igual que --cpu-strict',
     originalDescription: 'Use strict CPU placement for draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Placement estricto de CPU para el modelo borrador (0|1).',
   },
   {
@@ -852,7 +852,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-override-tensor'],
     defaultValue: null,
     originalDescription: 'override tensor buffer type for draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description:
       'Sobreescribe el tipo de buffer de tensores del modelo borrador (patron=buffer,...).',
   },
@@ -863,7 +863,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-spec-draft-backend-sampling'],
     defaultValue: 'enabled',
     originalDescription: 'offload draft sampling to the backend',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Descarga el sampling del borrador al backend (default habilitado).',
   },
   {
@@ -872,7 +872,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '48',
     originalDescription: 'number of tokens ngram for speculative decoding ngram-mod',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Número mínimo de tokens ngram para speculative decoding ngram-mod.',
   },
   {
@@ -881,7 +881,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '64',
     originalDescription: 'Number maximum of tokens ngram for speculative decoding ngram-mod',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Número máximo de tokens ngram para speculative decoding ngram-mod.',
   },
   {
@@ -890,7 +890,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '24',
     originalDescription: 'Length of the lookup of ngram-mod',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Longitud del lookup de ngram-mod.',
   },
   {
@@ -899,7 +899,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '12',
     originalDescription: 'Tamaño N (lookup n-gram) for ngram-simple speculative decoding',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Tamaño N (lookup n-gram) para ngram-simple speculative decoding.',
   },
   {
@@ -908,7 +908,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '48',
     originalDescription: 'Tamaño M (draft m-gram) for ngram-simple speculative decoding',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Tamaño M (draft m-gram) para ngram-simple speculative decoding.',
   },
   {
@@ -917,7 +917,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '1',
     originalDescription: 'minimum hits for ngram-simple speculative decoding',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Número mínimo de hits para ngram-simple speculative decoding.',
   },
   {
@@ -927,7 +927,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-type-k'],
     defaultValue: 'f16',
     originalDescription: 'KV cache data type for K for the draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Tipo de dato de cache K para el modelo borrador (mismos valores que -ctk).',
   },
   {
@@ -937,7 +937,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--spec-draft-type-v'],
     defaultValue: 'f16',
     originalDescription: 'KV cache data type for V for the draft model',
-    category: 'especulativo',
+    category: 'Especulativo',
     description: 'Tipo de dato de cache V para el modelo borrador (mismos valores que -ctv).',
   },
 
@@ -948,9 +948,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '127.0.0.1',
     originalDescription: 'ip address to listen',
-    category: 'servidor',
+    category: 'Servidor',
     description:
-      'Dirección IP donde escucha el servidor (o socket UNIX si termina en .sock). 127.0.0.1 = solo local; 0.0.0.0 = expone a la red (solo redes de confianza).',
+      'Dirección IP donde escucha el Servidor (o socket UNIX si termina en .sock). 127.0.0.1 = solo local; 0.0.0.0 = expone a la red (solo redes de confianza).',
   },
   {
     name: 'Puerto',
@@ -958,9 +958,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '8080',
     originalDescription: 'port to listen',
-    category: 'servidor',
+    category: 'Servidor',
     description:
-      'Puerto donde escucha el servidor HTTP (default 8080). En este proyecto el orquestador usa 3000 para no chocar con este puerto.',
+      'Puerto donde escucha el Servidor HTTP (default 8080). En este proyecto el orquestador usa 3000 para no chocar con este puerto.',
   },
   {
     name: 'Timeout',
@@ -968,8 +968,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-to',
     defaultValue: '3600',
     originalDescription: 'server read/write timeout in seconds',
-    category: 'servidor',
-    description: 'Timeout de lectura/escritura del servidor en segundos.',
+    category: 'Servidor',
+    description: 'Timeout de lectura/escritura del Servidor en segundos.',
   },
   {
     name: 'Reuse port',
@@ -977,7 +977,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'disabled',
     originalDescription: 'allow multiple sockets to bind to the same port',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Permite a varios sockets enlazarse al mismo puerto (SO_REUSEPORT).',
   },
   {
@@ -986,7 +986,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to serve static files from',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta desde la que servir archivos estáticos.',
   },
   {
@@ -995,8 +995,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'prefix path the server serves from',
-    category: 'servidor',
-    description: 'Prefijo de ruta desde el que el servidor sirve la API (sin barra final).',
+    category: 'Servidor',
+    description: 'Prefijo de ruta desde el que el Servidor sirve la API (sin barra final).',
   },
   {
     name: 'Slots (paralelismo)',
@@ -1004,9 +1004,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-np',
     defaultValue: '-1',
     originalDescription: 'number of server slots',
-    category: 'servidor',
+    category: 'Servidor',
     description:
-      'Número de slots del servidor (requests concurrentes). -1 = auto. Más de 1 habilita batching entre requests, mejorando el aprovechamiento de la GPU con varios usuarios.',
+      'Número de slots del Servidor (requests concurrentes). -1 = auto. Más de 1 habilita batching entre requests, mejorando el aprovechamiento de la GPU con varios usuarios.',
   },
   {
     name: 'Batching continuo',
@@ -1015,7 +1015,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-cont-batching', '-nocb'],
     defaultValue: 'enabled',
     originalDescription: 'continuous batching (dynamic batching)',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Habilita batching continuo (dynamic batching): las secuencias se añaden/quitan del batch al vuelo. Necesario para servir varios usuarios con -np > 1.',
   },
@@ -1026,7 +1026,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-context-shift'],
     defaultValue: 'disabled',
     originalDescription: 'use context shift on infinite text generation',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Si al llenarse el contexto se desplazan tokens viejos para hacer sitio (default deshabilitado). Útil para generación infinita; --no-context-shift desactiva el shift.',
   },
@@ -1037,7 +1037,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-cache-prompt'],
     defaultValue: 'enabled',
     originalDescription: 'whether to enable prompt caching',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Habilita la caché de prompt (reutiliza el prompt ya evaluado entre requests).',
   },
   {
@@ -1047,7 +1047,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-kv-unified', '-no-kvu'],
     defaultValue: 'auto',
     originalDescription: 'use single unified KV buffer',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Usa un único buffer KV unificado compartido entre todas las secuencias.',
   },
   {
@@ -1056,7 +1056,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-cram',
     defaultValue: '8192',
     originalDescription: 'set the maximum cache size in MiB',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Tamaño máximo de caché en MiB (-1 = sin límite, 0 = deshabilitado).',
   },
   {
@@ -1066,7 +1066,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-cache-idle-slots'],
     defaultValue: 'enabled',
     originalDescription: 'save idle slots to the prompt cache',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Guarda los slots inactivos en la prompt cache al recibir una nueva tarea (requiere cache-ram).',
   },
@@ -1077,7 +1077,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--swa-checkpoints'],
     defaultValue: '32',
     originalDescription: 'max number of context checkpoints per slot',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Número máximo de checkpoints de contexto por slot.',
   },
   {
@@ -1086,7 +1086,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-cms',
     defaultValue: '256',
     originalDescription: 'minimum spacing between context checkpoints',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Espaciado mínimo entre checkpoints de contexto en tokens (0 = sin mínimo).',
   },
   {
@@ -1095,7 +1095,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'set custom jinja chat template',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Sobreescribe la plantilla de chat Jinja (chatml, llama2, llama3, …). Útil cuando el GGUF no trae la plantilla correcta o se quiere forzar un formato.',
   },
@@ -1105,7 +1105,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'set custom jinja chat template file',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Archivo con la plantilla de chat Jinja personalizada.',
   },
   {
@@ -1114,7 +1114,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-rea',
     defaultValue: 'auto',
     originalDescription: 'Use reasoning/thinking in the chat',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Controla el razonamiento/thinking en el chat (on/off/auto, default auto = detectar de la plantilla).',
   },
@@ -1124,7 +1124,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'auto',
     originalDescription: 'controls whether thought tags are extracted',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Controla cómo se manejan las etiquetas de pensamiento: none (sin parsear), deepseek (en reasoning_content), deepseek-legacy (conserva  ImGui_).',
   },
@@ -1134,7 +1134,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     originalDescription: 'token budget for thinking',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Presupuesto de tokens para pensar: -1 sin límite, 0 fin inmediato, N>0 presupuesto.',
   },
@@ -1144,7 +1144,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'message injected when reasoning budget is exhausted',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Mensaje inyectado antes del tag de fin de pensamiento cuando se agota el presupuesto.',
   },
@@ -1155,7 +1155,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-skip-chat-parsing'],
     defaultValue: 'disabled',
     originalDescription: 'force a pure content parser',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Fuerza un parser de contenido puro: el modelo saca todo en content (reasoning + tools).',
   },
@@ -1165,8 +1165,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     aliases: ['--no-prefill-assistant'],
     defaultValue: 'enabled',
-    originalDescription: 'whether to prefill the assistant\'s response',
-    category: 'servidor',
+    originalDescription: "whether to prefill the assistant's response",
+    category: 'Servidor',
     description:
       'Si el último mensaje es del asistente, lo trata como prefill de su respuesta (en vez de mensaje completo).',
   },
@@ -1176,7 +1176,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-mm',
     defaultValue: null,
     originalDescription: 'path to a multimodal projector file',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Ruta al archivo del proyector multimodal (visión). Con -hf se omite si existe. Necesario para modelos que aceptan imágenes (LLaVA, etc.).',
   },
@@ -1186,7 +1186,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-mmu',
     defaultValue: null,
     originalDescription: 'URL to a multimodal projector file',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'URL del archivo del proyector multimodal.',
   },
   {
@@ -1196,7 +1196,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-mmproj-offload'],
     defaultValue: 'enabled',
     originalDescription: 'GPU offloading for multimodal projector',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Habilita el offload a GPU del proyector multimodal.',
   },
   {
@@ -1205,7 +1205,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'minimum number of tokens each image can take',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Número mínimo de tokens que ocupa cada imagen (modelos de visión con resolución dinámica).',
   },
@@ -1215,7 +1215,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'maximum number of tokens each image can take',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Número máximo de tokens que ocupa cada imagen (modelos de visión con resolución dinámica).',
   },
@@ -1226,9 +1226,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--embedding'],
     defaultValue: 'disabled',
     originalDescription: 'restrict to only support embedding use case',
-    category: 'servidor',
+    category: 'Servidor',
     description:
-      'Restringe el servidor a solo soportar el caso de uso de embeddings (modelos dedicados).',
+      'Restringe el Servidor a solo soportar el caso de uso de embeddings (modelos dedicados).',
   },
   {
     name: 'Reranking',
@@ -1237,8 +1237,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--rerank'],
     defaultValue: 'disabled',
     originalDescription: 'enable reranking endpoint on server',
-    category: 'servidor',
-    description: 'Habilita el endpoint de reranking en el servidor.',
+    category: 'Servidor',
+    description: 'Habilita el endpoint de reranking en el Servidor.',
   },
   {
     name: 'Pooling',
@@ -1246,7 +1246,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'pooling type for embeddings',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Tipo de pooling para embeddings: none, mean, cls, last o rank. Si no se indica, el del modelo.',
   },
@@ -1256,7 +1256,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '2',
     originalDescription: 'normalisation for embeddings',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Normalización de embeddings (-1 ninguna, 0 max abs int16, 1 taxicab, 2 euclidean, >2 p-norm).',
   },
@@ -1266,7 +1266,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'API key to use for authentication',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'API key de autenticación (varias separadas por coma). Por defecto ninguna.',
   },
   {
@@ -1275,7 +1275,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to file containing API keys',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Archivo con las API keys (una por línea).',
   },
   {
@@ -1284,7 +1284,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to a PEM-encoded SSL private key',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta a la clave privada SSL codificada en PEM.',
   },
   {
@@ -1293,7 +1293,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to a PEM-encoded SSL certificate',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta al certificado SSL codificado en PEM.',
   },
   {
@@ -1302,8 +1302,8 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '30',
     originalDescription: 'server SSE ping interval in seconds',
-    category: 'servidor',
-    description: 'Intervalo (segundos) de los pings SSE del servidor (-1 = deshabilitado).',
+    category: 'Servidor',
+    description: 'Intervalo (segundos) de los pings SSE del Servidor (-1 = deshabilitado).',
   },
   {
     name: 'Web UI',
@@ -1312,7 +1312,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-ui', '--webui', '--no-webui'],
     defaultValue: 'enabled',
     originalDescription: 'whether to enable the Web UI',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Habilita (o --no-ui deshabilita) la Web UI integrada.',
   },
   {
@@ -1321,7 +1321,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'JSON that provides default UI settings',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'JSON con ajustes por defecto de la UI (sobreescribe los defaults).',
   },
   {
@@ -1330,7 +1330,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'JSON file that provides default UI settings',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Archivo JSON con ajustes por defecto de la UI.',
   },
   {
@@ -1340,7 +1340,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-ui-mcp-proxy', '--webui-mcp-proxy', '--no-webui-mcp-proxy'],
     defaultValue: 'disabled',
     originalDescription: 'enable MCP CORS proxy - do not enable in untrusted environments',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Experimental: habilita el proxy CORS de MCP (no activar en entornos no confiables).',
   },
@@ -1350,7 +1350,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'enable built-in tools for AI agents',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Experimental: herramientas integradas para agentes (read_file, grep_search, exec_shell_command, …). "all" habilita todas. No activar en entornos no confiables.',
   },
@@ -1360,7 +1360,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'disabled',
     originalDescription: 'enable changing global properties via POST /props',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Permite cambiar propiedades globales vía POST /props.',
   },
   {
@@ -1370,7 +1370,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-slots'],
     defaultValue: 'enabled',
     originalDescription: 'expose slots monitoring endpoint',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Expone el endpoint de monitorización de slots.',
   },
   {
@@ -1379,7 +1379,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to save slot kv cache',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta donde guardar la cache KV de los slots (default deshabilitado).',
   },
   {
@@ -1388,7 +1388,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'directory for loading local media files',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Directorio para cargar archivos multimedia locales (accesibles vía file:// relativo).',
   },
@@ -1398,7 +1398,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-a',
     defaultValue: null,
     originalDescription: 'set model name aliases',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Alias del nombre del modelo (separados por coma), usado por la API.',
   },
   {
@@ -1407,7 +1407,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'set model tags (informational)',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Tags del modelo (separados por coma), informativos (no se usan para routing).',
   },
   {
@@ -1416,7 +1416,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'directory containing models for the router server',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Directorio con los modelos para el router server.',
   },
   {
@@ -1425,7 +1425,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'INI file containing model presets',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta a un archivo INI con presets de modelos para el router server.',
   },
   {
@@ -1434,7 +1434,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '4',
     originalDescription: 'maximum number of models to load simultaneously',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Para el router server, número máximo de modelos cargados a la vez (0 = ilimitado).',
   },
@@ -1445,7 +1445,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-models-autoload'],
     defaultValue: 'enabled',
     originalDescription: 'automatically load models',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Para el router server, carga modelos automáticamente.',
   },
   {
@@ -1455,7 +1455,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-warmup'],
     defaultValue: 'enabled',
     originalDescription: 'perform warmup with an empty run',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Realiza un run vacío de calentamiento al iniciar.',
   },
   {
@@ -1464,7 +1464,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-r',
     defaultValue: null,
     originalDescription: 'halt generation at PROMPT',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Detiene la generación al hallar PROMPT y devuelve el control (modo interactivo).',
   },
   {
@@ -1473,7 +1473,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-sp',
     defaultValue: 'false',
     originalDescription: 'special tokens output enabled',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Habilita la salida de tokens especiales.',
   },
   {
@@ -1482,7 +1482,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'disabled',
     originalDescription: 'use Suffix/Prefix/Middle pattern for infill',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Usa el patrón Suffix/Prefix/Middle para infill (algunos modelos lo prefieren).',
   },
   {
@@ -1491,7 +1491,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-sps',
     defaultValue: '0.10',
     originalDescription: 'how much prompt must match to use that slot',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Cuánto debe coincidir el prompt de un request con el de un slot para reutilizarlo (0.0 = off).',
   },
@@ -1501,7 +1501,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'disabled',
     originalDescription: 'load LoRA adapters without applying them',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Carga los adaptadores LoRA sin aplicarlos (se aplican luego vía POST /lora-adapters).',
   },
@@ -1511,9 +1511,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1',
     originalDescription: 'number of seconds of idleness after which server will sleep',
-    category: 'servidor',
+    category: 'Servidor',
     description:
-      'Segundos de inactividad tras los que el servidor entra en sleep (-1 = deshabilitado).',
+      'Segundos de inactividad tras los que el Servidor entra en sleep (-1 = deshabilitado).',
   },
   {
     name: 'Dir log de prompts',
@@ -1521,7 +1521,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'Log prompts to directory',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Directorio donde loguear los prompts (solo para depuración).',
   },
   {
@@ -1530,7 +1530,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-mv',
     defaultValue: null,
     originalDescription: 'vocoder model for audio generation',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Modelo vocoder para generación de audio.',
   },
   {
@@ -1539,7 +1539,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'Use guide tokens to improve TTS word recall',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Usa guide tokens para mejorar el recall de palabras en TTS.',
   },
   {
@@ -1548,7 +1548,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-lcs',
     defaultValue: null,
     originalDescription: 'path to static lookup cache',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta a la cache de lookup estática (no se actualiza al generar).',
   },
   {
@@ -1557,17 +1557,17 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-lcd',
     defaultValue: null,
     originalDescription: 'path to dynamic lookup cache',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta a la cache de lookup dinámica (se actualiza al generar).',
   },
-  // ── Flags que estaban en común pero son raramente usadas ──
+  // ── Flags que estaban en Común pero son raramente usadas ──
   {
     name: 'Cache SWA completa',
     long: '--swa-full',
     short: null,
     defaultValue: 'false',
     originalDescription: 'use full-size SWA cache',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Usa una cache Sliding Window Attention de tamaño completo (en vez de la parcial). Aumenta el consumo de VRAM pero evita recomputar la ventana deslizante.',
   },
@@ -1578,7 +1578,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-perf'],
     defaultValue: 'false',
     originalDescription: 'whether to enable internal libllama performance timings',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Habilita (o --no-perf deshabilita) los timings internos de libllama. Las métricas que parsea este proyecto provienen de esa salida de rendimiento.',
   },
@@ -1589,7 +1589,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-escape'],
     defaultValue: 'true',
     originalDescription: 'whether to process escapes sequences',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Si se procesan secuencias de escape (\\n, \\r, \\t, \\\', \\", \\\\) en los prompts. --no-escape los trata literalmente.',
   },
@@ -1600,7 +1600,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-kv-offload', '-nkvo'],
     defaultValue: 'enabled',
     originalDescription: 'whether to enable KV cache offloading',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Habilita el offload de la cache KV a la GPU (--no-kv-offload lo desactiva). Mantenerlo activo mejora la velocidad; desactivarlo libera VRAM a costa de latency.',
   },
@@ -1610,7 +1610,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-dt',
     defaultValue: null,
     originalDescription: 'KV cache defragmentation threshold (DEPRECATED)',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       '[DEPRECATED] Umbral de defragmentación de la cache KV. Mantenido por compatibilidad.',
   },
@@ -1620,9 +1620,9 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'linear',
     originalDescription: 'RoPE frequency scaling method',
-    category: 'servidor',
+    category: 'Servidor',
     description:
-      'Método de escalado de RoPE: none, linear o yarn. Permite extender el contexto más allá del entrenamiento del modelo. yarn (Yet another RoPE extensioN) es común para contextos muy largos.',
+      'Método de escalado de RoPE: none, linear o yarn. Permite extender el contexto más allá del entrenamiento del modelo. yarn (Yet another RoPE extensioN) es Común para contextos muy largos.',
   },
   {
     name: 'Factor RoPE scale',
@@ -1630,7 +1630,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'RoPE context scaling factor',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Factor de escalado de contexto RoPE: expande el contexto en un factor N.',
   },
   {
@@ -1639,7 +1639,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'RoPE base frequency, used by NTK-aware scaling',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Frecuencia base de RoPE, usada por el escalado NTK-aware. Por defecto se lee del modelo.',
   },
@@ -1649,7 +1649,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'RoPE frequency scaling factor',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Factor de escala de frecuencia RoPE: expande el contexto en un factor 1/N.',
   },
   {
@@ -1658,7 +1658,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     originalDescription: 'YaRN: original context size of model',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'YaRN: tamaño de contexto original del modelo (0 = contexto de entrenamiento).',
   },
   {
@@ -1667,7 +1667,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1.00',
     originalDescription: 'YaRN: extrapolation mix factor',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'YaRN: factor de mezcla de extrapolación (0.0 = interpolación completa).',
   },
   {
@@ -1676,7 +1676,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '-1.00',
     originalDescription: 'YaRN: scale sqrt(t) or attention magnitude',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'YaRN: escala de la magnitud de atención sqrt(t).',
   },
   {
@@ -1685,7 +1685,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-ot',
     defaultValue: null,
     originalDescription: 'override tensor buffer type',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Sobreescribe el tipo de buffer de un tensor por patrón (formato patron=buffer,...).',
   },
@@ -1695,7 +1695,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-fit',
     defaultValue: 'on',
     originalDescription: 'whether to adjust unset arguments to fit in device memory',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Ajusta argumentos sin definir (p.ej. ctx-size) para que el modelo quepa en la memoria del dispositivo (on/off).',
   },
@@ -1705,7 +1705,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-fitt',
     defaultValue: '1024',
     originalDescription: 'target margin per device for --fit',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Margen objetivo por dispositivo (MiB) para --fit. Valor único se aplica a todos.',
   },
   {
@@ -1714,7 +1714,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-fitc',
     defaultValue: '4096',
     originalDescription: 'minimum ctx size that can be set by --fit',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Tamaño mínimo de ctx que --fit puede asignar.',
   },
   {
@@ -1723,7 +1723,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'false',
     originalDescription: 'check model tensor data for invalid values',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Comprueba los datos de los tensores del modelo en busca de valores inválidos.',
   },
   {
@@ -1732,7 +1732,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'advanced option to override model metadata by key',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Sobreescribe metadatos del modelo por clave (KEY=TYPE:VALUE,...). Tipos: int, float, bool, str.',
   },
@@ -1743,7 +1743,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-op-offload'],
     defaultValue: 'true',
     originalDescription: 'whether to offload host tensor operations to device',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Si las operaciones de tensor en host se descargan al dispositivo (default true).',
   },
   {
@@ -1753,7 +1753,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-direct-io', '-ndio'],
     defaultValue: 'disabled',
     originalDescription: 'use DirectIO if available',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Usa DirectIO si está disponible (elude la page cache del SO al cargar).',
   },
   {
@@ -1762,7 +1762,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'attempt optimizations that help on some NUMA systems',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Optimizaciones para sistemas NUMA: distribute (reparto uniforme), isolate (solo nodo local) o numactl (mapa de numactl). Recomendado vaciar la page cache antes de usarlo.',
   },
@@ -1772,7 +1772,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to LoRA adapter',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Ruta a un adaptador LoRA (separar por coma para cargar varios).',
   },
   {
@@ -1781,7 +1781,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'path to LoRA adapter with user defined scaling',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Adaptador LoRA con escala definida por el usuario (formato FNAME:SCALE,...).',
   },
   {
@@ -1790,7 +1790,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'add a control vector',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Añade un vector de control (separar por coma para varios).',
   },
   {
@@ -1799,7 +1799,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'add a control vector with user defined scaling',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Vector de control con escala (formato FNAME:SCALE,...).',
   },
   {
@@ -1808,7 +1808,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'layer range to apply control vector(s)',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Rango de capas al que aplicar los vectores de control (START END, inclusivo).',
   },
   {
@@ -1817,7 +1817,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-C',
     defaultValue: '""',
     originalDescription: 'CPU affinity mask: arbitrarily long hex',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Máscara de afinidad de CPU en hex (arbitrariamente larga). Complementa --cpu-range.',
   },
@@ -1827,7 +1827,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-Cr',
     defaultValue: null,
     originalDescription: 'range of CPUs for affinity',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Rango de CPUs para afinidad (formato lo-hi). Complementa --cpu-mask.',
   },
   {
@@ -1836,7 +1836,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     originalDescription: 'use strict CPU placement',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Usa placement estricto de CPU (0|1).',
   },
   {
@@ -1845,7 +1845,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '0',
     originalDescription: 'set process/thread priority: low(-1) to realtime(3)',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Prioridad del proceso/thread: low(-1), normal(0), medium(1), high(2), realtime(3).',
   },
@@ -1855,7 +1855,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: '50',
     originalDescription: 'use polling level to wait for work',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Nivel de polling para esperar trabajo (0 = sin polling, 0-100).',
   },
   {
@@ -1865,7 +1865,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-repack', '-nr'],
     defaultValue: 'enabled',
     originalDescription: 'whether to enable weight repacking',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Habilita (o --no-repack deshabilita) el repacking de pesos durante la carga.',
   },
   {
@@ -1874,7 +1874,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'bypass host buffer allowing extra buffers to be used',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Omite el buffer host permitiendo usar buffers extra.',
   },
   {
@@ -1884,7 +1884,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--log-verbose'],
     defaultValue: null,
     originalDescription: 'Set verbosity level to infinity',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Sube el nivel de verbosity al máximo (log de todos los mensajes, útil para depurar). Las métricas que parsea este proyecto salen del output verbose.',
   },
@@ -1895,7 +1895,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--log-verbosity'],
     defaultValue: '3',
     originalDescription: 'Set the verbosity threshold',
-    category: 'servidor',
+    category: 'Servidor',
     description:
       'Umbral de verbosity (0 genérico, 1 error, 2 warning, 3 info, 4 trace, 5 debug). Se ignoran los mensajes de verbosity mayor.',
   },
@@ -1905,7 +1905,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'Log to file',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Redirige el log a un archivo en vez de a stdout.',
   },
   {
@@ -1914,7 +1914,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: 'auto',
     originalDescription: 'Set colored logging',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Logging coloreado (on/off/auto). "auto" lo activa si la salida es una terminal.',
   },
   {
@@ -1924,7 +1924,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--no-log-timestamps'],
     defaultValue: null,
     originalDescription: 'Enable timestamps in log messages',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Habilita (o desactiva) las marcas de tiempo en los mensajes de log.',
   },
   {
@@ -1933,7 +1933,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'Log disable',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Deshabilita el logging por completo.',
   },
   {
@@ -1942,7 +1942,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'Offline mode: forces use of cache',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Modo offline: fuerza el uso de caché e impide el acceso a la red.',
   },
   {
@@ -1951,7 +1951,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'show version and build info',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Muestra la versión e info de build y termina.',
   },
   {
@@ -1961,7 +1961,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     aliases: ['--usage'],
     defaultValue: null,
     originalDescription: 'print usage and exit',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Imprime el uso y termina.',
   },
   {
@@ -1970,7 +1970,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: null,
     defaultValue: null,
     originalDescription: 'print source-able bash completion script for llama.cpp',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Imprime un script de completado bash cargable para llama.cpp.',
   },
   {
@@ -1979,7 +1979,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     short: '-cl',
     defaultValue: null,
     originalDescription: 'show list of models in cache',
-    category: 'servidor',
+    category: 'Servidor',
     description: 'Muestra la lista de modelos en caché y termina.',
   },
 ];

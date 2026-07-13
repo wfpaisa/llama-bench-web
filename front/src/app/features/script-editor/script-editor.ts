@@ -31,7 +31,7 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 
 /** Orden establecido en que se muestran las categorías como row groups. */
-const CATEGORY_ORDER: FlagCategory[] = ['común', 'muestreo', 'especulativo', 'servidor'];
+const CATEGORY_ORDER: FlagCategory[] = ['Común', 'Muestreo', 'Especulativo', 'Servidor'];
 
 /**
  * ScriptEditor: edición del script de llama-server (fuente de verdad).
@@ -95,9 +95,7 @@ export class ScriptEditor {
   protected readonly search = signal('');
 
   /** Categorías con su grupo colapsado (oculto) en la tabla. Vacío = todo expandido. */
-  protected readonly collapsedCategories = signal<Set<FlagCategory>>(
-    new Set(CATEGORY_ORDER),
-  );
+  protected readonly collapsedCategories = signal<Set<FlagCategory>>(new Set(CATEGORY_ORDER));
 
   /**
    * Cuando hay búsqueda activa, ignoramos el estado colapsado para que los

@@ -6,7 +6,7 @@
 /* Layout: dos columnas en desktop, una sola en pantallas estrechas. */
 .cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 1.25rem;
   align-items: start;
 }
@@ -127,7 +127,12 @@ th {
   }
 }
 
+.flag-group-title {
+  margin: 0 0.5rem;
+}
+
 .cell-code code {
+  font-size: 1rem;
   font-family: var(--font-mono);
   white-space: nowrap;
 }
