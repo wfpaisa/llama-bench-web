@@ -207,15 +207,14 @@
           @if (isCategoryExpanded(f.category)) {
             <tr [class.present]="flagPresent().has(f.long)">
               <td class="cell-actions">
-                @if (!flagPresent().has(f.long)) {
-                  <p-button
-                    icon="pi pi-arrow-left"
-                    size="small"
-                    severity="success"
-                    [text]="true"
-                    (onClick)="addToScript(f)"
-                  />
-                }
+                <p-button
+                  icon="pi pi-arrow-left"
+                  size="small"
+                  [severity]="flagPresent().has(f.long) ? 'secondary' : 'success'"
+                  [text]="true"
+                  (onClick)="addToScript(f)"
+                  [disabled]="flagPresent().has(f.long)"
+                />
               </td>
 
               <td class="cell-code">

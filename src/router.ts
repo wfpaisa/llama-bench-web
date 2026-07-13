@@ -269,7 +269,14 @@ export async function handleRequest(req: Request): Promise<Response> {
         batchSize: body.params?.batchSize ?? parsed.batchSize ?? 512,
         ubatchSize: body.params?.ubatchSize ?? parsed.ubatchSize ?? 128,
         flashAttn: body.params?.flashAttn ?? parsed.flashAttn ?? true,
-        device: body.params?.device ?? (parsed.device ? parsed.device.split(',').map((s) => s.trim()).filter(Boolean) : []),
+        device:
+          body.params?.device ??
+          (parsed.device
+            ? parsed.device
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : []),
         tensorSplit: body.params?.tensorSplit ?? (parsed.tensorSplit ? parsed.tensorSplit.split(',').map(Number).filter(Number.isFinite) : null),
         nCpuMoe: body.params?.nCpuMoe ?? parsed.nCpuMoe ?? 0,
         cacheReuse: body.params?.cacheReuse ?? parsed.cacheReuse ?? 0,
@@ -320,12 +327,7 @@ export async function handleRequest(req: Request): Promise<Response> {
       const body = await req.json()
       const rating = body?.rating
       // null explícito = "sin calificar"; number entre 0 y 5 (0 = sin calificar).
-      const normalized =
-        rating == null
-          ? null
-          : typeof rating === 'number' && Number.isFinite(rating)
-            ? rating
-            : Number(rating)
+      const normalized = rating == null ? null : typeof rating === 'number' && Number.isFinite(rating) ? rating : Number(rating)
       if (normalized !== null && (typeof normalized !== 'number' || normalized < 0 || normalized > 5)) {
         return json({ ok: false, error: 'rating debe estar entre 0 y 5.' }, 400)
       }

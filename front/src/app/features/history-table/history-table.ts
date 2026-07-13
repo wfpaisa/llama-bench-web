@@ -309,7 +309,10 @@ export class HistoryTable {
     const curDir = this.store.sortDir();
 
     // Re-emisión reactiva: el evento refleja el estado ya aplicado → ignorar.
-    if (field === curCol && (event as SortEvent).order === (curDir === 'asc' ? 1 : curDir === 'desc' ? -1 : 0)) {
+    if (
+      field === curCol &&
+      (event as SortEvent).order === (curDir === 'asc' ? 1 : curDir === 'desc' ? -1 : 0)
+    ) {
       return;
     }
 
@@ -588,9 +591,10 @@ export class HistoryTable {
     const count = ids.length;
     this.confirm.confirm({
       target: event.target as EventTarget,
-      message: count === 1
-        ? '¿Eliminar el resultado seleccionado del historial?'
-        : `¿Eliminar ${count} resultados seleccionados del historial?`,
+      message:
+        count === 1
+          ? '¿Eliminar el resultado seleccionado del historial?'
+          : `¿Eliminar ${count} resultados seleccionados del historial?`,
       icon: 'pi pi-info-circle',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
@@ -603,9 +607,7 @@ export class HistoryTable {
             });
             this.messages.add({
               severity: 'success',
-              summary: count === 1
-                ? 'Resultado eliminado.'
-                : `${count} resultados eliminados.`,
+              summary: count === 1 ? 'Resultado eliminado.' : `${count} resultados eliminados.`,
               life: 2600,
             });
           },

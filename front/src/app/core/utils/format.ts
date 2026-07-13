@@ -384,7 +384,7 @@ export function parseModel(m: string | null | undefined): ParsedModel | null {
 //   - Familias conocidas: Mixtral (NxNB), DeepSeek-MoE, GR/MoE, Qwen3-MoE…
 // Es una heurística de nombre: puede dar falsos negativos en modelos sin el
 // sufijo, pero evita mostrar el control --n-cpu-moe en modelos densos.
-const MOE_RE = /A\d+B|MoE|Mixtral|\d+x\d+B|GR\d+|OLMoE|SmolLM2?-MoE/i
+const MOE_RE = /A\d+B|MoE|Mixtral|\d+x\d+B|GR\d+|OLMoE|SmolLM2?-MoE/i;
 
 /**
  * True si el nombre del modelo es identificable como MoE (Mixture of Experts).
@@ -392,8 +392,8 @@ const MOE_RE = /A\d+B|MoE|Mixtral|\d+x\d+B|GR\d+|OLMoE|SmolLM2?-MoE/i
  * el control --n-cpu-moe solo cuando aplica.
  */
 export function isModelMoe(base: string | null | undefined): boolean {
-  if (!base) return false
-  return MOE_RE.test(base)
+  if (!base) return false;
+  return MOE_RE.test(base);
 }
 
 /**

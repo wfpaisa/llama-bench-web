@@ -71,6 +71,7 @@
 
   --p-tooltip-max-width: 30rem;
 
+  --p-form-field-background: var(--p-surface-950);
   --p-datatable-row-striped-background: rgba(0, 0, 0, 0.05);
 }
 

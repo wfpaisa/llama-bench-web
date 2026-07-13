@@ -122,7 +122,11 @@ export class LlamaBenchService {
 
   // ── Optimizador ──
   /** Estimación heurística instantánea (no arranca el binario). */
-  estimate(script: string, params: TunedParams, priority: 'ctx' | 'quality'): Observable<EstimateRequestResponse> {
+  estimate(
+    script: string,
+    params: TunedParams,
+    priority: 'ctx' | 'quality',
+  ): Observable<EstimateRequestResponse> {
     return this.api.post<EstimateRequestResponse>('/estimate', { script, params, priority });
   }
 

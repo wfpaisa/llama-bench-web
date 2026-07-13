@@ -117,7 +117,20 @@ function interpArchBySize(sizeB: number): { layers: number; kvHeads: number } {
  */
 export function parseModelMeta(raw: string | null): ModelMeta {
   if (!raw) {
-    return { raw: '', base: '', quant: null, bytesPerParam: null, paramsB: null, layers: null, attentionLayers: null, kvHeads: null, headDim: null, weightsFileMiB: null, weightsFile: null, mmprojSizeMiB: null };
+    return {
+      raw: '',
+      base: '',
+      quant: null,
+      bytesPerParam: null,
+      paramsB: null,
+      layers: null,
+      attentionLayers: null,
+      kvHeads: null,
+      headDim: null,
+      weightsFileMiB: null,
+      weightsFile: null,
+      mmprojSizeMiB: null,
+    };
   }
   const [repoPart, quantPart] = raw.split(':');
   const quant = quantPart ?? null;
@@ -125,7 +138,20 @@ export function parseModelMeta(raw: string | null): ModelMeta {
   const bytesPerParam = quant ? bytesPerParamFor(quant) : null;
   const paramsB = paramsBFromName(base);
   const arch = paramsB != null ? interpArchBySize(paramsB) : { layers: 32, kvHeads: 8 };
-  return { raw, base, quant, bytesPerParam, paramsB, layers: arch.layers, attentionLayers: null, kvHeads: arch.kvHeads, headDim: 128, weightsFileMiB: null, weightsFile: null, mmprojSizeMiB: null };
+  return {
+    raw,
+    base,
+    quant,
+    bytesPerParam,
+    paramsB,
+    layers: arch.layers,
+    attentionLayers: null,
+    kvHeads: arch.kvHeads,
+    headDim: 128,
+    weightsFileMiB: null,
+    weightsFile: null,
+    mmprojSizeMiB: null,
+  };
 }
 
 /**
@@ -145,7 +171,12 @@ export function estimateVramMiB(
 ): { weights: number; kv: number; overhead: number; total: number } | null {
   // Si tenemos el tamaño real del archivo, los pesos son exactos; si no,
   // los estimamos con params × bytes/param.
-  const weightsTotal = meta.weightsFileMiB != null ? meta.weightsFileMiB : (meta.paramsB == null || meta.bytesPerParam == null ? null : (meta.paramsB * 1e9 * meta.bytesPerParam) / MIB);
+  const weightsTotal =
+    meta.weightsFileMiB != null
+      ? meta.weightsFileMiB
+      : meta.paramsB == null || meta.bytesPerParam == null
+        ? null
+        : (meta.paramsB * 1e9 * meta.bytesPerParam) / MIB;
   if (weightsTotal == null) return null;
 
   // ngl: si es menor que el total de capas, solo esa fracción de pesos va a GPU.
@@ -234,7 +265,14 @@ export function buildBreakdown(
 ): VramBreakdown {
   const selected = selectDevices(devices, params.device);
   const totalFree = selected.reduce((s, d) => s + d.freeMiB, 0);
-  const est = estimateVramMiB(meta, params.ctxSize, params.cacheTypeK, params.cacheTypeV, params.ubatchSize, params.ngl);
+  const est = estimateVramMiB(
+    meta,
+    params.ctxSize,
+    params.cacheTypeK,
+    params.cacheTypeV,
+    params.ubatchSize,
+    params.ngl,
+  );
 
   if (!est) {
     return {
@@ -258,7 +296,14 @@ export function buildBreakdown(
 
   // 3) KV cache: --cache-reuse reduce el ctx efectivo que se paga fresco.
   const effectiveCtx = Math.max(0, params.ctxSize - params.cacheReuse);
-  const estEffective = estimateVramMiB(meta, effectiveCtx, params.cacheTypeK, params.cacheTypeV, params.ubatchSize, params.ngl);
+  const estEffective = estimateVramMiB(
+    meta,
+    effectiveCtx,
+    params.cacheTypeK,
+    params.cacheTypeV,
+    params.ubatchSize,
+    params.ngl,
+  );
   const kvMiB = estEffective?.kv ?? est.kv;
 
   const totalBase = weightsMiB + kvMiB + overheadMiB;

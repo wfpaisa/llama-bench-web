@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -13,11 +21,7 @@ import { LlamaBenchService } from '../../core/services/llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 import type { StoredCalibration } from '../../core/services/storage.service';
 import { applyTunedParams, parseParamsFromScript } from '../../core/utils/flag-writer';
-import {
-  buildBreakdown,
-  totalFreeFor,
-  KV_TYPES,
-} from '../../core/utils/vram-estimate';
+import { buildBreakdown, totalFreeFor, KV_TYPES } from '../../core/utils/vram-estimate';
 import { fmtGB, fmt, backendLabel, isModelMoe } from '../../core/utils/format';
 import type {
   DryfitResponse,
@@ -159,7 +163,9 @@ export class OptimizerModal {
   });
 
   /** VRAM total libre de los devices seleccionados. */
-  protected readonly totalFreeMiB = computed(() => totalFreeFor(this.devices(), this.params().device));
+  protected readonly totalFreeMiB = computed(() =>
+    totalFreeFor(this.devices(), this.params().device),
+  );
 
   /** Opciones para el multiselect de devices. */
   protected readonly deviceOptions = computed(() =>
@@ -228,7 +234,7 @@ export class OptimizerModal {
       } else {
         used = heuristicNow;
       }
-      const base = countBaseline ? baseline[d.id] ?? 0 : 0;
+      const base = countBaseline ? (baseline[d.id] ?? 0) : 0;
       const modelPct = d.totalMiB > 0 ? (used / d.totalMiB) * 100 : 0;
       const basePct = d.totalMiB > 0 ? (base / d.totalMiB) * 100 : 0;
       return {
@@ -428,7 +434,11 @@ export class OptimizerModal {
   protected applyToScript(): void {
     const next = applyTunedParams(this.store.script(), this.params());
     this.store.setScript(next);
-    this.messages.add({ severity: 'success', summary: 'Parámetros aplicados al script', life: 2600 });
+    this.messages.add({
+      severity: 'success',
+      summary: 'Parámetros aplicados al script',
+      life: 2600,
+    });
     this.store.closeOptimizer();
   }
 

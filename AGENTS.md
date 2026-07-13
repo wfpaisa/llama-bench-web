@@ -303,12 +303,12 @@ Lee los primeros 2MB del `.gguf` (sin cargar el archivo entero) y parsea el
 header binario: magic `GGUF` → version → tensor_count → kv_count → pares
 clave/valor tipados. Extrae:
 
-| Clave GGUF | Campo ModelMeta |
-| --- | --- |
-| `<arch>.block_count` | `layers` |
-| `<arch>.attention.head_count_kv` | `kvHeads` |
-| `<arch>.attention.key_length` | `headDim` |
-| `<arch>.context_length` | (disponible, no usado en la fórmula) |
+| Clave GGUF                       | Campo ModelMeta                      |
+| -------------------------------- | ------------------------------------ |
+| `<arch>.block_count`             | `layers`                             |
+| `<arch>.attention.head_count_kv` | `kvHeads`                            |
+| `<arch>.attention.key_length`    | `headDim`                            |
+| `<arch>.context_length`          | (disponible, no usado en la fórmula) |
 
 Detiene la lectura apenas tiene las 4 claves. Tolerante a fallos: si el buffer
 se corta o hay un tipo inesperado, devuelve lo que tenga y la fórmula cae a

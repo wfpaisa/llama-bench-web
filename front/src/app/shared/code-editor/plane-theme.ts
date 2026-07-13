@@ -13,7 +13,7 @@ import { tags } from '@lezer/highlight';
  */
 
 // --- Paleta base (extraída del tema VS Code "Plane") -------------------------
-const bg = '#191919'; // editor.background
+const bg = 'var(--p-form-field-background)'; // editor.background
 const fg = '#e6e8ef'; // editor.foreground
 const caret = '#aeafad'; // editorCursor.foreground
 const selection = '#e8f2f334'; // editor.selectionBackground

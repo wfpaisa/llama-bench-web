@@ -6,14 +6,14 @@ import { MessageService } from 'primeng/api';
 import { ConfirmationService } from 'primeng/api';
 
 import { routes } from './app.routes';
-import Noir from './theme';
+import Plane from './theme';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     // PrimeNG con preset Noir (Aura + primary azul), modo oscuro vía clase `.dark`.
     providePrimeNG({
       theme: {
-        preset: Noir,
+        preset: Plane,
         options: {
           darkModeSelector: '.dark',
         },

@@ -21,13 +21,7 @@
 // El espejo client-side (para feedback instantáneo en los sliders) vive en
 // front/.../core/utils/vram-estimate.ts.
 
-import type {
-  EstimateResponse,
-  LlamaDevice,
-  ModelMeta,
-  TunedParams,
-  VramBreakdown,
-} from './types.ts'
+import type { EstimateResponse, LlamaDevice, ModelMeta, TunedParams, VramBreakdown } from './types.ts'
 import { detectBackend } from './devices.ts'
 import { existsSync, statSync, readdirSync, openSync, readSync, closeSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -58,7 +52,7 @@ const BYTES_PER_PARAM: Record<string, number> = {
   IQ3_S: 0.36,
   IQ3_XXS: 0.33,
   Q2_K: 0.35,
-  IQ2_M: 0.30,
+  IQ2_M: 0.3,
   // Variantes dinámicas (Unsloth Dynamic): aprox. al quant base del nombre.
   UD_Q6_K_XL: 0.7,
   UD_Q4_K_XL: 0.57,
@@ -114,7 +108,20 @@ const MIB = 1024 * 1024
  */
 export function parseModelMeta(raw: string | null): ModelMeta {
   if (!raw) {
-    return { raw: '', base: '', quant: null, bytesPerParam: null, paramsB: null, layers: null, attentionLayers: null, kvHeads: null, headDim: null, weightsFileMiB: null, weightsFile: null, mmprojSizeMiB: null }
+    return {
+      raw: '',
+      base: '',
+      quant: null,
+      bytesPerParam: null,
+      paramsB: null,
+      layers: null,
+      attentionLayers: null,
+      kvHeads: null,
+      headDim: null,
+      weightsFileMiB: null,
+      weightsFile: null,
+      mmprojSizeMiB: null,
+    }
   }
   const [repoPart, quantPart] = raw.split(':')
   const quant = quantPart ?? null
@@ -129,7 +136,20 @@ export function parseModelMeta(raw: string | null): ModelMeta {
   // Arquitectura (layers/kvHeads/headDim) desde el catálogo de familias o por tamaño.
   const arch = archForName(base, paramsB)
 
-  return { raw, base, quant, bytesPerParam, paramsB, layers: arch.layers, attentionLayers: null, kvHeads: arch.kvHeads, headDim: arch.headDim, weightsFileMiB: null, weightsFile: null, mmprojSizeMiB: null }
+  return {
+    raw,
+    base,
+    quant,
+    bytesPerParam,
+    paramsB,
+    layers: arch.layers,
+    attentionLayers: null,
+    kvHeads: arch.kvHeads,
+    headDim: arch.headDim,
+    weightsFileMiB: null,
+    weightsFile: null,
+    mmprojSizeMiB: null,
+  }
 }
 
 /** Bytes por parámetro de un quant dado, normalizando el nombre. */
@@ -457,9 +477,7 @@ export function splitPerDevice(totalMiB: number, devices: LlamaDevice[], tensorS
 // bytes/param de la heurística). Si el flag es --model con ruta explícita, lo
 // usamos directo. También buscamos el mmproj (*.mmproj*.gguf o mmproj-*.gguf).
 
-const HF_CACHE_DIR = process.env['HF_HOME']
-  ? join(process.env['HF_HOME'], 'hub')
-  : join(homedir(), '.cache', 'huggingface', 'hub')
+const HF_CACHE_DIR = process.env['HF_HOME'] ? join(process.env['HF_HOME'], 'hub') : join(homedir(), '.cache', 'huggingface', 'hub')
 
 interface ResolvedModel {
   /** Ruta absoluta al archivo .gguf del modelo, o null si no se encontró. */
@@ -595,11 +613,7 @@ function resolveGgufInDir(path: string): string | null {
 function findMmprojInDir(dir: string): string | null {
   try {
     const files = readdirSync(dir)
-    return (
-      files
-        .map((f) => join(dir, f))
-        .find((f) => /mmproj/i.test(f) && /\.gguf$/i.test(f)) ?? null
-    )
+    return files.map((f) => join(dir, f)).find((f) => /mmproj/i.test(f) && /\.gguf$/i.test(f)) ?? null
   } catch {
     return null
   }
@@ -841,7 +855,7 @@ function readGgufValue(buf: Buffer, off: number, typeName: string): [number | nu
         // Si los elementos son numéricos/bool, los recolectamos (p.ej.
         // attention.recurrent_layers para modelos híbridos). Si son strings u
         // otros arrays, los saltamos.
-        const numeric = ['uint8','int8','uint16','int16','uint32','int32','float32','bool','uint64','int64','float64']
+        const numeric = ['uint8', 'int8', 'uint16', 'int16', 'uint32', 'int32', 'float32', 'bool', 'uint64', 'int64', 'float64']
         if (numeric.includes(elemTypeName)) {
           const vals: number[] = []
           for (let i = 0; i < count; i++) {
