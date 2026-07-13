@@ -226,6 +226,7 @@
             <div class="column-name">draft acc <p-sortIcon field="draftAcceptance" /></div>
           </th>
         }
+
         @if (colVisible('genDr')) {
           <th class="col-draft" title="Drafts generados (#gen drafts)">
             <div class="column-name">gen dr</div>
@@ -362,8 +363,20 @@
           </td>
         }
         @if (colVisible('genTps')) {
-          <td class="num col-gen" [class.best]="isBestGen(r)">
-            {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
+          <td class="num col-gen gen-tps-cell" [class.best]="isBestGen(r)">
+            <span>
+              @if (r.generationTokensPerSecond != null) {
+                {{ r.generationTokensPerSecond | fmtNum }}<small class="stime">t/s</small>
+              }
+            </span>
+
+            @if (r.config?.specDraftNMax != null) {
+              <p-tag
+                [value]="'MTP: ' + r.config.specDraftNMax"
+                severity="warn"
+                pTooltip="Drafts máximos por token (--spec-draft-n-max)"
+              />
+            }
           </td>
         }
         @if (colVisible('promptTokens')) {
@@ -384,6 +397,7 @@
             {{ r.draftAcceptance | fmtNum: 3 }}
           </td>
         }
+
         @if (colVisible('genDr')) {
           <td class="num col-draft">{{ r.genDrafts | fmtNum: 0 }}</td>
         }

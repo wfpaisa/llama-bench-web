@@ -115,6 +115,7 @@ export function parseScript(script: string): ParsedScript {
     nCpuMoe: toNumOrNull(flagValue(argv, '--n-cpu-moe')) ?? toNumOrNull(flagValue(argv, '--cpu-moe')) ?? 0,
     cacheReuse: toNumOrNull(flagValue(argv, '--cache-reuse')) ?? 0,
     noMmproj: hasFlag(argv, '--no-mmproj'),
+    specDraftNMax: toNumOrNull(flagValue(argv, '--spec-draft-n-max')),
   }
 }
 

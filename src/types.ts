@@ -73,6 +73,8 @@ export interface ParsedScript {
   cacheReuse: number
   /** `--no-mmproj` presente. */
   noMmproj: boolean
+  /** `--spec-draft-n-max` (número de drafts para MTP/speculative). null si no estaba. */
+  specDraftNMax: number | null
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */

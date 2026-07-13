@@ -94,5 +94,6 @@ export function emptyParsedScript(): ParsedScript {
     nCpuMoe: 0,
     cacheReuse: 0,
     noMmproj: false,
+    specDraftNMax: null,
   }
 }

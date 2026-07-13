@@ -92,6 +92,14 @@
   font-weight: 700;
 }
 
+/* Celda Generation speed: valor a la izq., tag MTP a la der. */
+:host ::ng-deep .gen-tps-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 /* Fila seleccionada. */
 :host ::ng-deep tr.selected td {
   background: var(--p-primary-900) !important;
