@@ -16,8 +16,12 @@
     "build:app": "bun run build:front && bun run build:back && bun run build:electron",
     "dist": "bun run build:app && electron-builder",
     "dev:electron": "bun run build:electron && electron dist-electron/main.js",
+    "prepare": "husky",
     "typecheck": "tsc --noEmit",
     "fix": "bunx prettier . --write"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -25,8 +29,12 @@
     "concurrently": "^9.1.0",
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0",
+    "husky": "^9.1.5",
+    "lint-staged": "^15.2.9",
     "prettier": "3.8.4",
     "typescript": "^5.6.0"
   },
-  "trustedDependencies": ["electron"]
+  "trustedDependencies": [
+    "electron"
+  ]
 }
