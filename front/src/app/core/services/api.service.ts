@@ -8,8 +8,15 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
-/** Token de inyección con la URL base del backend (configurable por entorno). */
-export const API_BASE_URL = 'http://localhost:3000';
+/**
+ * URL base del backend. En dev (ng serve en :4242 → backend en :3000) apunta al
+ * backend absoluto. En modo empaquetado (Electron) el backend sirve el frontend
+ * en el mismo origen e inyecta `window.__API_BASE_URL = ''` en index.html, así
+ * las rutas son relativas (same-origin). Ver `src/router.ts` (serveStatic).
+ */
+export const API_BASE_URL: string =
+  (typeof window !== 'undefined' && (window as unknown as { __API_BASE_URL?: string }).__API_BASE_URL) ||
+  'http://localhost:3000';
 
 /** Respuesta exitosa con cuerpo JSON { ok, error?, ... }. */
 type JsonBody = object;

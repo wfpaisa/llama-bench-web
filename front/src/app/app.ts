@@ -22,7 +22,7 @@ import { GpuGrid } from './features/gpu-grid/gpu-grid';
 })
 export class App {
   private readonly messages = inject(MessageService);
-  protected readonly title = signal('llama-bench');
+  protected readonly title = signal('plane-llama-bench');
 
   /** Alterna la clase `.dark` en <html> (darkModeSelector del preset PrimeNG). */
   toggleDarkMode(): void {

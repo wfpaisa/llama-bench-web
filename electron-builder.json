@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "app.plane-llama-bench",
+  "productName": "plane-llama-bench",
+  "directories": {
+    "output": "release"
+  },
+  "files": ["dist-electron/**/*"],
+  "extraResources": [
+    {
+      "from": "electron/backend/",
+      "to": "backend",
+      "filter": ["plane-llama-bench-backend"]
+    },
+    {
+      "from": "front/dist/plane-llama-bench/browser",
+      "to": "frontend"
+    }
+  ],
+  "linux": {
+    "target": ["AppImage"],
+    "category": "Utility",
+    "executableName": "plane-llama-bench",
+    "maintainer": "plane-llama-bench"
+  },
+  "appImage": {
+    "artifactName": "plane-llama-bench-${version}-${arch}.AppImage"
+  }
+}

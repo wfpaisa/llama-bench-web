@@ -1,4 +1,4 @@
-// LlamaBenchService: un método Observable por cada endpoint del backend.
+// PlaneLlamaBenchService: un método Observable por cada endpoint del backend.
 // Centraliza el contrato HTTP para que los componentes/store no conozcan rutas.
 // Los endpoints de defaults (script/prompt) devuelven texto plano.
 
@@ -29,7 +29,7 @@ export interface BenchmarkRequest {
 }
 
 @Injectable({ providedIn: 'root' })
-export class LlamaBenchService {
+export class PlaneLlamaBenchService {
   private readonly api = inject(ApiService);
 
   // ── Estado del servidor ──

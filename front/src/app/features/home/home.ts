@@ -7,11 +7,11 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { interval, Subscription } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { EMPTY, interval, Subscription } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 
 import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
-import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 
 import { TabsModule } from 'primeng/tabs';
@@ -53,7 +53,7 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
 })
 export class Home implements OnDestroy {
   private readonly store = inject(BenchStore);
-  private readonly api = inject(LlamaBenchService);
+  private readonly api = inject(PlaneLlamaBenchService);
   private readonly storage = inject(StorageService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -142,55 +142,49 @@ export class Home implements OnDestroy {
         this.store.setRam(data.ram ?? null);
       },
       error: () => {
-        this.store.setGpus([]);
-        this.store.setRam(null);
+        /* backend reiniciándose o sin red: conservamos el estado anterior en
+           vez de vaciar el store, para no colapsar el monitor a "—". El polling
+           recuperará la lectura en cuanto el backend responda. */
       },
     });
   }
 
   // ── Polling ──
+  // Nota de resiliencia: el catchError va DENTRO del switchMap (sobre el
+  // observable del request, no del interval). Así, ante un error transitorio
+  // (p.ej. ERR_NETWORK_IO_SUSPENDED al suspender el equipo, backend reiniciándo-
+  // se, o pérdida de red), el error se traga con EMPTY y el interval externo
+  // SIGUE VIVO: el siguiente tick reintentará el request. Si el catchError
+  // estuviera fuera del switchMap, el error mataría el interval y el polling
+  // quedaría muerto hasta recargar la página. Ante error conservamos el último
+  // estado conocido del store (no lo vaciamos): el monitor de GPU sigue
+  // mostrando la última lectura en vez de colapsar a "—".
   private startPolling(): void {
     // Status cada 1.5s.
     const status$ = interval(1500)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap(() => this.api.getStatus()),
+        switchMap(() => this.api.getStatus().pipe(catchError(() => EMPTY))),
       )
-      .subscribe({
-        next: (s) => this.store.setStatus(s),
-        error: () => {
-          /* ignore */
-        },
-      });
+      .subscribe((s) => this.store.setStatus(s));
 
     // Logs cada 1s (incremental vía cursor).
     const logs$ = interval(1000)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap(() => this.api.getLogs(this.store.logCursor())),
+        switchMap(() => this.api.getLogs(this.store.logCursor()).pipe(catchError(() => EMPTY))),
       )
-      .subscribe({
-        next: (data) => this.store.appendLogs(data.entries, data.cursor),
-        error: () => {
-          /* backend reiniciándose */
-        },
-      });
+      .subscribe((data) => this.store.appendLogs(data.entries, data.cursor));
 
     // GPU cada 4s.
     const gpu$ = interval(4000)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap(() => this.api.getGpus()),
+        switchMap(() => this.api.getGpus().pipe(catchError(() => EMPTY))),
       )
-      .subscribe({
-        next: (data) => {
-          this.store.setGpus(data.gpus);
-          this.store.setRam(data.ram ?? null);
-        },
-        error: () => {
-          this.store.setGpus([]);
-          this.store.setRam(null);
-        },
+      .subscribe((data) => {
+        this.store.setGpus(data.gpus);
+        this.store.setRam(data.ram ?? null);
       });
 
     this.subs.push(status$, logs$, gpu$);

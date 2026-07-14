@@ -17,7 +17,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
-import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 import type { StoredCalibration } from '../../core/services/storage.service';
 import { applyTunedParams, parseParamsFromScript } from '../../core/utils/flag-writer';
@@ -86,7 +86,7 @@ interface DeviceBar {
 })
 export class OptimizerModal {
   protected readonly store = inject(BenchStore);
-  private readonly api = inject(LlamaBenchService);
+  private readonly api = inject(PlaneLlamaBenchService);
   private readonly messages = inject(MessageService);
   private readonly storage = inject(StorageService);
 

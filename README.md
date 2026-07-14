@@ -1,4 +1,4 @@
-# llama-bench-web
+# plane-llama-bench
 
 Utilidad web para hacer benchmark de modelos locales con **llama.cpp**,
 controlando `llama-server` desde el navegador.
@@ -395,7 +395,7 @@ nativo (`@if/@for`), lazy loading de rutas.
 | Ruta / componente           | Responsabilidad                                                   |
 | --------------------------- | ----------------------------------------------------------------- |
 | `core/services/api`         | Wrapper `HttpClient` + manejo de errores unificado (lanza Error). |
-| `core/services/llama-bench` | Un Observable por endpoint del backend.                           |
+| `core/services/plane-llama-bench` | Un Observable por endpoint del backend.                           |
 | `core/services/storage`     | 4 claves de `localStorage` (script, prompt, sort, modelFilter).   |
 | `core/state/bench.store`    | Estado central con signals + actions + effects de persistencia.   |
 | `features/home`             | Orquestador: polling (status 1.5s, logs 1s, gpu 4s) + carga.      |

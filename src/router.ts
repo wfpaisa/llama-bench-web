@@ -1,9 +1,12 @@
-// Router HTTP: path matching manual + CORS. Solo API JSON (el frontend vive en
-// front/, servido aparte). Sin frameworks: handleRequest() despacha a cada
-// módulo según el path.
+// Router HTTP: path matching manual + CORS. En dev es solo API JSON (el frontend
+// vive en front/, servido aparte por ng serve). En modo empaquetado (env
+// FRONT_DIST seteada por Electron) sirve además los estáticos del frontend en
+// el mismo puerto → same-origin, sin CORS ni mixed-content. Sin frameworks:
+// handleRequest() despacha a cada módulo según el path.
 
-import { existsSync } from 'node:fs'
+import { createReadStream, existsSync, statSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
+import { extname, join, normalize } from 'node:path'
 import type { LogsResponse, StatusResponse } from './types.ts'
 import { managed, benchmarkRunning, setBenchmarkRunning, benchAbortController, status, statusError } from './state.ts'
 import { parseScript } from './script-parser.ts'
@@ -345,7 +348,95 @@ export async function handleRequest(req: Request): Promise<Response> {
     return json({ ok: true })
   }
 
+  // ── Estáticos del frontend (solo en modo empaquetado) ──
+  // Cuando la env FRONT_DIST está seteada (la inyecta Electron al spawn), el
+  // backend sirve el build de Angular desde el mismo puerto → same-origin. Esto
+  // se evalúa DESPUÉS de todos los endpoints de la API, así que /status, /logs,
+  // /history, etc. nunca colisionan con archivos. Fallback SPA a index.html.
+  const dist = process.env.FRONT_DIST
+  if (dist && req.method === 'GET') {
+    return serveStatic(dist, path)
+  }
+
   return new Response('Not found', { status: 404, headers: CORS })
+}
+
+// ── Servidor de estáticos (modo empaquetado) ─────────────────────────────────
+
+// Content-types para las extensiones que usa el build de Angular (JS, CSS,
+// fuentes, imágenes, sourcemaps). El resto cae a application/octet-stream.
+const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.map': 'application/json; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+}
+
+/**
+ * Sirve un archivo del directorio del frontend. Resuelve la ruta pedida contra
+ * `dist` (sin escapar del dir → normalize + verificación de prefijo), y si no
+ * existe cae a index.html (SPA routing del Angular router).
+ *
+ * El index.html se post-procesa para inyectar `window.__API_BASE_URL = ''`:
+ * así el ApiService del frontend usa rutas relativas (mismo origen) en vez del
+ * default 'http://localhost:3000' (que solo aplica en dev con ng serve aparte).
+ */
+async function serveStatic(dist: string, reqPath: string): Promise<Response> {
+  // Limpiar la ruta: quitar leading slash y query (ya hecho por URL parsing).
+  const rel = normalize(reqPath.replace(/^\/+/, ''))
+  const abs = normalize(join(dist, rel))
+
+  // Anti path-traversal: el resuelto debe seguir dentro de dist.
+  if (!abs.startsWith(normalize(dist))) {
+    return new Response('Forbidden', { status: 403 })
+  }
+
+  // Si existe y es archivo → servirlo. Si es directorio o no existe → SPA.
+  if (existsSync(abs) && statSync(abs).isFile()) {
+    const ct = MIME[extname(abs).toLowerCase()] ?? 'application/octet-stream'
+    // stream para archivos grandes (fuentes, sourcemaps).
+    const stream = createReadStream(abs)
+    const readable = new ReadableStream({
+      start(controller) {
+        stream.on('data', (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)))
+        stream.on('end', () => controller.close())
+        stream.on('error', (e) => controller.error(e))
+      },
+      cancel() {
+        stream.destroy()
+      },
+    })
+    return new Response(readable, { headers: { 'Content-Type': ct } })
+  }
+
+  // SPA fallback: index.html con la base URL inyectada.
+  const indexFile = join(dist, 'index.html')
+  if (existsSync(indexFile)) {
+    let html = await readFile(indexFile, 'utf8')
+    // Inyectar antes de </head>: same-origin → API base vacía (rutas relativas).
+    if (!html.includes('__API_BASE_URL')) {
+      html = html.replace(
+        '</head>',
+        `<script>window.__API_BASE_URL='';</script></head>`
+      )
+    }
+    return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  }
+
+  return new Response('Not found', { status: 404 })
 }
 
 // existsSync re-export: el entry lo usa en el bootstrap para history.json.

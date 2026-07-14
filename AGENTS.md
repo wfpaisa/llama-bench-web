@@ -29,6 +29,11 @@ Ejecutados desde la **raíz** del repo (que orquesta backend + frontend juntos):
 | `bun run build:front` | Build de producción del frontend Angular (`ng build`) → `front/dist/`                                                  |
 | `bun run typecheck`   | `tsc --noEmit` del backend                                                                                             |
 | `bun run fix`         | Formatea todo con `prettier`                                                                                           |
+| `bun run build:back`  | Precompila el backend a binario nativo standalone (`bun build --compile`) → `electron/backend/llama-bench-backend`     |
+| `bun run build:electron` | Compila el shell de Electron (`electron/*.ts`) → `dist-electron/`                                                   |
+| `bun run build:app`   | Build completo: frontend + backend compilado + shell de Electron                                                       |
+| `bun run dist`        | `build:app` + `electron-builder` → genera el `.AppImage` en `release/`                                                 |
+| `bun run dev:electron`| Compila el shell y lanza Electron conectándose al backend de dev                                                       |
 
 Dentro de `front/` (directorio del frontend Angular) también aplican los scripts
 `ng` habituales (`start`, `build`, `watch`, `test`) — ver `front/package.json`.
@@ -55,7 +60,7 @@ src/                        # Backend (Bun, API pura)
   benchmark.ts              # Orquestador del benchmark completo (runBenchmark, finalize)
   history.ts                # Persistencia del historial (loadHistory, saveResult, …)
   optimizer.ts              # Heurística de VRAM + parser del header GGUF + resolución de archivo (-hf/--model)
-  router.ts                 # HTTP request handler: path matching + CORS (solo API JSON)
+  router.ts                 # HTTP request handler: path matching + CORS (API JSON + estáticos en modo empaquetado)
   shutdown.ts               # Cierre ordenado ante signals (SIGINT/SIGTERM/SIGHUP)
 data/                       # Datos locales (gitignored)
   history.json              # Resultados de benchmarks
@@ -81,6 +86,13 @@ front/                      # Frontend (Angular 22 + PrimeNG 21)
       gpu-grid/, logs-viewer/, response-card/, last-result/,
       history-table/, compare-modal/, chart-modal/,
       optimizer-modal/      # Diálogo optimizador de parámetros (sliders, barras, heurística en vivo)
+electron/                    # Shell de Electron (desktop packaging → AppImage)
+  main.ts                    # Proceso principal: spawn backend, health-check, BrowserWindow, shutdown
+  preload.ts                 # Preload mínimo (contextIsolation; la app habla por HTTP, no IPC)
+  tsconfig.json              # TS config del shell (CommonJS → dist-electron/)
+electron-builder.json        # Config de empaquetado: extraResources (backend + frontend) → AppImage
+dist-electron/               # Shell compilado (gitignored)
+release/                     # Salida de electron-builder: .AppImage (gitignored)
 ```
 
 > Mandates del frontend en `front/AGENTS.md`: `inject()`,
@@ -179,6 +191,77 @@ When killing the process group with `kill(-pid)`, the negative PID targets the e
 aborta el benchmark en curso y detiene el llama-server con un timeout corto
 (3s) para no colgar la terminal, y luego sale con `128 + signum`. Sin esto, el
 hijo detached quedaría huérfano (reclutado por init) y seguiría ocupando la GPU.
+
+---
+
+## Empaquetado AppImage (Electron)
+
+La app se empaqueta como `.AppImage` de Linux. El backend (Bun) y el frontend
+(Angular) **no se reescriben**: se compilan y se incluyen como recursos dentro
+del AppImage. Electron es solo un shell que los orquesta.
+
+### Piezas en runtime
+
+```
+┌─ Electron (Node.js) — electron/main.ts ──────────────────────┐
+│  1. DATA_DIR = app.getPath('userData') → ~/.config/llama-bench│
+│  2. PORT = findFreePort(3000)                                 │
+│  3. spawn: $RESOURCES/backend/llama-bench-backend             │
+│           env: { PORT, DATA_DIR, FRONT_DIST=$RESOURCES/frontend│
+│  4. health-check: GET /status (polling 300ms, timeout 15s)    │
+│  5. BrowserWindow.loadURL(http://127.0.0.1:PORT/)             │
+│  6. before-quit: SIGTERM → 3s → SIGKILL al backend            │
+└───────────────────────────────────────────────────────────────┘
+        │ HTTP same-origin (:PORT)
+┌───────▼───────────────────────────────────────────────────────┐
+│ Backend Bun compilado (binario nativo standalone)             │
+│  • API JSON (/status, /logs, /benchmark, …)                   │
+│  • Sirve estáticos del frontend cuando FRONT_DIST está seteada │
+│  • shutdown.ts mata al llama-server gestionado (no huérfanos) │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Compilación del backend
+
+`bun build src/server.ts --compile --target=bun-linux-x64` produce un binario
+standalone que embebe el runtime de Bun (no necesita Bun instalado en el host).
+Electron lo lanza como subproceso. **Cero cambios al código del backend**: usa
+`process.env.PORT` / `process.env.DATA_DIR` que ya lee `config.ts`.
+
+### `DATA_DIR` escribible (AppImage read-only)
+
+El AppImage es de solo lectura. La carpeta `data/` (history.json,
+script-default.txt, log_debug.txt) vive en `~/.config/llama-bench`
+(`app.getPath('userData')` de Electron), que es escribible y persiste entre
+actualizaciones. Electron la pasa al backend vía `env.DATA_DIR`, que
+`config.ts:11` ya respeta.
+
+### `llama-server` externo
+
+`llama-server` **no se embebe** en el AppImage (es un binario externo del
+usuario). Se detecta del `PATH` vía `Bun.which` (`server-manager.ts:58`); si no
+está, la UI muestra un error claro. El usuario puede indicar la ruta absoluta
+en el script del textarea.
+
+### Same-origin: `FRONT_DIST`
+
+En dev, el backend es **API pura** y el frontend vive en `ng serve :4242`. En
+modo empaquetado, Electron setea `env.FRONT_DIST` al directorio del build de
+Angular; el router (`src/router.ts` → `serveStatic`) sirve entonces los
+estáticos desde el mismo puerto que la API → same-origin. El `index.html` se
+post-procesa para inyectar `window.__API_BASE_URL = ''`, y el `ApiService` del
+frontend usa rutas relativas (ver `front/.../api.service.ts`).
+
+### Flujo de build
+
+```
+bun run dist
+  ├─ build:front   → front/dist/plane-llama-bench/browser/   (Angular)
+  ├─ build:back    → electron/backend/llama-bench-backend     (Bun --compile)
+  ├─ build:electron→ dist-electron/main.js + preload.js       (tsc)
+  └─ electron-builder → release/llama-bench-<ver>-x64.AppImage
+       extraResources: backend/  (binario)  +  frontend/  (estáticos)
+```
 
 ---
 
@@ -361,7 +444,7 @@ la GPU, no el `free` del momento.
 7. **History cap**: `data/history.json` is trimmed to `HISTORY_CAP` (200) entries on each write. No pagination or lazy loading.
 8. **`.gitignore` ignores `data/*`**: History.json is not tracked in git. Each developer has their own local history.
 9. **No CORS issues**: Backend sets `Access-Control-Allow-Origin: *` on all responses, so el frontend Angular (dev en `:4242`) llama al backend (`:3000`) sin proxy. No usar `withCredentials` (incompatible con `*`).
-10. **Backend = API pura**: Ya no sirve `index.html`, `/app.js` ni `/style.css`. El frontend se sirve aparte (`ng serve` en dev, o estáticos del `front/dist/` en producción). El code de `Bun.build()`/`public/` fue eliminado en la migración a Angular.
+10. **Backend = API pura (en dev)**: En dev no sirve `index.html` ni assets: el frontend vive en `ng serve` aparte. En **modo empaquetado** (Electron setea `env.FRONT_DIST`), el router sí sirve estáticos (`serveStatic` en `router.ts`) desde el mismo puerto que la API → same-origin. El `index.html` se post-procesa para inyectar `window.__API_BASE_URL=''`. Ver sección "Empaquetado AppImage (Electron)".
 11. **Spanish UI**: All user-facing text is in Spanish. Code comments are also in Spanish.
 12. **`src/types.ts` (backend) y `front/.../core/models/types.ts` son espejos**: El backend ya no comparte tipos con el frontend (viven en proyectos separados). Si una interfaz cambia, actualizar ambos lados. Incluye `TunedParams`, `ModelMeta`, `VramBreakdown`, `EstimateResponse` del optimizador.
 13. **ESM live bindings**: State variables in `src/state.ts` (`managed`, `status`, etc.) are `let` exports. ESM modules see the current value on each access (live bindings), so closures in `server-manager.ts` correctly observe state changes.
@@ -373,3 +456,4 @@ la GPU, no el `free` del momento.
 19. **Header GGUF del modelo**: `readGgufArch` lee los primeros 2MB del `.gguf` y extrae capas/KV heads/head_dim reales. Si el modelo no está cacheado (p.ej. se descarga por primera vez), no se puede resolver y la heurística cae a la interpolación por tamaño (menos precisa). El archivo se busca en el HF cache (`~/.cache/huggingface/hub`) o vía `--model` con ruta explícita.
 20. **`--n-gpu-layers` afecta los pesos en VRAM**: Si `ngl < capas`, solo esa fracción de pesos va a VRAM; el resto a RAM del sistema. El KV cache y el overhead siempre van a GPU (no se pueden offload). Mover el slider de "Capas en GPU" reduce los pesos visibles en las barras.
 21. **Comparación contra VRAM total, no libre**: Las barras del optimizador comparan contra `totalMiB` del device, no `freeMiB`. El modelo puede usar VRAM que el display-server reporta como "ocupada" — comparar contra `free` daba falsos rojos. El "¿cabe?" real es contra la capacidad total de la GPU.
+22. **Empaquetado Electron/AppImage**: El backend se precompila con `bun build --compile` (binario nativo standalone que embebe Bun) y Electron lo lanza como subproceso. `DATA_DIR` se resuelve a `~/.config/llama-bench` (escritura fuera del AppImage read-only). `llama-server` no se embebe: se detecta del PATH del usuario. El shell vive en `electron/`; `bun run dist` genera el AppImage en `release/`. Ver sección "Empaquetado AppImage (Electron)".

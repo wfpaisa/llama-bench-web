@@ -13,7 +13,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
-import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { formatScript } from '../../core/utils/format';
 
 /**
@@ -39,7 +39,7 @@ import { formatScript } from '../../core/utils/format';
 })
 export class BenchmarkPanel implements OnDestroy {
   protected readonly store = inject(BenchStore);
-  private readonly api = inject(LlamaBenchService);
+  private readonly api = inject(PlaneLlamaBenchService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
 

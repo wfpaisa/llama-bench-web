@@ -21,13 +21,13 @@ export interface SortState {
 }
 
 const KEYS = {
-  script: 'llama-bench-script',
-  prompt: 'llama-bench-prompt',
-  sort: 'llama-bench-sort',
-  maxTokens: 'llama-bench-max-tokens',
-  maxTokensEnabled: 'llama-bench-max-tokens-enabled',
-  historyColumns: 'llama-bench-history-columns',
-  calibration: 'llama-bench-calibration',
+  script: 'plane-llama-bench-script',
+  prompt: 'plane-llama-bench-prompt',
+  sort: 'plane-llama-bench-sort',
+  maxTokens: 'plane-llama-bench-max-tokens',
+  maxTokensEnabled: 'plane-llama-bench-max-tokens-enabled',
+  historyColumns: 'plane-llama-bench-history-columns',
+  calibration: 'plane-llama-bench-calibration',
 } as const;
 
 @Injectable({ providedIn: 'root' })

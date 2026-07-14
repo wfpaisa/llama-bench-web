@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { BenchStore } from '../../core/state/bench.store';
-import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { MessageService } from 'primeng/api';
 import { FmtNumPipe } from '../../core/utils/pipes';
 
@@ -22,7 +22,7 @@ import { FmtNumPipe } from '../../core/utils/pipes';
 })
 export class LogsViewer {
   protected readonly store = inject(BenchStore);
-  private readonly api = inject(LlamaBenchService);
+  private readonly api = inject(PlaneLlamaBenchService);
   private readonly messages = inject(MessageService);
 
   private readonly logsEl = viewChild<ElementRef<HTMLDivElement>>('logsEl');

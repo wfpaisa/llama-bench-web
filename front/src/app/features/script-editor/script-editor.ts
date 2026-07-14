@@ -17,7 +17,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { Table, TableModule } from 'primeng/table';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
-import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { formatScript } from '../../core/utils/format';
 import {
   addFlagToScript,
@@ -64,7 +64,7 @@ const CATEGORY_ORDER: FlagCategory[] = ['Común', 'Muestreo', 'Especulativo', 'S
 })
 export class ScriptEditor {
   protected readonly store = inject(BenchStore);
-  private readonly api = inject(LlamaBenchService);
+  private readonly api = inject(PlaneLlamaBenchService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
 

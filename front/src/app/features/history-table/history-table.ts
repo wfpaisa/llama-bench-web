@@ -9,7 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService, SelectItemGroup, SortEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { BenchStore } from '../../core/state/bench.store';
-import { LlamaBenchService } from '../../core/services/llama-bench.service';
+import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 import { BenchmarkResult, ParsedScript } from '../../core/models/types';
 import {
@@ -179,7 +179,7 @@ const GROUPED_COLUMNS: SelectItemGroup[] = GROUP_ORDER.map((gk) => {
 })
 export class HistoryTable {
   protected readonly store = inject(BenchStore);
-  private readonly api = inject(LlamaBenchService);
+  private readonly api = inject(PlaneLlamaBenchService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
   private readonly storage = inject(StorageService);
