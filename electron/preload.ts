@@ -7,4 +7,4 @@
 //
 // contextIsolation: true → el renderer no tiene acceso directo a Node.
 
-export {};
+export {}

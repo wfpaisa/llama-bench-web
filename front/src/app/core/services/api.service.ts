@@ -15,7 +15,8 @@ import { catchError, map } from 'rxjs/operators';
  * las rutas son relativas (same-origin). Ver `src/router.ts` (serveStatic).
  */
 export const API_BASE_URL: string =
-  (typeof window !== 'undefined' && (window as unknown as { __API_BASE_URL?: string }).__API_BASE_URL) ||
+  (typeof window !== 'undefined' &&
+    (window as unknown as { __API_BASE_URL?: string }).__API_BASE_URL) ||
   'http://localhost:3000';
 
 /** Respuesta exitosa con cuerpo JSON { ok, error?, ... }. */

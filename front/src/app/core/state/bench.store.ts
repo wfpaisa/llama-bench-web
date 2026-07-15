@@ -68,6 +68,12 @@ export class BenchStore {
   /** Si false, el benchmark se ejecuta sin límite de tokens (omisión de max_tokens). */
   readonly maxTokensEnabled = signal(true);
 
+  // ── Flags destacadas (favoritos) del editor de script ──
+  // Array de flags largas canónicas (p.ej. '--ctx-size'). Se carga desde el
+  // backend (/flags-favorites) y se persiste en /data. Vacío hasta la primera
+  // carga (la hace ScriptEditor al inicializarse).
+  readonly favorites = signal<string[]>([]);
+
   // ── Estado del benchmark ──
   readonly benchRunning = signal(false);
   readonly benchState = signal('');
@@ -153,6 +159,9 @@ export class BenchStore {
 
   /** Cantidad seleccionada. */
   readonly selectedCount = computed(() => this.selected().size);
+
+  /** Cantidad de flags destacadas (para el badge del toggle "Solo destacados"). */
+  readonly favoriteCount = computed(() => this.favorites().length);
 
   // ════════════ Inyección + init ════════════
 
@@ -253,6 +262,32 @@ export class BenchStore {
 
   setAutoscroll(v: boolean): void {
     this.autoscroll.set(v);
+  }
+
+  // ════════════ Actions: flags destacadas ════════════
+
+  /** Reemplaza toda la lista de favoritos (tras cargar del backend). */
+  setFavorites(favorites: string[]): void {
+    this.favorites.set(favorites);
+  }
+
+  /** ¿Es la flag larga dada un favorito? */
+  isFavorite(flagLong: string): boolean {
+    return this.favorites().includes(flagLong);
+  }
+
+  /**
+   * Alterna el estado de destacado de una flag. Devuelve la nueva lista completa
+   * para que el llamador la persista en el backend (actualización optimista: el
+   * signal cambia ya, el POST va en paralelo).
+   */
+  toggleFavorite(flagLong: string): string[] {
+    const current = this.favorites();
+    const next = current.includes(flagLong)
+      ? current.filter((f) => f !== flagLong)
+      : [...current, flagLong];
+    this.favorites.set(next);
+    return next;
   }
 
   // ════════════ Actions: benchmark ════════════

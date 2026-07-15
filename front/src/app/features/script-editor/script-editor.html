@@ -72,7 +72,7 @@
     <div class="col col-flags">
       <p-table
         #dt
-        [value]="flagsList()"
+        [value]="visibleFlags()"
         dataKey="long"
         [showGridlines]="true"
         [globalFilterFields]="[
@@ -92,11 +92,11 @@
       >
         <ng-template #caption>
           <div class="flags-toolbar">
-            <p-inputgroup>
+            <p-inputgroup class="search-input">
               <p-inputgroup-addon><i class="pi pi-search"></i></p-inputgroup-addon>
               <input
                 pInputText
-                placeholder="Buscar flags…"
+                placeholder="Filtrar"
                 [ngModel]="search()"
                 (ngModelChange)="search.set($event); dt.filterGlobal($event, 'contains')"
               />
@@ -112,7 +112,18 @@
                 </p-inputgroup-addon>
               }
             </p-inputgroup>
-            <span class="muted small count" size="small">{{ flagsList().length }} flags</span>
+            <p-button
+              [icon]="showFavoritesOnly() ? 'pi pi-star-fill' : 'pi pi-star'"
+              [label]="
+                showFavoritesOnly() ? 'Destacados (' + store.favoriteCount() + ')' : 'Destacados'
+              "
+              size="small"
+              [severity]="showFavoritesOnly() ? 'warn' : 'secondary'"
+              [outlined]="!showFavoritesOnly()"
+              (onClick)="toggleFavoritesOnly()"
+              pTooltip="Mostrar solo las flags destacadas"
+            />
+            <span class="muted small count">{{ visibleFlags().length }} flags</span>
             <p-button
               icon="pi pi-expand"
               label="Pantalla completa"
@@ -127,66 +138,12 @@
         <ng-template #header>
           <tr>
             <th style="width: 3rem"></th>
-            <th style="min-width: 5rem">
-              <div class="th-filter">
-                Corta
-                <p-columnFilter
-                  type="text"
-                  field="short"
-                  display="menu"
-                  placeholder="-c"
-                  ariaLabel="Filtrar por flag corta"
-                />
-              </div>
-            </th>
-            <th style="min-width: 8rem">
-              <div class="th-filter">
-                Flag larga
-                <p-columnFilter
-                  type="text"
-                  field="long"
-                  display="menu"
-                  placeholder="p.ej. ctx…"
-                  ariaLabel="Filtrar por flag larga"
-                />
-              </div>
-            </th>
-            <th style="min-width: 12rem">
-              <div class="th-filter">
-                Nombre
-                <p-columnFilter
-                  type="text"
-                  field="name"
-                  display="menu"
-                  placeholder="Nombre…"
-                  ariaLabel="Filtrar por nombre"
-                />
-              </div>
-            </th>
-            <th style="min-width: 16rem">
-              <div class="th-filter">
-                ¿Para qué sirve?
-                <p-columnFilter
-                  type="text"
-                  field="description"
-                  display="menu"
-                  placeholder="Descripción…"
-                  ariaLabel="Filtrar por descripción"
-                />
-              </div>
-            </th>
-            <th style="min-width: 16rem">
-              <div class="th-filter">
-                Texto original (EN)
-                <p-columnFilter
-                  type="text"
-                  field="originalDescription"
-                  display="menu"
-                  placeholder="Original…"
-                  ariaLabel="Filtrar por texto original"
-                />
-              </div>
-            </th>
+            <th style="width: 3rem">Destacados</th>
+            <th style="min-width: 5rem">Corta</th>
+            <th style="min-width: 8rem">Flag larga</th>
+            <th style="min-width: 8rem">Default</th>
+            <th style="min-width: 16rem">¿Para qué sirve?</th>
+            <th style="min-width: 16rem">Texto original (EN)</th>
           </tr>
         </ng-template>
 
@@ -196,7 +153,7 @@
             (click)="toggleCategory(f.category)"
             [class.collapsed]="!isCategoryExpanded(f.category)"
           >
-            <td colspan="6">
+            <td colspan="7">
               <i
                 class="pi"
                 [class.pi-chevron-down]="isCategoryExpanded(f.category)"
@@ -222,6 +179,16 @@
                 />
               </td>
 
+              <td class="cell-fav">
+                <i
+                  class="pi star-toggle"
+                  [class.pi-star-fill]="isFavorite(f.long)"
+                  [class.pi-star]="!isFavorite(f.long)"
+                  [class.active]="isFavorite(f.long)"
+                  (click)="toggleFavorite(f)"
+                ></i>
+              </td>
+
               <td class="cell-code">
                 @if (f.short) {
                   <code>{{ f.short }}</code>
@@ -234,14 +201,9 @@
                 <code>{{ f.long }}</code>
               </td>
 
-              <td class="cell-name">
-                <div class="flag-name">{{ f.name }}</div>
+              <td class="cell-default">
                 @if (f.defaultValue) {
-                  <div class="flag-default">
-                    default: <code>{{ f.defaultValue }}</code>
-                  </div>
-                } @else {
-                  <div class="flag-default muted">switch</div>
+                  <code>{{ f.defaultValue }}</code>
                 }
               </td>
 
@@ -260,7 +222,7 @@
 
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
+            <td colspan="7" class="empty muted">Ningún flag coincide con el filtro.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -274,13 +236,13 @@
   [modal]="true"
   [draggable]="true"
   [resizable]="true"
-  header="Catálogo de flags — {{ flagsList().length }} flags"
+  header="Catálogo de flags — {{ visibleFlags().length }} flags"
   [style]="{ width: '90vw', maxWidth: '120rem', height: '90vh' }"
   [maximizable]="true"
 >
   <p-table
     #dtFs
-    [value]="flagsList()"
+    [value]="visibleFlags()"
     dataKey="long"
     [showGridlines]="true"
     [globalFilterFields]="[
@@ -297,69 +259,52 @@
     rowGroupMode="subheader"
     groupRowsBy="category"
   >
+    <ng-template #caption>
+      <div class="flags-toolbar">
+        <p-inputgroup class="search-input">
+          <p-inputgroup-addon><i class="pi pi-search"></i></p-inputgroup-addon>
+          <input
+            pInputText
+            placeholder="Filtrar"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event); dtFs.filterGlobal($event, 'contains')"
+          />
+
+          @if (search()) {
+            <p-inputgroup-addon>
+              <p-button
+                icon="pi pi-times"
+                severity="secondary"
+                (onClick)="clearFlags()"
+                [text]="true"
+              />
+            </p-inputgroup-addon>
+          }
+        </p-inputgroup>
+        <p-button
+          [icon]="showFavoritesOnly() ? 'pi pi-star-fill' : 'pi pi-star'"
+          [label]="
+            showFavoritesOnly() ? 'Destacados (' + store.favoriteCount() + ')' : 'Destacados'
+          "
+          size="small"
+          [severity]="showFavoritesOnly() ? 'warn' : 'secondary'"
+          [outlined]="!showFavoritesOnly()"
+          (onClick)="toggleFavoritesOnly()"
+          pTooltip="Mostrar solo las flags destacadas"
+        />
+        <span class="muted small count">{{ visibleFlags().length }} flags</span>
+      </div>
+    </ng-template>
+
     <ng-template #header>
       <tr>
         <th style="width: 3rem"></th>
-        <th style="min-width: 5rem">
-          <div class="th-filter">
-            Corta
-            <p-columnFilter
-              type="text"
-              field="short"
-              display="menu"
-              placeholder="-c"
-              ariaLabel="Filtrar por flag corta"
-            />
-          </div>
-        </th>
-        <th style="min-width: 8rem">
-          <div class="th-filter">
-            Flag larga
-            <p-columnFilter
-              type="text"
-              field="long"
-              display="menu"
-              placeholder="p.ej. ctx…"
-              ariaLabel="Filtrar por flag larga"
-            />
-          </div>
-        </th>
-        <th style="min-width: 12rem">
-          <div class="th-filter">
-            Nombre
-            <p-columnFilter
-              type="text"
-              field="name"
-              display="menu"
-              placeholder="Nombre…"
-              ariaLabel="Filtrar por nombre"
-            />
-          </div>
-        </th>
-        <th style="min-width: 16rem">
-          <div class="th-filter">
-            ¿Para qué sirve?
-            <p-columnFilter
-              type="text"
-              field="description"
-              display="menu"
-              placeholder="Descripción…"
-              ariaLabel="Filtrar por descripción"
-            />
-          </div>
-        </th>
-        <th style="min-width: 16rem">
-          <div class="th-filter">
-            Texto original (EN)
-            <p-columnFilter
-              type="text"
-              field="originalDescription"
-              display="menu"
-              placeholder="Original…"
-              ariaLabel="Filtrar por texto original"
-            />
-          </div>
-        </th>
+        <th style="width: 3rem">Destacados</th>
+        <th style="min-width: 5rem">Corta</th>
+        <th style="min-width: 8rem">Flag larga</th>
+        <th style="min-width: 8rem">Default</th>
+        <th style="min-width: 16rem">¿Para qué sirve?</th>
+        <th style="min-width: 16rem">Texto original (EN)</th>
       </tr>
     </ng-template>
 
@@ -369,7 +314,7 @@
         (click)="toggleCategory(f.category)"
         [class.collapsed]="!isCategoryExpanded(f.category)"
       >
-        <td colspan="6">
+        <td colspan="7">
           <i
             class="pi"
             [class.pi-chevron-down]="isCategoryExpanded(f.category)"
@@ -396,6 +341,16 @@
             }
           </td>
 
+          <td class="cell-fav">
+            <i
+              class="pi star-toggle"
+              [class.pi-star-fill]="isFavorite(f.long)"
+              [class.pi-star]="!isFavorite(f.long)"
+              [class.active]="isFavorite(f.long)"
+              (click)="toggleFavorite(f)"
+            ></i>
+          </td>
+
           <td class="cell-code">
             @if (f.short) {
               <code>{{ f.short }}</code>
@@ -408,14 +363,9 @@
             <code>{{ f.long }}</code>
           </td>
 
-          <td class="cell-name">
-            <div class="flag-name">{{ f.name }}</div>
+          <td class="cell-default">
             @if (f.defaultValue) {
-              <div class="flag-default">
-                default: <code>{{ f.defaultValue }}</code>
-              </div>
-            } @else {
-              <div class="flag-default muted">switch</div>
+              <code>{{ f.defaultValue }}</code>
             }
           </td>
 
@@ -434,7 +384,7 @@
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6" class="empty muted">Ningún flag coincide con el filtro.</td>
+        <td colspan="7" class="empty muted">Ningún flag coincide con el filtro.</td>
       </tr>
     </ng-template>
   </p-table>

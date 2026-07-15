@@ -17,7 +17,7 @@ import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
 import { clearHistory, deleteResult, deleteResults, ensureDataDir, loadHistory, setRating } from './history.ts'
 import { getLogBuffer, systemLog } from './logs.ts'
-import { SCRIPT_FILE, PROMPT_FILE } from './config.ts'
+import { SCRIPT_FILE, PROMPT_FILE, FLAGS_FAV_FILE } from './config.ts'
 import { listDevices } from './devices.ts'
 import { parseModelMeta, buildEstimateResponse, resolveModelFile } from './optimizer.ts'
 import { runDryfit } from './dryfit.ts'
@@ -98,6 +98,33 @@ export async function handleRequest(req: Request): Promise<Response> {
       await ensureDataDir()
       await writeFile(PROMPT_FILE, body.prompt, 'utf8')
       systemLog('prompt-default guardado.')
+      return json({ ok: true })
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message }, 500)
+    }
+  }
+
+  // ── Flags destacadas (favoritos) del editor de script ──
+  // Array JSON de flags largas canónicas. Si no existe el archivo → array vacío.
+  if (path === '/flags-favorites' && req.method === 'GET') {
+    try {
+      const content = await readFile(FLAGS_FAV_FILE, 'utf8')
+      const arr = JSON.parse(content)
+      const favorites = Array.isArray(arr) && arr.every((x) => typeof x === 'string') ? arr : []
+      return json({ favorites })
+    } catch {
+      return json({ favorites: [] })
+    }
+  }
+  if (path === '/flags-favorites' && req.method === 'POST') {
+    try {
+      const body = await req.json()
+      const favorites = body?.favorites
+      if (!Array.isArray(favorites) || !favorites.every((x) => typeof x === 'string')) {
+        return json({ ok: false, error: "'favorites' debe ser un array de strings." }, 400)
+      }
+      await ensureDataDir()
+      await writeFile(FLAGS_FAV_FILE, JSON.stringify(favorites, null, 2), 'utf8')
       return json({ ok: true })
     } catch (e) {
       return json({ ok: false, error: (e as Error).message }, 500)

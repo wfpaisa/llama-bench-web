@@ -120,6 +120,15 @@ export class PlaneLlamaBenchService {
     return this.api.post<OkResponse>('/prompt-default', { prompt });
   }
 
+  // ── Flags destacadas (favoritos) del editor de script ──
+  getFlagsFavorites(): Observable<{ favorites: string[] }> {
+    return this.api.get<{ favorites: string[] }>('/flags-favorites');
+  }
+
+  saveFlagsFavorites(favorites: string[]): Observable<OkResponse> {
+    return this.api.post<OkResponse>('/flags-favorites', { favorites });
+  }
+
   // ── Optimizador ──
   /** Estimación heurística instantánea (no arranca el binario). */
   estimate(

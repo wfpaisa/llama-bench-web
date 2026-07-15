@@ -20,6 +20,10 @@ export const SCRIPT_FILE = join(DATA_DIR, 'script-default.txt')
 // Prompt de benchmark por defecto guardado desde la UI.
 export const PROMPT_FILE = join(DATA_DIR, 'prompt-default.txt')
 
+// Flags destacadas (favoritos) del editor de script. Array JSON con las flags
+// largas canónicas (p.ej. ['--ctx-size', '--n-gpu-layers']).
+export const FLAGS_FAV_FILE = join(DATA_DIR, 'flags-favorites.json')
+
 // Límite del historial persistido.
 export const HISTORY_CAP = 200
 

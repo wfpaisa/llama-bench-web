@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -38,10 +39,10 @@ const CATEGORY_ORDER: FlagCategory[] = ['Común', 'Muestreo', 'Especulativo', 'S
  * Layout en dos columnas:
  *  - Columna UNO: CodeMirror (bash) con el script + acciones (formatear, default, play/stop).
  *  - Columna DOS: p-table con todas las flags conocidas, agrupadas por categoría
- *    (rowGroupMode subheader expandible). Búsqueda global en el caption + filtros
- *    por columna (texto para nombre/flag larga/corta). Cada fila con botón "info"
- *    (abre diálogo con descripción) y "agregar" (inserta el flag en el script).
- *    El filtrado lo hace PrimeNG nativamente (p-columnFilter + filterGlobal).
+ *    (rowGroupMode subheader expandible). Búsqueda global única en el caption
+ *    (sin filtros por columna). Cada fila lleva estrella de destacado (favoritos
+ *    persistidos en /data) y botón de agregar al script. Toggle "Solo
+ *    destacados" en el toolbar para filtrar los más usados.
  */
 @Component({
   selector: 'app-script-editor',
@@ -90,6 +91,52 @@ export class ScriptEditor {
       (a, b) => (rank.get(a.category) ?? 99) - (rank.get(b.category) ?? 99),
     );
   });
+
+  /**
+   * Flags visibles en la tabla: si `showFavoritesOnly()` está activo, recorta a
+   * las destacadas. La búsqueda textual la sigue haciendo PrimeNG vía
+   * `filterGlobal` sobre `[value]`, así que no se duplica lógica.
+   */
+  protected readonly visibleFlags = computed<LlamaFlag[]>(() => {
+    const all = this.flagsList();
+    if (!this.showFavoritesOnly()) return all;
+    const favs = new Set(this.store.favorites());
+    return all.filter((f) => favs.has(f.long));
+  });
+
+  /** Filtra la tabla para mostrar solo las flags destacadas. */
+  protected readonly showFavoritesOnly = signal(false);
+
+  /** Alterna el filtro "solo destacados". */
+  protected toggleFavoritesOnly(): void {
+    this.showFavoritesOnly.update((v) => !v);
+  }
+
+  /** ¿La flag larga dada está destacada? */
+  protected isFavorite(flagLong: string): boolean {
+    return this.store.isFavorite(flagLong);
+  }
+
+  /**
+   * Alterna el destacado de una flag: actualiza el signal del store
+   * (optimista) y persiste la nueva lista en el backend. Si el POST falla,
+   * revierte y avisa vía toast.
+   */
+  protected toggleFavorite(f: LlamaFlag): void {
+    const next = this.store.toggleFavorite(f.long);
+    this.api.saveFlagsFavorites(next).subscribe({
+      error: (e: Error) => {
+        // Revertir: volver a alternar para dejar el signal como estaba.
+        this.store.toggleFavorite(f.long);
+        this.messages.add({
+          severity: 'error',
+          summary: 'No se pudo guardar el destacado',
+          detail: e.message,
+          life: 4000,
+        });
+      },
+    });
+  }
 
   /** Texto de la búsqueda global (caption). */
   protected readonly search = signal('');
@@ -154,6 +201,15 @@ export class ScriptEditor {
       const s = this.store.script();
       if (s !== this.script()) this.script.set(s);
     });
+
+    // Cargar las flags destacadas desde el backend una sola vez al iniciar.
+    // untracked: no queremos que este effect se re-dispare si favorites cambia.
+    untracked(() => {
+      this.api.getFlagsFavorites().subscribe({
+        next: ({ favorites }) => this.store.setFavorites(favorites),
+        error: () => this.store.setFavorites([]),
+      });
+    });
   }
 
   /** Usuario edita → actualiza modelo local y store (el effect del store persiste). */
@@ -184,7 +240,7 @@ export class ScriptEditor {
 
   // ── Catálogo de flags ──
 
-  /** Limpia todos los filtros de la tabla (búsqueda global) y restaura expansión. */
+  /** Limpia la búsqueda global de la tabla y restaura la expansión de grupos. */
   clearFlags(): void {
     this.search.set('');
     this.collapsedCategories.set(new Set());

@@ -18,22 +18,22 @@
 
 Ejecutados desde la **raíz** del repo (que orquesta backend + frontend juntos):
 
-| Command               | Purpose                                                                                                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `mise install`        | Install Bun via mise version manager                                                                                   |
-| `bun install`         | Instala deps de la raíz (incl. `concurrently`)                                                                         |
-| `bun run dev`         | **Dev conjunto**: arranca backend (`:3000`) + frontend (`:4242`) con `concurrently` (con `--watch`); Ctrl+C mata ambos |
-| `bun run dev:back`    | Solo backend con `--watch`                                                                                             |
-| `bun run dev:front`   | Solo frontend Angular (`ng serve`)                                                                                     |
-| `bun run start`       | Producción: `bun src/server.ts`                                                                                        |
-| `bun run build:front` | Build de producción del frontend Angular (`ng build`) → `front/dist/`                                                  |
-| `bun run typecheck`   | `tsc --noEmit` del backend                                                                                             |
-| `bun run fix`         | Formatea todo con `prettier`                                                                                           |
-| `bun run build:back`  | Precompila el backend a binario nativo standalone (`bun build --compile`) → `electron/backend/llama-bench-backend`     |
-| `bun run build:electron` | Compila el shell de Electron (`electron/*.ts`) → `dist-electron/`                                                   |
-| `bun run build:app`   | Build completo: frontend + backend compilado + shell de Electron                                                       |
-| `bun run dist`        | `build:app` + `electron-builder` → genera el `.AppImage` en `release/`                                                 |
-| `bun run dev:electron`| Compila el shell y lanza Electron conectándose al backend de dev                                                       |
+| Command                  | Purpose                                                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `mise install`           | Install Bun via mise version manager                                                                                   |
+| `bun install`            | Instala deps de la raíz (incl. `concurrently`)                                                                         |
+| `bun run dev`            | **Dev conjunto**: arranca backend (`:3000`) + frontend (`:4242`) con `concurrently` (con `--watch`); Ctrl+C mata ambos |
+| `bun run dev:back`       | Solo backend con `--watch`                                                                                             |
+| `bun run dev:front`      | Solo frontend Angular (`ng serve`)                                                                                     |
+| `bun run start`          | Producción: `bun src/server.ts`                                                                                        |
+| `bun run build:front`    | Build de producción del frontend Angular (`ng build`) → `front/dist/`                                                  |
+| `bun run typecheck`      | `tsc --noEmit` del backend                                                                                             |
+| `bun run fix`            | Formatea todo con `prettier`                                                                                           |
+| `bun run build:back`     | Precompila el backend a binario nativo standalone (`bun build --compile`) → `electron/backend/llama-bench-backend`     |
+| `bun run build:electron` | Compila el shell de Electron (`electron/*.ts`) → `dist-electron/`                                                      |
+| `bun run build:app`      | Build completo: frontend + backend compilado + shell de Electron                                                       |
+| `bun run dist`           | `build:app` + `electron-builder` → genera el `.AppImage` en `release/`                                                 |
+| `bun run dev:electron`   | Compila el shell y lanza Electron conectándose al backend de dev                                                       |
 
 Dentro de `front/` (directorio del frontend Angular) también aplican los scripts
 `ng` habituales (`start`, `build`, `watch`, `test`) — ver `front/package.json`.
