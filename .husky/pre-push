@@ -1,1 +1,5 @@
-bash scripts/release.sh
+#!/usr/bin/env bash
+
+#bash scripts/release.sh
+
+bun pm version patch
