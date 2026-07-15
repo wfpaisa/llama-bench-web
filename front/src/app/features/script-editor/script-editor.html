@@ -45,24 +45,25 @@
         </div>
 
         <div class="buttons">
-          <p-button
-            label="Play"
-            icon="pi pi-play"
-            severity="success"
-            [disabled]="running() || store.benchRunning()"
-            (onClick)="start()"
-            size="large"
-            [outlined]="true"
-          />
-          <p-button
-            label="Stop"
-            icon="pi pi-stop"
-            severity="danger"
-            [disabled]="!running()"
-            (onClick)="stop()"
-            size="large"
-            [outlined]="true"
-          />
+          @if (!running()) {
+            <p-button
+              label="Play"
+              icon="pi pi-play"
+              severity="success"
+              [disabled]="running() || store.benchRunning()"
+              (onClick)="start()"
+              size="large"
+            />
+          }
+          @if (running()) {
+            <p-button
+              label="Stop"
+              icon="pi pi-stop"
+              severity="danger"
+              (onClick)="stop()"
+              size="large"
+            />
+          }
         </div>
       </div>
     </div>

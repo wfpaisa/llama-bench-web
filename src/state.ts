@@ -95,5 +95,6 @@ export function emptyParsedScript(): ParsedScript {
     cacheReuse: 0,
     noMmproj: false,
     specDraftNMax: null,
+    cacheRam: null,
   }
 }

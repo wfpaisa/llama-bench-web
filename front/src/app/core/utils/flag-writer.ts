@@ -10,7 +10,8 @@
 //   --ctx-size, --n-gpu-layers, --cache-type-k, --cache-type-v,
 //   --batch-size, --ubatch-size, --flash-attn on/off,
 //   --device (coma-separado), --tensor-split (coma-separado),
-//   --n-cpu-moe, --cache-reuse, --no-mmproj (switch).
+//   --n-cpu-moe, --cache-reuse, --no-mmproj (switch),
+//   --spec-draft-n-max, --cache-ram.
 
 import type { TunedParams } from '../models/types';
 
@@ -184,6 +185,9 @@ export function parseParamsFromScript(script: string): TunedParams {
     nCpuMoe: flagNum(tokens, '--n-cpu-moe', ['--cpu-moe']) ?? 0,
     cacheReuse: flagNum(tokens, '--cache-reuse') ?? 0,
     noMmproj: flagSwitch(tokens, '--no-mmproj'),
+    specDraftMax:
+      flagNum(tokens, '--spec-draft-n-max', ['--draft-max', '--draft', '--draft-n']) ?? 0,
+    cacheRam: flagNum(tokens, '--cache-ram', ['-cram']) ?? 8192,
   };
 }
 
@@ -238,5 +242,16 @@ export function applyTunedParams(script: string, params: TunedParams): string {
   }
   // --no-mmproj: switch.
   tokens = setFlagSwitch(tokens, '--no-mmproj', params.noMmproj);
+  // --spec-draft-n-max: si 0, quitar; si >0, setearlo (limpia aliases viejos).
+  for (const alias of ['--draft-max', '--draft', '--draft-n']) {
+    tokens = removeFlag(tokens, alias);
+  }
+  if (params.specDraftMax > 0) {
+    tokens = setFlagValue(tokens, '--spec-draft-n-max', String(params.specDraftMax));
+  } else {
+    tokens = removeFlag(tokens, '--spec-draft-n-max');
+  }
+  // --cache-ram: se escribe siempre con el valor del slider (default 8192).
+  tokens = setFlagValue(tokens, '--cache-ram', String(params.cacheRam));
   return rebuildScript(tokens);
 }

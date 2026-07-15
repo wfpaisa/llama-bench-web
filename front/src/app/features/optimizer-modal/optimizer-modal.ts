@@ -63,8 +63,8 @@ interface DeviceBar {
  * --list-devices + resuelve el archivo del modelo y lee su header GGUF).
  *
  * Controles: ctx-size, n-gpu-layers, batch/ubatch, KV cache K/V, devices,
- * tensor-split (slider por device), --n-cpu-moe, --cache-reuse, --flash-attn,
- * --no-mmproj. Botón "Default" restaura los valores de llama-server --help.
+ * tensor-split (slider por device), --n-cpu-moe, --cache-reuse, --spec-draft-n-max,
+ * --cache-ram, --flash-attn, --no-mmproj. Botón "Default" restaura los valores de llama-server --help.
  *
  * Estado: copia temporal local (no toca el script del editor hasta "Aplicar").
  */
@@ -148,6 +148,14 @@ export class OptimizerModal {
    * densos no tiene sentido offloadear expertos (no los hay).
    */
   protected readonly isMoe = computed(() => isModelMoe(this.meta()?.base));
+
+  /**
+   * Tope del slider --cache-ram: la RAM total del sistema (leída vía GET /gpu y
+   * almacenada en el store). Si no está disponible (no-Linux o sin polling aún),
+   * cae a 32 GiB para que el slider sea usable. cache-ram es un presupuesto de
+   * overflow: la VRAM se llena primero y el exceso del KV cache derrama a RAM.
+   */
+  protected readonly cacheRamMax = computed(() => this.store.ram()?.memTotalMiB ?? 32768);
 
   /** True cuando los params ya se sembraron al abrir (evita resembrar en reopen). */
   private seeded = false;
@@ -426,6 +434,8 @@ export class OptimizerModal {
       nCpuMoe: 0,
       cacheReuse: 0,
       noMmproj: false,
+      specDraftMax: 0,
+      cacheRam: 8192,
     });
     this.messages.add({ severity: 'info', summary: 'Valores por defecto aplicados', life: 2600 });
   }
@@ -492,7 +502,10 @@ export class OptimizerModal {
     this.measured.set(null);
     this.heuristicAtCalib.set(null);
     this.calibError.set(null);
-    const script = this.store.script();
+    // Aplicar los params actuales del optimizador al script antes de medir, para
+    // que el dry-fit refleje lo que el usuario ve en los sliders (ctx, ngl,
+    // spec-draft, cache-ram, …). El script del editor queda intacto.
+    const script = applyTunedParams(this.store.script(), this.params());
     const key = this.modelKey();
     // Capturar la heurística actual (con los params del momento) como referencia:
     // los sliders moverán las barras por delta respecto a esta + la medición real.
@@ -557,6 +570,8 @@ export class OptimizerModal {
       nCpuMoe: 0,
       cacheReuse: 0,
       noMmproj: false,
+      specDraftMax: 0,
+      cacheRam: 8192,
     };
   }
 }

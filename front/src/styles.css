@@ -54,6 +54,8 @@
   --color-accent: #2563eb;
 
   --p-tooltip-max-width: 30rem;
+
+  --p-disabled-opacity: 0.2;
 }
 
 :root[class='dark'] {
@@ -73,6 +75,7 @@
 
   --p-form-field-background: var(--p-surface-950);
   --p-datatable-row-striped-background: rgba(0, 0, 0, 0.05);
+  --p-disabled-opacity: 0.5;
 }
 
 /* ---- Box model universal ---- */
@@ -295,11 +298,22 @@ pre {
   line-height: 1.4;
 }
 
+/* forms */
 .p-disabled,
 .p-component:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
-  color: var(--color-text-muted);
-  border-color: var(--color-border);
+
+  /* color: var(--color-text-muted); */
+  /* border-color: var(--color-border); */
   cursor: not-allowed;
+}
+
+.p-button-success,
+.p-button-danger,
+.p-button-success:hover,
+.p-button-danger:hover {
+  --p-button-success-color: #000;
+  --p-button-danger-color: #000;
+  --p-button-success-hover-color: #000;
+  --p-button-danger-hover-color: #000;
 }

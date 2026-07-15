@@ -284,6 +284,8 @@ export async function handleRequest(req: Request): Promise<Response> {
         nCpuMoe: body.params?.nCpuMoe ?? parsed.nCpuMoe ?? 0,
         cacheReuse: body.params?.cacheReuse ?? parsed.cacheReuse ?? 0,
         noMmproj: body.params?.noMmproj ?? parsed.noMmproj ?? false,
+        specDraftMax: body.params?.specDraftMax ?? parsed.specDraftNMax ?? 0,
+        cacheRam: body.params?.cacheRam ?? parsed.cacheRam ?? 8192,
       }
       const priority = body.priority === 'quality' ? 'quality' : 'ctx'
 
@@ -428,10 +430,7 @@ async function serveStatic(dist: string, reqPath: string): Promise<Response> {
     let html = await readFile(indexFile, 'utf8')
     // Inyectar antes de </head>: same-origin → API base vacía (rutas relativas).
     if (!html.includes('__API_BASE_URL')) {
-      html = html.replace(
-        '</head>',
-        `<script>window.__API_BASE_URL='';</script></head>`
-      )
+      html = html.replace('</head>', `<script>window.__API_BASE_URL='';</script></head>`)
     }
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
   }

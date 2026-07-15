@@ -295,6 +295,46 @@
             />
           </div>
 
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="specDraftSlider"
+                pTooltip="Tokens draft propuestos por paso en speculative decoding (MTP). Más tokens pueden acelerar la generación si la tasa de aceptación es alta, pero suben el consumo de VRAM: el batch de verificación pasa de 1 a (n+1) tokens, agrandando los buffers de atención en cada capa. No hay fórmula oficial de llama.cpp; los costes estimados aquí se calibraron empíricamente: activar (~8 % del peso del modelo) + ~3,5 % por cada token extra. En modelos grandes con tensor-split, n=3 suele ser el punto dulce antes de que los retornos decrecientes se aplanen. 0 = desactivado."
+                >Spec draft (--spec-draft-n-max)</label
+              >
+              <span class="ctrl-val tabular-nums">{{ params().specDraftMax }}</span>
+            </div>
+            <p-slider
+              inputId="specDraftSlider"
+              [ngModel]="params().specDraftMax"
+              (ngModelChange)="params.set({ ...params(), specDraftMax: $event })"
+              [min]="0"
+              [max]="4"
+              [step]="1"
+            />
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <label
+                class="ctrl-label"
+                for="cacheRamSlider"
+                pTooltip="Presupuesto máximo (MiB) que el KV cache puede derramar a la RAM del sistema cuando la VRAM se llena. llama-server carga primero en VRAM y desborda el exceso a RAM, así que este valor NO resta de la VRAM estimada: es un colchón de overflow que evita OOM cuando el contexto excede la GPU. El tope del slider es la RAM total del sistema. Default de llama-server: 8192."
+                >Cache RAM (--cache-ram)</label
+              >
+              <span class="ctrl-val tabular-nums">{{ fmtGB(params().cacheRam) }}</span>
+            </div>
+            <p-slider
+              inputId="cacheRamSlider"
+              [ngModel]="params().cacheRam"
+              (ngModelChange)="params.set({ ...params(), cacheRam: $event })"
+              [min]="0"
+              [max]="cacheRamMax()"
+              [step]="1024"
+            />
+          </div>
+
           <div class="control-block switch-row">
             <label
               class="ctrl-label"
@@ -313,13 +353,13 @@
             <label
               class="ctrl-label"
               for="mmprojToggle"
-              pTooltip="No cargar el vision projector (mmproj). El mmproj es el módulo de visión que permite procesar imágenes (modelos multimodales). Si tu modelo es solo de texto, activar este switch ahorra toda la VRAM que ocuparía el mmproj (típicamente 0,5–2 GB). Si el modelo es multimodal y lo activás, perderás la capacidad de procesar imágenes. Default de llama-server: off (carga el mmproj si existe)."
-              >No mmproj (--no-mmproj)</label
+              pTooltip="Cargar el vision projector (mmproj): el módulo de visión que permite procesar imágenes (modelos multimodales). Si tu modelo es solo de texto, desactivar este switch ahorra toda la VRAM que ocuparía el mmproj (típicamente 0,5–2 GB). Si el modelo es multimodal y lo desactivás, perderás la capacidad de procesar imágenes. Default de llama-server: on (carga el mmproj si existe)."
+              >Cargar vision (--no-mmproj)</label
             >
             <p-toggleswitch
               inputId="mmprojToggle"
-              [ngModel]="params().noMmproj"
-              (ngModelChange)="params.set({ ...params(), noMmproj: $event })"
+              [ngModel]="!params().noMmproj"
+              (ngModelChange)="params.set({ ...params(), noMmproj: !$event })"
             />
           </div>
         </div>

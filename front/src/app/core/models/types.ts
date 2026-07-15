@@ -198,6 +198,10 @@ export interface TunedParams {
   cacheReuse: number;
   /** --no-mmproj: si true, no carga el vision projector (ahorra VRAM). */
   noMmproj: boolean;
+  /** --spec-draft-n-max: tokens draft por paso (speculative/MTP). 0 = desactivado. */
+  specDraftMax: number;
+  /** --cache-ram: presupuesto máximo (MiB) que el KV cache puede derramar a RAM. */
+  cacheRam: number;
 }
 
 /** Desglose heurístico del consumo de VRAM de una configuración. */

@@ -12,6 +12,7 @@
 //               (capas, kvHeads y headDim se leen del header GGUF del archivo)
 //   overhead  = 128 + ubatch × 0.5   [MiB]  (buffers de cómputo del backend)
 //               + mmproj si --no-mmproj está off y hay mmproj detectado
+//               + spec-draft si --spec-draft-n-max > 0 (ver más abajo)
 //
 // Resolución del archivo del modelo (resolveModelFile):
 //   -hf "org/model:quant" → busca en ~/.cache/huggingface/hub/models--org--model/
@@ -299,6 +300,8 @@ export function recommendParams(input: RecommendInput): TunedParams {
   const nCpuMoe = current.nCpuMoe ?? 0
   const cacheReuse = current.cacheReuse ?? 0
   const noMmproj = current.noMmproj ?? false
+  const specDraftMax = current.specDraftMax ?? 0
+  const cacheRam = current.cacheRam ?? 8192
 
   // Si no podemos estimar (faltan metadatos), devolver defaults sin optimizar.
   if (meta.paramsB == null || meta.bytesPerParam == null) {
@@ -315,6 +318,8 @@ export function recommendParams(input: RecommendInput): TunedParams {
       nCpuMoe,
       cacheReuse,
       noMmproj,
+      specDraftMax,
+      cacheRam,
     }
   }
 
@@ -352,6 +357,8 @@ export function recommendParams(input: RecommendInput): TunedParams {
     nCpuMoe,
     cacheReuse,
     noMmproj,
+    specDraftMax,
+    cacheRam,
   }
 }
 
@@ -398,6 +405,18 @@ export function buildEstimateResponse(input: EstimateRequestInput): EstimateResp
   }
   if (!params.noMmproj && meta.mmprojSizeMiB != null) {
     overheadMiB += meta.mmprojSizeMiB
+  }
+
+  // --spec-draft-n-max: el batch de verificación pasa de 1 a (n+1) tokens, lo que
+  // agranda los buffers de atención (KQ mask) en CADA capa offload. NO hay
+  // fórmula oficial de llama.cpp para esto (depende de backend, versión y
+  // arquitectura); los coeficientes se calibraron empíricamente como fracción
+  // del peso en VRAM, así escalan a otros modelos sin quemar GB absolutos:
+  //   - Activar (n=1): ~8% del peso (coste fijo de levantar la verificación).
+  //   - Cada token extra (n≥2): +3.5% del peso (buffer KQ por capa).
+  // Verificación contra mediciones reales de un 27B Q4 (4 saltos): error <0.6%.
+  if (params.specDraftMax > 0) {
+    overheadMiB += weightsMiB * (0.08 + 0.035 * (params.specDraftMax - 1))
   }
 
   // --cache-reuse reduce el KV cache: los últimos N tokens del cache anterior

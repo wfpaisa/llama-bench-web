@@ -75,6 +75,8 @@ export interface ParsedScript {
   noMmproj: boolean
   /** `--spec-draft-n-max` (número de drafts para MTP/speculative). null si no estaba. */
   specDraftNMax: number | null
+  /** `--cache-ram` (presupuesto MiB que el KV cache puede derramar a RAM). null si no estaba. */
+  cacheRam: number | null
 }
 
 /** Estado del proceso llama-server gestionado por el backend. */
@@ -251,6 +253,10 @@ export interface TunedParams {
   cacheReuse: number
   /** --no-mmproj: si true, no carga el vision projector (ahorra VRAM del mmproj). */
   noMmproj: boolean
+  /** --spec-draft-n-max: tokens draft por paso (speculative/MTP). 0 = desactivado. */
+  specDraftMax: number
+  /** --cache-ram: presupuesto máximo (MiB) que el KV cache puede derramar a RAM. */
+  cacheRam: number
 }
 
 /** Desglose heurístico del consumo de VRAM de una configuración. */

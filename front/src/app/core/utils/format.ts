@@ -51,11 +51,16 @@ export function fmt(n: number | null | undefined, d = 2): string {
 }
 
 /**
- * Convierte MiB → GB con N decimales y separador de miles; `—` si null.
- * Pensada para VRAM/RAM que vienen en MiB desde el backend.
+ * Convierte MiB → GB (decimal, ÷1000) con N decimales y separador de miles;
+ * `—` si null. Pensada para VRAM/RAM que vienen en MiB desde el backend.
+ *
+ * Usa la convención decimal (1 GB = 1000 MB) —no la binaria (1 GiB = 1024 MiB)—
+ * para coincidir con lo que muestran el monitor del SO y nvidia-smi/`watch -n 1
+ * nvidia-smi` en su columna de memoria. La etiqueta "GB" es por tanto honesta:
+ * la app muestra 15,9 GB para una GPU de 15872 MiB, igual que el sistema.
  */
 export function fmtGB(mib: number | null | undefined, d = 2): string {
-  return mib == null ? '—' : numFmt(d).format(mib / 1024);
+  return mib == null ? '—' : numFmt(d).format(mib / 1000);
 }
 
 /**
@@ -242,7 +247,7 @@ function vendorUpper(v: LlamaDevice['vendor']): string {
 
 /**
  * Una fila por device del backend para render multi-fila en la celda VRAM:
- *   { vendor:"AMD", index:"0", gb:"1,5", detail:"Vulkan0: AMD … (8176 MiB, 5407 MiB free)" }
+ *   { vendor:"AMD", index:"0", gb:"1,5", detail:"Vulkan0: AMD … (8,2 GB, 5,4 GB libres)" }
  * `index` es el número tras el prefijo del backend ("Vulkan0" → "0"). Devuelve []
  * si no hay deviceVram (el template cae al fallback legacy).
  */
@@ -257,7 +262,7 @@ export function deviceVramRows(r: BenchmarkResult): DeviceVramRow[] {
       vendor: vendorUpper(dev.vendor),
       index: num,
       gb: d.usedMiB != null ? fmtGB(d.usedMiB, 1) : '?',
-      detail: `${dev.id}: ${dev.name} (${Math.round(dev.totalMiB)} MiB, ${Math.round(dev.freeMiB)} MiB free)`,
+      detail: `${dev.id}: ${dev.name} (${fmtGB(dev.totalMiB, 1)} GB, ${fmtGB(dev.freeMiB, 1)} GB libres)`,
     };
   });
 }

@@ -15,6 +15,7 @@
 //               (capas, kvHeads, headDim llegan del header GGUF vía la API)
 //   overhead  = 128 + ubatch × 0.5   [MiB]
 //               + mmproj si --no-mmproj está off y hay mmproj detectado
+//               + spec-draft si --spec-draft-n-max > 0 (ver buildBreakdown)
 //
 // Los metadatos del modelo (capas, kvHeads, headDim, weightsFileMiB,
 // mmprojSizeMiB) llegan del backend vía POST /estimate, que los resuelve leyendo
@@ -234,7 +235,15 @@ export function recommendParams(
   }
   bestCtx = Math.max(512, Math.floor(bestCtx / 256) * 256);
 
-  return { ...current, ctxSize: bestCtx, ngl: 999, cacheTypeK, cacheTypeV };
+  return {
+    ...current,
+    ctxSize: bestCtx,
+    ngl: 999,
+    cacheTypeK,
+    cacheTypeV,
+    specDraftMax: current.specDraftMax,
+    cacheRam: current.cacheRam,
+  };
 }
 
 /** Filtra los devices por ids seleccionados (vacío = todos). */
@@ -292,6 +301,14 @@ export function buildBreakdown(
   let overheadMiB = est.overhead;
   if (!params.noMmproj && meta.mmprojSizeMiB != null) {
     overheadMiB += meta.mmprojSizeMiB;
+  }
+  // spec-draft: el batch de verificación crece (1 → n+1 tokens), agrandando los
+  // buffers de atención (KQ mask) en cada capa offload. NO hay fórmula oficial
+  // de llama.cpp (depende de backend/versión/arquitectura); coeficientes
+  // calibrados empíricamente como fracción del peso en VRAM para escalar a
+  // cualquier modelo: activar ~8%, cada token extra +3.5%.
+  if (params.specDraftMax > 0) {
+    overheadMiB += weightsMiB * (0.08 + 0.035 * (params.specDraftMax - 1));
   }
 
   // 3) KV cache: --cache-reuse reduce el ctx efectivo que se paga fresco.

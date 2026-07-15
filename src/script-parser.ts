@@ -116,6 +116,7 @@ export function parseScript(script: string): ParsedScript {
     cacheReuse: toNumOrNull(flagValue(argv, '--cache-reuse')) ?? 0,
     noMmproj: hasFlag(argv, '--no-mmproj'),
     specDraftNMax: toNumOrNull(flagValue(argv, '--spec-draft-n-max')),
+    cacheRam: toNumOrNull(flagValue(argv, '--cache-ram')) ?? toNumOrNull(flagValue(argv, '-cram')),
   }
 }
 

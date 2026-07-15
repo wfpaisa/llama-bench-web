@@ -76,7 +76,6 @@
         label="Benchmark"
         icon="pi pi-bolt"
         severity="success"
-        [outlined]="true"
         [disabled]="running() || store.benchRunning()"
         (onClick)="run()"
         size="large"
@@ -86,7 +85,7 @@
           label="Detener"
           icon="pi pi-stop"
           severity="danger"
-          [outlined]="true"
+          size="large"
           (onClick)="stop()"
         />
       }
