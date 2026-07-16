@@ -160,6 +160,11 @@ export interface BenchmarkResult {
    * Opcional para compatibilidad con entradas viejas del historial.
    */
   rating?: number | null;
+  /**
+   * Marca de favorito (corazón) del usuario. false/undefined = no destacado.
+   * Opcional para compatibilidad con entradas viejas del historial.
+   */
+  favorite?: boolean;
   errors: string[];
 }
 

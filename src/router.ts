@@ -15,7 +15,7 @@ import { readGpuStats } from './gpu.ts'
 import { readRamStats } from './mem.ts'
 import { runBenchmark } from './benchmark.ts'
 import { DEFAULT_PROMPT } from './metrics.ts'
-import { clearHistory, deleteResult, deleteResults, ensureDataDir, loadHistory, setRating } from './history.ts'
+import { clearHistory, deleteResult, deleteResults, ensureDataDir, loadHistory, setFavorite, setRating } from './history.ts'
 import { getLogBuffer, systemLog } from './logs.ts'
 import { SCRIPT_FILE, PROMPT_FILE, FLAGS_FAV_FILE } from './config.ts'
 import { listDevices } from './devices.ts'
@@ -351,20 +351,31 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
   }
 
-  // ── Calificación de un resultado (1-10 estrellas) ──
-  // PATCH /history/:id  body: { rating: number | null }
+  // ── Calificación (1-10 estrellas) y favorito (corazón) de un resultado ──
+  // PATCH /history/:id  body: { rating?: number | null, favorite?: boolean }
+  // Ambos campos son opcionales: se persiste solo el que venga en el body.
   if (path.startsWith('/history/') && req.method === 'PATCH') {
     const id = decodeURIComponent(path.slice('/history/'.length))
     try {
       const body = await req.json()
-      const rating = body?.rating
-      // null explícito = "sin calificar"; number entre 0 y 10 (0 = sin calificar).
-      const normalized = rating == null ? null : typeof rating === 'number' && Number.isFinite(rating) ? rating : Number(rating)
-      if (normalized !== null && (typeof normalized !== 'number' || normalized < 0 || normalized > 10)) {
-        return json({ ok: false, error: 'rating debe estar entre 0 y 10.' }, 400)
+
+      // rating: null explícito = "sin calificar"; number entre 0 y 10.
+      if (body && 'rating' in body) {
+        const rating = body.rating
+        const normalized = rating == null ? null : typeof rating === 'number' && Number.isFinite(rating) ? rating : Number(rating)
+        if (normalized !== null && (typeof normalized !== 'number' || normalized < 0 || normalized > 10)) {
+          return json({ ok: false, error: 'rating debe estar entre 0 y 10.' }, 400)
+        }
+        const ok = await setRating(id, normalized)
+        if (!ok) return json({ ok: false, error: 'Resultado no encontrado.' }, 404)
       }
-      const ok = await setRating(id, normalized)
-      if (!ok) return json({ ok: false, error: 'Resultado no encontrado.' }, 404)
+
+      // favorite: boolean para destacar (corazón).
+      if (body && 'favorite' in body) {
+        const ok = await setFavorite(id, Boolean(body.favorite))
+        if (!ok) return json({ ok: false, error: 'Resultado no encontrado.' }, 404)
+      }
+
       return json({ ok: true })
     } catch (e) {
       return json({ ok: false, error: (e as Error).message }, 500)

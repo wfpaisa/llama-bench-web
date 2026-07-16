@@ -94,6 +94,13 @@ export class PlaneLlamaBenchService {
     return this.api.patch<OkResponse>(`/history/${encodeURIComponent(id)}`, { rating });
   }
 
+  /**
+   * Alterna la marca de favorito (corazón) de un resultado.
+   */
+  setFavorite(id: string, favorite: boolean): Observable<OkResponse> {
+    return this.api.patch<OkResponse>(`/history/${encodeURIComponent(id)}`, { favorite });
+  }
+
   clearHistory(): Observable<OkResponse> {
     return this.api.delete<OkResponse>('/history');
   }

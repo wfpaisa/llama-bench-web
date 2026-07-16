@@ -222,6 +222,11 @@ export interface BenchmarkResult {
    * Campo opcional para compatibilidad con entradas viejas del historial.
    */
   rating?: number | null
+  /**
+   * Marca de favorito (corazón) del usuario. false = no destacado.
+   * Campo opcional para compatibilidad con entradas viejas del historial.
+   */
+  favorite?: boolean
   /** Errores encontrados durante el run. */
   errors: string[]
 }

@@ -280,6 +280,42 @@ td {
   font-size: 0.85rem;
 }
 
+/* Celda de favorito (corazón): botón minimalista sin fondo/borde. */
+.fav-cell {
+  text-align: center;
+}
+.fav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  transition:
+    color 0.15s,
+    transform 0.1s;
+}
+.fav-btn:hover {
+  color: var(--p-red-400);
+  background: rgba(255, 255, 255, 0.05);
+}
+.fav-btn:active {
+  transform: scale(0.88);
+}
+/* Corazón marcado: rojo sólido. */
+.fav-btn.is-fav {
+  color: var(--p-red-500);
+}
+.fav-btn.is-fav:hover {
+  color: var(--p-red-400);
+}
+
 /* ── Modos de visualización de la card ── */
 
 /* Maximizada: overlay full-screen con scroll interno propio. La tabla

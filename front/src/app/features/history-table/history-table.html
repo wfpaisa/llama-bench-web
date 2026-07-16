@@ -117,6 +117,17 @@
             <div class="column-name">Fecha <p-sortIcon field="timestamp" /></div>
           </th>
         }
+        @if (colVisible('fav')) {
+          <th
+            [pSortableColumn]="'favorite'"
+            style="min-width: 2.5rem"
+            title="Favorito (corazón). Clic para ordenar."
+          >
+            <div class="column-name">
+              <i class="pi pi-heart"></i> <p-sortIcon field="favorite" />
+            </div>
+          </th>
+        }
         @if (colVisible('rating')) {
           <th
             [pSortableColumn]="'rating'"
@@ -320,6 +331,21 @@
         }
         @if (colVisible('date')) {
           <td class="date-cell">{{ dateStr(r.timestamp) }}</td>
+        }
+        @if (colVisible('fav')) {
+          <td class="fav-cell">
+            <button
+              type="button"
+              class="fav-btn"
+              [class.is-fav]="r.favorite"
+              (click)="onToggleFavorite(r)"
+              [title]="r.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'"
+              [attr.aria-pressed]="!!r.favorite"
+              aria-label="Favorito"
+            >
+              <i class="pi" [class.pi-heart]="!r.favorite" [class.pi-heart-fill]="r.favorite"></i>
+            </button>
+          </td>
         }
         @if (colVisible('rating')) {
           <td class="rating-cell">

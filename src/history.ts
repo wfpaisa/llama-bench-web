@@ -58,6 +58,19 @@ export async function setRating(id: string, rating: number | null): Promise<bool
   return true
 }
 
+/**
+ * Alterna la marca de favorito (corazón) de un resultado por id.
+ * Devuelve false si el id no existe.
+ */
+export async function setFavorite(id: string, favorite: boolean): Promise<boolean> {
+  const all = await loadHistory()
+  const idx = all.findIndex((r) => r.id === id)
+  if (idx === -1) return false
+  all[idx] = { ...all[idx], favorite }
+  await writeFile(HISTORY_FILE, JSON.stringify(all, null, 2))
+  return true
+}
+
 /** Vacía todo el historial. */
 export async function clearHistory(): Promise<void> {
   await ensureDataDir()

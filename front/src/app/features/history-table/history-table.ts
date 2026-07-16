@@ -73,6 +73,7 @@ export interface ColumnGroupMeta {
  * Claves de las columnas seleccionadas por defecto al primer uso.
  */
 const DEFAULT_VISIBLE = [
+  'fav',
   'model',
   'backend',
   'ctx',
@@ -93,6 +94,7 @@ const DEFAULT_VISIBLE = [
  */
 const COLUMN_DEFS: HistoryColumn[] = [
   { key: 'date', header: 'Fecha' },
+  { key: 'fav', header: '♥' },
   { key: 'rating', header: '★ Calificación' },
   { key: 'model', header: 'Modelo' },
   { key: 'backend', header: 'Backend' },
@@ -504,6 +506,34 @@ export class HistoryTable {
         this.messages.add({
           severity: 'error',
           summary: 'Error al guardar calificación',
+          detail: e.message,
+          life: 4000,
+        });
+      },
+    });
+  }
+
+  /**
+   * Alterna la marca de favorito (corazón) de un resultado. Aplica el nuevo
+   * valor optimistamente en el store para feedback inmediato; si el backend
+   * falla, recarga el historial para revertir y muestra un toast.
+   */
+  protected onToggleFavorite(r: BenchmarkResult): void {
+    const next = !r.favorite;
+    this.store.setFavorite(r.id, next);
+    this.api.setFavorite(r.id, next).subscribe({
+      next: () => {
+        this.api.getHistory().subscribe({
+          next: (h) => this.store.setHistory(h.results || []),
+        });
+      },
+      error: (e: Error) => {
+        this.api.getHistory().subscribe({
+          next: (h) => this.store.setHistory(h.results || []),
+        });
+        this.messages.add({
+          severity: 'error',
+          summary: 'Error al guardar favorito',
           detail: e.message,
           life: 4000,
         });

@@ -380,6 +380,16 @@ export class BenchStore {
     this.history.set(next);
   }
 
+  /**
+   * Actualiza optimistamente la marca de favorito (corazón) de un resultado en
+   * el historial local. El componente que la invoca es responsable de
+   * persistirla vía el servicio; si falla, debe recargar el historial.
+   */
+  setFavorite(id: string, favorite: boolean): void {
+    const next = this.history().map((r) => (r.id === id ? { ...r, favorite } : r));
+    this.history.set(next);
+  }
+
   // ── Comparación ──
   openCompare(): boolean {
     if (this.selectedResults().length < 2) return false;
