@@ -56,13 +56,13 @@
       white-space: pre-wrap;
     }
   }
-}
 
-.metric-wide2 {
-  grid-column: span 2;
-}
-.metric-full {
-  grid-column: 1 / -1;
+  &.metric-wide2 {
+    grid-column: span 2;
+  }
+  &.metric-full {
+    grid-column: 1 / -1;
+  }
 }
 
 /* VRAM: una fila por device del backend (igual que en el historial). */

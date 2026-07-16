@@ -41,22 +41,22 @@
   > svg {
     display: block;
   }
-}
 
-.chip-nvidia {
-  background: rgba(118, 185, 0, 0.5);
-  color: #fff;
-}
+  &.chip-nvidia {
+    background: rgba(118, 185, 0, 0.5);
+    color: #fff;
+  }
 
-.chip-amd {
-  background: rgba(237, 28, 36, 0.5);
-  color: #fff;
-}
+  &.chip-amd {
+    background: rgba(237, 28, 36, 0.5);
+    color: #fff;
+  }
 
-.chip-ram {
-  /* background: var(--p-blue-500); */
-  background: rgba(0, 122, 255, 0.5);
-  color: #fff;
+  &.chip-ram {
+    /* background: var(--p-blue-500); */
+    background: rgba(0, 122, 255, 0.5);
+    color: #fff;
+  }
 }
 
 /* Grupo barra + valor alineados horizontalmente. */
@@ -87,18 +87,16 @@
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s ease;
-}
 
-.hbar-fill.green {
-  background: var(--p-green-500);
-}
-
-.hbar-fill.yellow {
-  background: var(--p-amber-400);
-}
-
-.hbar-fill.red {
-  background: var(--p-red-500);
+  &.green {
+    background: var(--p-green-500);
+  }
+  &.yellow {
+    background: var(--p-amber-400);
+  }
+  &.red {
+    background: var(--p-red-500);
+  }
 }
 
 /* Valor en GB al final de la barra. */
