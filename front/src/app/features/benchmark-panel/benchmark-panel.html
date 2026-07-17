@@ -72,14 +72,16 @@
 
   <div class="actions">
     <div class="buttons">
-      <p-button
-        label="Benchmark"
-        icon="pi pi-bolt"
-        severity="success"
-        [disabled]="running() || store.benchRunning()"
-        (onClick)="run()"
-        size="large"
-      />
+      @if (!store.benchRunning()) {
+        <p-button
+          label="Benchmark"
+          icon="pi pi-bolt"
+          severity="success"
+          [disabled]="running() || store.benchRunning()"
+          (onClick)="run()"
+          size="large"
+        />
+      }
       @if (store.benchRunning()) {
         <p-button
           label="Detener"
