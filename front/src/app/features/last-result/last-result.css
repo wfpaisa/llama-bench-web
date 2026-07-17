@@ -1,74 +1,78 @@
 /* LastResult: grid de métricas del último benchmark. */
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
+:host {
+  display: block;
 
-.metric {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 0.6rem 0.75rem;
-
-  .k {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-text-muted);
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
   }
 
-  .k-sub {
-    font-size: 0.68rem;
-    color: var(--color-text-muted);
-    opacity: 0.8;
-    margin-top: 0.1rem;
-  }
+  .metric {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.75rem;
 
-  .v {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-top: 0.25rem;
-    font-family: var(--font-mono);
-
-    small {
+    .k {
       font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
       color: var(--color-text-muted);
-      font-weight: 400;
     }
 
-    &.v-small {
-      font-size: 0.8rem;
+    .k-sub {
+      font-size: 0.68rem;
+      color: var(--color-text-muted);
+      opacity: 0.8;
+      margin-top: 0.1rem;
     }
 
-    &.green {
-      color: var(--p-green-500);
+    .v {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+      font-family: var(--font-mono);
+
+      small {
+        font-size: 0.7rem;
+        color: var(--color-text-muted);
+        font-weight: 400;
+      }
+
+      &.v-small {
+        font-size: 0.8rem;
+      }
+
+      &.green {
+        color: var(--p-green-500);
+      }
+
+      &.amber {
+        color: var(--p-amber-400);
+      }
+
+      &.v-error {
+        color: var(--p-red-500);
+        font-size: 0.75rem;
+        white-space: pre-wrap;
+      }
     }
 
-    &.amber {
-      color: var(--p-amber-400);
+    &.metric-wide2 {
+      grid-column: span 2;
     }
-
-    &.v-error {
-      color: var(--p-red-500);
-      font-size: 0.75rem;
-      white-space: pre-wrap;
+    &.metric-full {
+      grid-column: 1 / -1;
     }
   }
 
-  &.metric-wide2 {
-    grid-column: span 2;
+  /* VRAM: una fila por device del backend (igual que en el historial). */
+  .vram-rows {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+    white-space: nowrap;
   }
-  &.metric-full {
-    grid-column: 1 / -1;
-  }
-}
-
-/* VRAM: una fila por device del backend (igual que en el historial). */
-.vram-rows {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.3;
-  white-space: nowrap;
 }

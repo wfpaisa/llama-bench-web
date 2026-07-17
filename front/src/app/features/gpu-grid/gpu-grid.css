@@ -8,107 +8,107 @@
   align-items: center;
   gap: 0.75rem;
   margin-right: 0.25rem;
-}
 
-/* Fila individual: icono a la izquierda, barras+valores a la derecha. */
-.metric-row {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-width: 0;
-  margin: 0 1rem;
-  align-items: flex-start;
-
-  .bars {
+  /* Fila individual: icono a la izquierda, barras+valores a la derecha. */
+  .metric-row {
     display: flex;
-    flex-direction: column;
-    align-content: flex-start;
-    align-items: start;
-  }
-}
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    margin: 0 1rem;
+    align-items: flex-start;
 
-/* Chip de marca: cuadrado pequeño con icono inline. */
-.chip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  flex-shrink: 0;
-  border-radius: 3px;
-  padding: 0.1rem;
-
-  > svg {
-    display: block;
+    .bars {
+      display: flex;
+      flex-direction: column;
+      align-content: flex-start;
+      align-items: start;
+    }
   }
 
-  &.chip-nvidia {
-    background: rgba(118, 185, 0, 0.5);
-    color: #fff;
+  /* Chip de marca: cuadrado pequeño con icono inline. */
+  .chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 0.1875rem;
+    padding: 0.1rem;
+
+    > svg {
+      display: block;
+    }
+
+    &.chip-nvidia {
+      background: rgba(118, 185, 0, 0.5);
+      color: #fff;
+    }
+
+    &.chip-amd {
+      background: rgba(237, 28, 36, 0.5);
+      color: #fff;
+    }
+
+    &.chip-ram {
+      /* background: var(--p-blue-500); */
+      background: rgba(0, 122, 255, 0.5);
+      color: #fff;
+    }
   }
 
-  &.chip-amd {
-    background: rgba(237, 28, 36, 0.5);
-    color: #fff;
+  /* Grupo barra + valor alineados horizontalmente. */
+  .bar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
   }
 
-  &.chip-ram {
-    /* background: var(--p-blue-500); */
-    background: rgba(0, 122, 255, 0.5);
-    color: #fff;
+  /* Grupo más compacto para la barra de Util. */
+  .bar-group-sm {
+    min-width: 3rem;
   }
-}
 
-/* Grupo barra + valor alineados horizontalmente. */
-.bar-group {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-/* Grupo más compacto para la barra de Util. */
-.bar-group-sm {
-  min-width: 3rem;
-}
-
-/* Track de barra horizontal. */
-.hbar-track {
-  width: 6rem;
-  height: 0.5rem;
-  background: var(--p-neutral-700);
-  border-radius: 5px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-/* Relleno con transición suave. */
-.hbar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.4s ease;
-
-  &.green {
-    background: var(--p-green-500);
+  /* Track de barra horizontal. */
+  .hbar-track {
+    width: 6rem;
+    height: 0.5rem;
+    background: var(--p-neutral-700);
+    border-radius: 5px;
+    overflow: hidden;
+    flex-shrink: 0;
   }
-  &.yellow {
-    background: var(--p-amber-400);
-  }
-  &.red {
-    background: var(--p-red-500);
-  }
-}
 
-/* Valor en GB al final de la barra. */
-.metric-value {
-  font-size: 0.65rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  letter-spacing: -0.01em;
-}
+  /* Relleno con transición suave. */
+  .hbar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
 
-.muted {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
+    &.green {
+      background: var(--p-green-500);
+    }
+    &.yellow {
+      background: var(--p-amber-400);
+    }
+    &.red {
+      background: var(--p-red-500);
+    }
+  }
+
+  /* Valor en GB al final de la barra. */
+  .metric-value {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+  }
 }
