@@ -66,7 +66,7 @@ export async function listDevices(binary: string): Promise<LlamaDevice[]> {
 const DEVICE_RE = /^\s*(\w+\d+)\s*:\s*(.+?)\s*\((\d+)\s*MiB\s*,\s*(\d+)\s*MiB\s*free\)\s*$/
 
 /** Parsea la salida cruda de --list-devices a LlamaDevice[]. */
-export function parseListDevices(stdout: string): LlamaDevice[] {
+function parseListDevices(stdout: string): LlamaDevice[] {
   const devices: LlamaDevice[] = []
   for (const raw of stdout.split('\n')) {
     const m = raw.match(DEVICE_RE)
@@ -112,7 +112,7 @@ export function detectBackend(devices: LlamaDevice[]): GpuBackend {
 }
 
 /** Deduce el vendor del nombre legible del device. */
-export function vendorFromName(name: string): 'nvidia' | 'amd' | 'intel' | 'unknown' {
+function vendorFromName(name: string): 'nvidia' | 'amd' | 'intel' | 'unknown' {
   if (/nvidia|geforce|\b(?:rtx|gtx)\b|quadro|tesla/i.test(name)) return 'nvidia'
   if (/\bamd\b|radeon|radv|instinct|rx\s?\d/i.test(name)) return 'amd'
   if (/intel|\barc\b|iris|\buhd\b/i.test(name)) return 'intel'

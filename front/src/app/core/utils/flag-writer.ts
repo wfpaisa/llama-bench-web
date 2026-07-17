@@ -108,9 +108,6 @@ export function setFlagSwitch(tokens: string[], flag: string, value: boolean): s
 export function removeFlag(tokens: string[], flag: string): string[] {
   const out: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
-    if (out.length > 0 && out[out.length - 1] === flag) {
-      // ya removido arriba, no debería pasar
-    }
     if (tokens[i] === flag) {
       const next = tokens[i + 1];
       if (next && !next.startsWith('-')) i++; // saltar también el valor

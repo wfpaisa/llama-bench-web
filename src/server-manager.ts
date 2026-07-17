@@ -108,8 +108,6 @@ export async function startServer(parsed: ParsedScript): Promise<ManagedServer> 
     parsed,
     ready,
     readyResolve: resolveReady,
-    readyReject: rejectReady,
-    done: false,
   }
   setManaged(m)
 
@@ -185,7 +183,6 @@ async function drainStream(reader: ReadableStreamDefaultReader<Uint8Array>, stre
         if (READY.test(line) && managed?.readyResolve) {
           managed.readyResolve()
           managed.readyResolve = undefined
-          managed.readyReject = undefined
         }
       }
     }

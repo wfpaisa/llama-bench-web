@@ -3,13 +3,13 @@
 // 1. NVIDIA: nvidia-smi con query CSV.
 // 2. AMD: lectura de sysfs (/sys/class/drm/card*/device/mem_info_*).
 
-import { mkdir, readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { spawn } from 'bun'
 import type { GpuInfo } from './types.ts'
 
 /** Lee GPUs NVIDIA vía nvidia-smi. Devuelve [] si nvidia-smi no está disponible. */
-export async function readNvidiaGpus(): Promise<GpuInfo[]> {
+async function readNvidiaGpus(): Promise<GpuInfo[]> {
   let out = ''
   try {
     const p = spawn({
@@ -41,7 +41,7 @@ export async function readNvidiaGpus(): Promise<GpuInfo[]> {
 }
 
 /** Lee VRAM/util de GPUs AMD vía sysfs (sin depender de radeontop). */
-export async function readAmdGpus(): Promise<GpuInfo[]> {
+async function readAmdGpus(): Promise<GpuInfo[]> {
   const gpus: GpuInfo[] = []
   const base = '/sys/class/drm'
   let cards: string[]
@@ -121,6 +121,3 @@ export function subtractGpuBaseline(final: GpuInfo[], baseline: GpuInfo[]): GpuI
     }
   })
 }
-
-// mkdir re-exportado para evitar import disperso; history también lo usa.
-export { mkdir }

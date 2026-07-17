@@ -218,7 +218,7 @@ export interface BenchmarkResult {
   /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
   ramUsedMiB: number | null
   /**
-   * Calificación del usuario (1-5 estrellas). null = sin calificar.
+   * Calificación del usuario (0-10). null = sin calificar.
    * Campo opcional para compatibilidad con entradas viejas del historial.
    */
   rating?: number | null

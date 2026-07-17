@@ -3,10 +3,10 @@
 // componentes lo muestren vía toast. Todas las rutas son relativas (sin prefijo)
 // porque el backend las sirve en la raíz.
 
-import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 /**
  * URL base del backend. En dev (ng serve en :4242 → backend en :3000) apunta al
@@ -94,9 +94,4 @@ export class ApiService {
     }
     return err instanceof Error ? err.message : 'Error desconocido';
   }
-}
-
-/** Helper de tipos: convierte un HttpResponse<T> en su body. */
-export function bodyOf<T>(): (src: Observable<HttpResponse<T>>) => Observable<T> {
-  return map((r) => r.body as T);
 }

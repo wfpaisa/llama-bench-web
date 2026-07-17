@@ -34,7 +34,7 @@ import { FmtGbPipe, FmtNumPipe, FmtSecPipe } from '../../core/utils/pipes';
  * para que la columna "Total VRAM" (que no es una prop nativa del resultado)
  * pueda ordenarse con un `field` real que PrimeNG resuelve.
  */
-export interface HistoryRow extends BenchmarkResult {
+interface HistoryRow extends BenchmarkResult {
   /** Modelo base (sin org/ ni :quant), campo por el que filtra el multiselect. */
   modelBase: string;
   /** VRAM total usada en MiB (suma de devices del backend o GPUs legacy). */
@@ -49,7 +49,7 @@ export interface HistoryRow extends BenchmarkResult {
  *   - 'read'  → Lectura (prompt tokens / time / speed).
  *   - 'draft' → Especulativo (draft acc / gen dr / acc dr / gen tk / acc tk).
  */
-export interface HistoryColumn {
+interface HistoryColumn {
   key: string;
   header: string;
   group?: 'gen' | 'read' | 'draft';
@@ -61,7 +61,7 @@ export interface HistoryColumn {
  * El grupo 'general' agrupa todas las columnas que no son de generación/lectura/
  * especulación.
  */
-export interface ColumnGroupMeta {
+interface ColumnGroupMeta {
   key: 'gen' | 'read' | 'draft' | 'general';
   icon: string;
   label: string;

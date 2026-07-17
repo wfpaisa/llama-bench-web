@@ -1,9 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
-import { MessageService } from 'primeng/api';
 import { StatusBar } from './features/status-bar/status-bar';
 import { GpuGrid } from './features/gpu-grid/gpu-grid';
 
@@ -21,7 +20,6 @@ import { GpuGrid } from './features/gpu-grid/gpu-grid';
   styleUrl: './app.css',
 })
 export class App {
-  private readonly messages = inject(MessageService);
   protected readonly title = signal('plane-llama-bench');
 
   /** Alterna la clase `.dark` en <html> (darkModeSelector del preset PrimeNG). */
