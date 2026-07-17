@@ -1,6 +1,6 @@
 {
   "name": "plane-llama-bench",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Utilidad web ligera para benchmark de modelos locales con llama.cpp (llama-server real + API + /metrics + GPU stats)",
   "type": "module",
   "main": "dist-electron/main.js",
