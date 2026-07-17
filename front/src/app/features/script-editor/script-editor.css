@@ -1,170 +1,170 @@
 /* ScriptEditor: layout de dos columnas (editor + tabla de flags). */
 :host {
   display: block;
-}
 
-/* Layout: dos columnas en desktop, una sola en pantallas estrechas. */
-.cols {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 1.25rem;
-  align-items: start;
+  /* Layout: dos columnas en desktop, una sola en pantallas estrechas. */
+  .cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 1.25rem;
+    align-items: start;
 
-  @media (max-width: 1100px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Columna UNO: editor de script (CodeMirror via app-code-editor) ── */
-
-.script-area {
-  display: block;
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 0.75rem;
-}
-
-.buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-/* ── Columna DOS: p-table de flags ── */
-
-.flags-toolbar {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  flex-wrap: wrap;
-
-  /* Input de búsqueda acotado: dejamos espacio al frente para count + botones. */
-  .search-input {
-    flex: 0 1 14rem;
-    min-width: 10rem;
-    max-width: 14rem;
+    @media (max-width: 1100px) {
+      grid-template-columns: 1fr;
+    }
   }
 
-  /* El count y el botón de pantalla completa quedan al frente (a la derecha). */
-  .count {
-    margin-left: auto;
+  /* ── Columna UNO: editor de script (CodeMirror via app-code-editor) ── */
+
+  .script-area {
+    display: block;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* ── Columna DOS: p-table de flags ── */
+
+  .flags-toolbar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+
+    /* Input de búsqueda acotado: dejamos espacio al frente para count + botones. */
+    .search-input {
+      flex: 0 1 14rem;
+      min-width: 10rem;
+      max-width: 14rem;
+    }
+
+    /* El count y el botón de pantalla completa quedan al frente (a la derecha). */
+    .count {
+      margin-left: auto;
+      white-space: nowrap;
+    }
+  }
+
+  .muted {
+    opacity: 0.65;
+  }
+  .small {
+  }
+
+  /* Fila del flag ya presente en el script: borde a la izquierda. */
+  ::ng-deep tr.present td {
+    background-color: rgba(100, 100, 100, 0.05);
+  }
+
+  /* ── Row group header (categoría expandible) ── */
+  ::ng-deep tr.flag-group-header {
+    cursor: pointer;
+    user-select: none;
+
+    td {
+      background-color: var(--p-surface-800, #1f2937);
+      font-weight: 600;
+      padding: 0.5rem 0.65rem;
+
+      > i.pi {
+        margin-right: 0.5rem;
+
+        opacity: 0.8;
+      }
+
+      .flag-group-title {
+        text-transform: capitalize;
+      }
+
+      .flag-group-count {
+        margin-left: 0.5rem;
+        padding: 0 0.4rem;
+        border-radius: 0.4rem;
+
+        font-weight: 500;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--p-text-muted-color, inherit);
+      }
+    }
+  }
+
+  /* ── Estrella de destacado ── */
+  .cell-fav {
+    text-align: center;
+    vertical-align: middle;
+
+    .star-toggle {
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: 0.5;
+      transition:
+        opacity 0.15s ease,
+        color 0.15s ease;
+
+      &:hover {
+        opacity: 0.85;
+      }
+
+      /* Destacado: estrella rellena dorada. */
+      &.active {
+        opacity: 1;
+        color: var(--p-primary-500);
+      }
+    }
+  }
+
+  /* Columna Default: solo el valor por defecto (sin etiqueta "default:"). */
+  .cell-default {
+    vertical-align: top;
+
+    code {
+      font-family: var(--font-mono);
+    }
+  }
+
+  .flag-group-title {
+    margin: 0 0.5rem;
+  }
+
+  .cell-code code {
+    font-size: 1rem;
+    font-family: var(--font-mono);
     white-space: nowrap;
   }
-}
 
-.muted {
-  opacity: 0.65;
-}
-.small {
-}
-
-/* Fila del flag ya presente en el script: borde a la izquierda. */
-:host ::ng-deep tr.present td {
-  background-color: rgba(100, 100, 100, 0.05);
-}
-
-/* ── Row group header (categoría expandible) ── */
-:host ::ng-deep tr.flag-group-header {
-  cursor: pointer;
-  user-select: none;
-
-  td {
-    background-color: var(--p-surface-800, #1f2937);
-    font-weight: 600;
-    padding: 0.5rem 0.65rem;
-
-    > i.pi {
-      margin-right: 0.5rem;
-
-      opacity: 0.8;
-    }
-
-    .flag-group-title {
-      text-transform: capitalize;
-    }
-
-    .flag-group-count {
-      margin-left: 0.5rem;
-      padding: 0 0.4rem;
-      border-radius: 0.4rem;
-
-      font-weight: 500;
-      background-color: rgba(255, 255, 255, 0.1);
-      color: var(--p-text-muted-color, inherit);
-    }
+  .cell-desc {
+    line-height: 1.45;
+    max-width: 28rem;
   }
-}
 
-/* ── Estrella de destacado ── */
-.cell-fav {
-  text-align: center;
-  vertical-align: middle;
-
-  .star-toggle {
-    cursor: pointer;
-    font-size: 1rem;
-    opacity: 0.5;
-    transition:
-      opacity 0.15s ease,
-      color 0.15s ease;
-
-    &:hover {
-      opacity: 0.85;
-    }
-
-    /* Destacado: estrella rellena dorada. */
-    &.active {
-      opacity: 1;
-      color: var(--p-primary-500);
-    }
+  .cell-original {
+    font-style: italic;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    max-width: 28rem;
   }
-}
 
-/* Columna Default: solo el valor por defecto (sin etiqueta "default:"). */
-.cell-default {
-  vertical-align: top;
-
-  code {
-    font-family: var(--font-mono);
+  .cell-actions {
+    text-align: center;
+    white-space: nowrap;
   }
-}
 
-.flag-group-title {
-  margin: 0 0.5rem;
-}
-
-.cell-code code {
-  font-size: 1rem;
-  font-family: var(--font-mono);
-  white-space: nowrap;
-}
-
-.cell-desc {
-  line-height: 1.45;
-  max-width: 28rem;
-}
-
-.cell-original {
-  font-style: italic;
-  color: var(--color-text-muted);
-  line-height: 1.4;
-  max-width: 28rem;
-}
-
-.cell-actions {
-  text-align: center;
-  white-space: nowrap;
-}
-
-.empty {
-  text-align: center;
-  padding: 1.5rem;
-  opacity: 0.7;
+  .empty {
+    text-align: center;
+    padding: 1.5rem;
+    opacity: 0.7;
+  }
 }

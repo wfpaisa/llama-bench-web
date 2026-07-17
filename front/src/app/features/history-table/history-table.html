@@ -254,16 +254,6 @@
             <div class="column-name">acc dr</div>
           </th>
         }
-        @if (colVisible('genTk')) {
-          <th class="col-draft" title="Tokens generados por draft-mtp (#gen tokens)">
-            <div class="column-name">gen tk</div>
-          </th>
-        }
-        @if (colVisible('accTk')) {
-          <th class="col-draft" title="Tokens aceptados por draft-mtp (#acc tokens)">
-            <div class="column-name">acc tk</div>
-          </th>
-        }
         @if (colVisible('loadTime')) {
           <th [pSortableColumn]="'loadTimeSeconds'" title="Tiempo de carga del modelo en segundos">
             <div class="column-name">load s <p-sortIcon field="loadTimeSeconds" /></div>
@@ -460,12 +450,6 @@
         }
         @if (colVisible('accDr')) {
           <td class="num col-draft">{{ r.accDrafts | fmtNum: 0 }}</td>
-        }
-        @if (colVisible('genTk')) {
-          <td class="num col-draft">{{ r.genTokens | fmtNum: 0 }}</td>
-        }
-        @if (colVisible('accTk')) {
-          <td class="num col-draft">{{ r.accTokens | fmtNum: 0 }}</td>
         }
         @if (colVisible('loadTime')) {
           <td class="num" [class.best]="isBestLoad(r)">

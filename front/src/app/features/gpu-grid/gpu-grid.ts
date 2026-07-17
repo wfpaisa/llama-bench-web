@@ -21,7 +21,6 @@ export class GpuGrid {
   protected readonly gpus = this.store.gpus;
   protected readonly ram = this.store.ram;
   protected readonly alert = alertCls;
-  protected readonly gb = fmtGB;
 
   // ── Helpers de cálculo ──
   protected vramPct(g: GpuInfo): number {

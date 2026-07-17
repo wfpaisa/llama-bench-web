@@ -23,7 +23,7 @@ import type { ParsedScript } from './types.ts'
  * - Ignora comentarios `#` que empiecen una línea (no tras argumentos).
  * Lanza Error si hay comillas sin cerrar.
  */
-export function tokenizeScript(script: string): string[] {
+function tokenizeScript(script: string): string[] {
   // 1) Quitar comentarios de línea completa (línea cuyo primer no-espacio es #).
   const lines = script.split(/\r?\n/).filter((l) => {
     const t = l.trimStart()
@@ -63,7 +63,7 @@ export function tokenizeScript(script: string): string[] {
 }
 
 /** Busca el valor de un flag de la forma `--flag valor` o `-x valor`. */
-export function flagValue(argv: string[], flag: string): string | null {
+function flagValue(argv: string[], flag: string): string | null {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === flag && i + 1 < argv.length) return argv[i + 1]
   }
@@ -71,7 +71,7 @@ export function flagValue(argv: string[], flag: string): string | null {
 }
 
 /** Convierte a número o null si no es válido. */
-export function toNumOrNull(s: string | null): number | null {
+function toNumOrNull(s: string | null): number | null {
   if (s === null) return null
   const v = Number(s)
   return Number.isFinite(v) ? v : null
@@ -124,7 +124,7 @@ export function parseScript(script: string): ParsedScript {
  * True si el flag (o alguno de sus aliases) aparece en argv como switch
  * (sin valor) o como `--flag valor`. Usado para --flash-attn on|off / -fa.
  */
-export function hasFlag(argv: string[], flag: string, aliases: string[] = []): boolean {
+function hasFlag(argv: string[], flag: string, aliases: string[] = []): boolean {
   const forms = new Set([flag, ...aliases])
   for (const a of argv) {
     if (forms.has(a)) return true

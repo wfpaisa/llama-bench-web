@@ -5,52 +5,52 @@
   min-height: 100vh;
   /* Altura del top bar (~20% menos que la versión anterior de ~3.5rem). */
   --header-h: 3rem;
-}
 
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  height: var(--header-h);
-  padding: 0 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: var(--header-h);
+    padding: 0 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
 
-  .app-title {
-    h1 {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
+    .app-title {
+      h1 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
 
-      small {
-        font-size: 0.7rem;
-        font-weight: 400;
-        color: var(--color-text-muted);
-        margin-left: 0.4rem;
+        small {
+          font-size: 0.7rem;
+          font-weight: 400;
+          color: var(--color-text-muted);
+          margin-left: 0.4rem;
+        }
       }
+    }
+
+    .section-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* Cards de métricas: alineadas a la derecha, centradas verticalmente. */
+    .app-metrics {
+      display: flex;
+      align-items: center;
+      min-width: 0;
     }
   }
 
-  .section-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  /* Cuerpo principal: ocupa el resto del viewport y hace scroll independiente. */
+  .app-body {
+    flex: 1 1 auto;
+    min-height: 0;
   }
-
-  /* Cards de métricas: alineadas a la derecha, centradas verticalmente. */
-  .app-metrics {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-  }
-}
-
-/* Cuerpo principal: ocupa el resto del viewport y hace scroll independiente. */
-.app-body {
-  flex: 1 1 auto;
-  min-height: 0;
 }

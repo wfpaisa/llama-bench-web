@@ -8,7 +8,7 @@ import { parseScript } from './script-parser.ts'
 import { readGpuStats, subtractGpuBaseline } from './gpu.ts'
 import { readRamStats, subtractRamBaseline } from './mem.ts'
 import { listDevices, detectBackend, computeDeviceVram } from './devices.ts'
-import { DEFAULT_PROMPT, pollMetricsUntilReady, waitForServer } from './metrics.ts'
+import { pollMetricsUntilReady, waitForServer } from './metrics.ts'
 import { startServer, stopServer, urlFor, assertBinaryExists } from './server-manager.ts'
 import { saveResult } from './history.ts'
 import { systemLog } from './logs.ts'
@@ -114,15 +114,6 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
       messages: [{ role: 'user', content: prompt }],
       max_tokens: maxTokens === null ? -1 : maxTokens,
       stream: false,
-
-      // Parametros adicionales
-      // return_progress: true,
-      // reasoning_format: 'auto',
-      // chat_template_kwargs: { enable_thinking: true }, // deshabilitar thinking en false
-      // thinking_budget_tokens: 512, // en max quitar este parametro
-      // reasoning_control: true,
-      //  backend_sampling: false,
-      // timings_per_token: true,
     }
     if (parsed.model) {
       body.model = parsed.model.split(':')[0] ?? parsed.model
@@ -191,8 +182,6 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
       draftAcceptance: parsedMetrics.draftAcceptance,
       genDrafts: parsedMetrics.genDrafts,
       accDrafts: parsedMetrics.accDrafts,
-      genTokens: parsedMetrics.genTokens,
-      accTokens: parsedMetrics.accTokens,
       loadTimeSeconds: parsedMetrics.loadTimeSeconds,
       generationTimeMs: parsedMetrics.generationTimeMs,
       requestLatencyMs,
@@ -244,8 +233,6 @@ function finalize(parsed: ParsedScript | null, prompt: string, errors: string[])
     draftAcceptance: null,
     genDrafts: null,
     accDrafts: null,
-    genTokens: null,
-    accTokens: null,
     loadTimeSeconds: null,
     generationTimeMs: null,
     requestLatencyMs: null,
@@ -258,5 +245,3 @@ function finalize(parsed: ParsedScript | null, prompt: string, errors: string[])
     errors,
   }
 }
-
-export { DEFAULT_PROMPT }

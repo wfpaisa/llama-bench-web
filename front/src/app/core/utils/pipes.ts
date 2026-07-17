@@ -1,6 +1,6 @@
 // Pipes standalone para usar en plantillas: formateo de números (es-CO, con
-// separador de miles), tiempo (ms→segundos / MM:SS), MiB→GB y nombre corto de
-// modelo. Puros y sin estado, reutilizables en toda la app.
+// separador de miles), tiempo (ms→segundos / MM:SS) y MiB→GB.
+// Puros y sin estado, reutilizables en toda la app.
 // Delegan en las funciones de format.ts para no duplicar lógica.
 
 import { Pipe } from '@angular/core';
@@ -53,18 +53,5 @@ export class FmtMsPipe {
 export class FmtGbPipe {
   transform(mib: number | null | undefined, decimals = 2): string {
     return fmtGB(mib, decimals);
-  }
-}
-
-/**
- * Nombre corto de modelo (sin org/ ni quant, recortado).
- * Uso: {{ model | shortModel }}
- */
-@Pipe({ name: 'shortModel' })
-export class ShortModelPipe {
-  transform(m: string | null | undefined): string {
-    if (!m) return '—';
-    const base = m.split(':')[0];
-    return base.split('/').pop()?.slice(0, 22) || base;
   }
 }

@@ -85,16 +85,6 @@ export function fmtSec(ms: number | null | undefined): string {
 }
 
 /**
- * Formatea un elapsed en ms a "M:SS" (sin padding de minutos).
- */
-export function formatElapsed(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec.toString().padStart(2, '0')}`;
-}
-
-/**
  * Nombre corto de modelo: quita el `:quant`, se queda con el último segmento
  * tras `/` y recorta a 22 caracteres.
  */
@@ -129,20 +119,6 @@ export function modelDisplayName(m: string | null | undefined): string | null {
 /** Clase de alerta por porcentaje de uso (>90 red, >70 yellow, else green). */
 export function alertCls(p: number): 'red' | 'yellow' | 'green' {
   return p > 90 ? 'red' : p > 70 ? 'yellow' : 'green';
-}
-
-/** Escapa entidades HTML para inyección segura. */
-export function escapeHtml(s: unknown): string {
-  return String(s).replace(/[&<>"']/g, (c) => {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    };
-    return map[c];
-  });
 }
 
 /**
@@ -226,18 +202,6 @@ export function deviceVramLine(r: BenchmarkResult, compact = false): string {
       })
       .join(compact ? ', ' : ' · ') || '—'
   );
-}
-
-/**
- * Tooltip con nombre legible de cada device del backend (para hover en el
- * historial). '' si no hay deviceVram.
- */
-export function deviceNamesLine(r: BenchmarkResult): string {
-  const dv = r.deviceVram;
-  if (!dv || dv.length === 0) return '';
-  return dv
-    .map((d) => `${d.device.id}: ${d.device.name} (${fmtGB(d.device.totalMiB, 1)} GB)`)
-    .join(' · ');
 }
 
 /** Marca en mayúsculas y legible (AMD/NVIDIA/INTEL), o '—' si es desconocida. */

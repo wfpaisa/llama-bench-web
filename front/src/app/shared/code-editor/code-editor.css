@@ -2,23 +2,23 @@
 
 :host {
   display: block;
-}
 
-.cm-host {
-  height: 35rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  overflow: hidden;
+  .cm-host {
+    height: 35rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
 
-  /* El editor ocupa todo el contenedor y usa la fuente mono del sistema. */
-  ::ng-deep .cm-editor,
-  ::ng-deep .cm-scroller {
-    height: 100%;
-  }
+    /* El editor ocupa todo el contenedor y usa la fuente mono del sistema. */
+    ::ng-deep .cm-editor,
+    ::ng-deep .cm-scroller {
+      height: 100%;
+    }
 
-  ::ng-deep .cm-scroller {
-    font-family: var(--font-mono);
-    font-size: 1rem;
-    line-height: 1.5;
+    ::ng-deep .cm-scroller {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
   }
 }

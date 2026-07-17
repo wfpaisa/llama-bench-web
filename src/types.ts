@@ -191,10 +191,6 @@ export interface BenchmarkResult {
   genDrafts: number | null
   /** draft-mtp: drafts aceptados (`#acc drafts`). null si no aplica. */
   accDrafts: number | null
-  /** draft-mtp: tokens generados (`#gen tokens`). null si no aplica. */
-  genTokens: number | null
-  /** draft-mtp: tokens aceptados (`#acc tokens`). null si no aplica. */
-  accTokens: number | null
   /** Tiempo de carga del modelo en segundos. */
   loadTimeSeconds: number | null
   /** Tiempo de generación (eval time) en ms, sin incluir prompt ni startup. */
@@ -218,7 +214,7 @@ export interface BenchmarkResult {
   /** RAM usada por el benchmark (delta MemUsed durante el run) en MiB. null si no disponible. */
   ramUsedMiB: number | null
   /**
-   * Calificación del usuario (1-5 estrellas). null = sin calificar.
+   * Calificación del usuario (0-10). null = sin calificar.
    * Campo opcional para compatibilidad con entradas viejas del historial.
    */
   rating?: number | null

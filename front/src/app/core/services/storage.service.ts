@@ -148,19 +148,6 @@ export class StorageService {
     }
   }
 
-  /** Borra la calibración de un modelo específico (al cambiar de modelo). */
-  clearCalibration(modelKey: string): void {
-    try {
-      const raw = localStorage.getItem(KEYS.calibration);
-      if (!raw) return;
-      const all = JSON.parse(raw) as Record<string, StoredCalibration>;
-      delete all[modelKey];
-      this.set(KEYS.calibration, JSON.stringify(all));
-    } catch {
-      /* ignore */
-    }
-  }
-
   // ── Helpers internos ──
   private getNonEmpty(key: string): string | null {
     try {

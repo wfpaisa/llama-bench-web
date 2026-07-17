@@ -1,69 +1,69 @@
 /* LogsViewer: panel de logs con scroll y colores por stream. */
 :host {
   display: block;
-}
 
-.row-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.logs-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.autoscroll {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-.logs {
-  margin-top: 0.75rem;
-  height: 44rem;
-  overflow-y: auto;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 0.5rem 0.75rem;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-
-  &.empty {
+  .row-between {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .logs-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .autoscroll {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
     color: var(--color-text-muted);
   }
 
-  .muted {
-    color: var(--color-text-muted);
-  }
+  .logs {
+    margin-top: 0.75rem;
+    height: 44rem;
+    overflow-y: auto;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
 
-  /* Color por stream. */
-  .ln-stdout {
-    color: #c9d1d9;
-  }
-  .ln-stderr {
-    color: #ff9b8a;
-  }
-  .ln-system {
-    color: #58a6ff;
-  }
+    &.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+    }
 
-  .ts {
-    color: #4a5568;
-    margin-right: 0.5rem;
-    user-select: none;
+    .muted {
+      color: var(--color-text-muted);
+    }
+
+    /* Color por stream. */
+    .ln-stdout {
+      color: #c9d1d9;
+    }
+    .ln-stderr {
+      color: #ff9b8a;
+    }
+    .ln-system {
+      color: #58a6ff;
+    }
+
+    .ts {
+      color: #4a5568;
+      margin-right: 0.5rem;
+      user-select: none;
+    }
   }
 }

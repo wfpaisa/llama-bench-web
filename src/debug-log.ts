@@ -50,8 +50,3 @@ export async function dumpDebugLog(lines: LogEntry[], metrics: ParsedMetrics, ex
     // El dump es best-effort: nunca debe romper el flujo del benchmark.
   }
 }
-
-/** Devuelve la ruta absoluta del archivo de debug (lo usa el router). */
-export function debugLogPath(): string {
-  return DEBUG_LOG_FILE
-}

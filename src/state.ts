@@ -15,8 +15,6 @@ export interface ManagedServer {
   // Resuelve cuando el proceso emite "server is listening" o al morir.
   ready: Promise<void>
   readyResolve?: () => void
-  readyReject?: (e: Error) => void
-  done: boolean
 }
 
 /** Proceso actualmente gestionado (null cuando está detenido). */

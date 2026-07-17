@@ -159,7 +159,6 @@ function createWindow(port: number): void {
     backgroundColor: '#0f1115',
     title: 'plane-llama-bench',
     webPreferences: {
-      preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },

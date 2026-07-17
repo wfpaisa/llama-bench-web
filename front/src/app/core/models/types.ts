@@ -137,8 +137,6 @@ export interface BenchmarkResult {
   draftAcceptance: number | null;
   genDrafts: number | null;
   accDrafts: number | null;
-  genTokens: number | null;
-  accTokens: number | null;
   loadTimeSeconds: number | null;
   generationTimeMs: number | null;
   requestLatencyMs: number | null;

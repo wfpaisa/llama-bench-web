@@ -1,77 +1,82 @@
 /* BenchmarkPanel: layout del formulario de benchmark. */
-.bench-prompt {
-  width: 100%;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  line-height: 1.5;
-  resize: vertical;
-  min-height: 6rem;
-}
-
-.desc {
-  max-width: 65ch;
-}
-
-.full {
+:host {
   display: block;
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-}
 
-.bench-params {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-.prompt-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.bench-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  align-items: flex-start;
-}
-
-.max-tokens-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.actions {
-  margin-top: 0.75rem;
-}
-
-.buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.mono {
-  font-family: var(--font-mono);
-}
-
-.muted {
-  color: var(--color-text-muted);
-}
-.small {
-  font-size: 0.78rem;
-}
-
-/* Limitar el ancho del inputnumber. */
-:host ::ng-deep .max-tokens {
-  .p-inputtext {
+  .bench-prompt {
     width: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 6rem;
+  }
+
+  .desc {
+    max-width: 65ch;
+  }
+
+  .full {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .bench-params {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  .prompt-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .bench-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+  }
+
+  .max-tokens-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    margin-top: 0.75rem;
+  }
+
+  .buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+  }
+
+  .small {
+    font-size: 0.78rem;
+  }
+
+  /* Limitar el ancho del inputnumber. */
+  ::ng-deep .max-tokens {
+    .p-inputtext {
+      width: 100%;
+    }
   }
 }

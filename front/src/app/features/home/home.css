@@ -12,12 +12,12 @@
     gap: 0.5rem;
     min-height: 0;
   }
-}
 
-/* Logs siempre visibles y fijos en la parte inferior de la ventana. */
-.home-logs {
-  bottom: 0;
-  z-index: 10;
-  background: var(--color-bg);
-  padding-top: 0.5rem;
+  /* Logs siempre visibles y fijos en la parte inferior de la ventana. */
+  .home-logs {
+    bottom: 0;
+    z-index: 10;
+    background: var(--color-bg);
+    padding-top: 0.5rem;
+  }
 }

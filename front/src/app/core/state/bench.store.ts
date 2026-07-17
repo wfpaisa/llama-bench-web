@@ -243,11 +243,6 @@ export class BenchStore {
     this.script.set(text);
   }
 
-  /** Aplica el formateo sobre el script actual. */
-  formatCurrentScript(formatted: string): void {
-    this.script.set(formatted);
-  }
-
   setPrompt(text: string): void {
     this.prompt.set(text);
   }

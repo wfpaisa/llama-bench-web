@@ -26,64 +26,6 @@ import type { LlamaDevice, ModelMeta, TunedParams, VramBreakdown } from '../mode
 
 const MIB = 1024 * 1024;
 
-// ── Tabla de bytes por parámetro según cuantización ───────────────────────────
-const BYTES_PER_PARAM: Record<string, number> = {
-  F32: 4.0,
-  F16: 2.0,
-  BF16: 2.0,
-  Q8_0: 0.85,
-  Q6_K: 0.69,
-  Q5_K_M: 0.59,
-  Q5_K_S: 0.56,
-  Q5_1: 0.59,
-  Q5_0: 0.56,
-  Q4_K_M: 0.69,
-  Q4_K_S: 0.56,
-  Q4_1: 0.56,
-  Q4_0: 0.56,
-  IQ4_NL: 0.51,
-  IQ4_XS: 0.45,
-  Q3_K_M: 0.45,
-  Q3_K_S: 0.41,
-  IQ3_M: 0.38,
-  IQ3_S: 0.36,
-  IQ3_XXS: 0.33,
-  Q2_K: 0.35,
-  IQ2_M: 0.3,
-  UD_Q6_K_XL: 0.7,
-  UD_Q4_K_XL: 0.57,
-};
-
-const ARCH_BY_SIZE: { upToB: number; layers: number; kvHeads: number }[] = [
-  { upToB: 1, layers: 16, kvHeads: 4 },
-  { upToB: 4, layers: 32, kvHeads: 4 },
-  { upToB: 8, layers: 32, kvHeads: 8 },
-  { upToB: 14, layers: 40, kvHeads: 8 },
-  { upToB: 32, layers: 64, kvHeads: 8 },
-  { upToB: 70, layers: 80, kvHeads: 8 },
-  { upToB: 110, layers: 90, kvHeads: 8 },
-  { upToB: 400, layers: 94, kvHeads: 4 },
-];
-
-/** Bytes por parámetro de un quant dado, normalizando el nombre. */
-export function bytesPerParamFor(quant: string): number | null {
-  const q = quant.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
-  if (BYTES_PER_PARAM[q] != null) return BYTES_PER_PARAM[q];
-  const base = q.replace(/^(UD_|DYN_|DYNAMIC_)/, '');
-  if (BYTES_PER_PARAM[base] != null) return BYTES_PER_PARAM[base];
-  const m = q.match(/Q(\d)/);
-  if (m) {
-    const n = Number(m[1]);
-    if (n === 2) return 0.35;
-    if (n === 3) return 0.45;
-    if (n === 4) return 0.56;
-    if (n === 5) return 0.57;
-    if (n === 6) return 0.69;
-    if (n === 8) return 0.85;
-  }
-  return null;
-}
-
 /** Bytes por elemento del tipo de KV cache. */
 function bytesPerKvElement(cacheType: string | null): number {
   if (!cacheType) return 2;
@@ -95,64 +37,6 @@ function bytesPerKvElement(cacheType: string | null): number {
   if (t === 'q5_0' || t === 'q5_1') return 0.625;
   if (t === 'iq4_nl' || t === 'iq4_xs') return 0.5;
   return 2;
-}
-
-/** Extrae los miles de millones de parámetros del nombre (p.ej. "27B", "1.5B"). */
-function paramsBFromName(base: string): number | null {
-  const m = base.match(/(\d+(?:\.\d+)?)\s*B\b/i);
-  if (!m) return null;
-  return Number(m[1]);
-}
-
-function interpArchBySize(sizeB: number): { layers: number; kvHeads: number } {
-  for (const row of ARCH_BY_SIZE) {
-    if (sizeB <= row.upToB) return { layers: row.layers, kvHeads: row.kvHeads };
-  }
-  const last = ARCH_BY_SIZE[ARCH_BY_SIZE.length - 1];
-  return { layers: last.layers, kvHeads: last.kvHeads };
-}
-
-/**
- * Parsea el nombre de un modelo HF y deduce sus metadatos (familia, params,
- * quant, capas, kvHeads). Espejo de parseModelMeta del backend.
- */
-export function parseModelMeta(raw: string | null): ModelMeta {
-  if (!raw) {
-    return {
-      raw: '',
-      base: '',
-      quant: null,
-      bytesPerParam: null,
-      paramsB: null,
-      layers: null,
-      attentionLayers: null,
-      kvHeads: null,
-      headDim: null,
-      weightsFileMiB: null,
-      weightsFile: null,
-      mmprojSizeMiB: null,
-    };
-  }
-  const [repoPart, quantPart] = raw.split(':');
-  const quant = quantPart ?? null;
-  const base = repoPart.split('/').pop() ?? repoPart;
-  const bytesPerParam = quant ? bytesPerParamFor(quant) : null;
-  const paramsB = paramsBFromName(base);
-  const arch = paramsB != null ? interpArchBySize(paramsB) : { layers: 32, kvHeads: 8 };
-  return {
-    raw,
-    base,
-    quant,
-    bytesPerParam,
-    paramsB,
-    layers: arch.layers,
-    attentionLayers: null,
-    kvHeads: arch.kvHeads,
-    headDim: 128,
-    weightsFileMiB: null,
-    weightsFile: null,
-    mmprojSizeMiB: null,
-  };
 }
 
 /**
@@ -198,52 +82,6 @@ export function estimateVramMiB(
   // con ubatch (tamaño del batch físico que el backend procesa en paralelo).
   const overhead = 128 + ubatchSize * 0.5;
   return { weights, kv, overhead, total: weights + kv + overhead };
-}
-
-/**
- * Recomienda parámetros que caben en la VRAM libre (búsqueda binaria de ctx).
- * Respeta el cache-type K/V que ya tenga `current` (no lo fuerza). Espejo del
- * recommendParams del backend.
- *
- * El budget es la VRAM libre con un margen de seguridad del 8% para no llenar
- * la GPU al tope (los buffers del backend tienen cierta variabilidad).
- */
-export function recommendParams(
-  meta: ModelMeta,
-  freeMiB: number,
-  current: TunedParams,
-  _devices: LlamaDevice[] = [],
-): TunedParams {
-  const cacheTypeK = current.cacheTypeK;
-  const cacheTypeV = current.cacheTypeV;
-
-  // Budget efectivo: VRAM libre × 0.92 (margen de seguridad del 8%).
-  const budget = freeMiB * 0.92;
-
-  let lo = 512;
-  let hi = 1_000_000;
-  let bestCtx = 8192;
-  while (lo <= hi) {
-    const mid = Math.floor((lo + hi) / 2);
-    const est = estimateVramMiB(meta, mid, cacheTypeK, cacheTypeV, current.ubatchSize);
-    if (est && est.total <= budget) {
-      bestCtx = mid;
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-  bestCtx = Math.max(512, Math.floor(bestCtx / 256) * 256);
-
-  return {
-    ...current,
-    ctxSize: bestCtx,
-    ngl: 999,
-    cacheTypeK,
-    cacheTypeV,
-    specDraftMax: current.specDraftMax,
-    cacheRam: current.cacheRam,
-  };
 }
 
 /** Filtra los devices por ids seleccionados (vacío = todos). */

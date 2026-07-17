@@ -5,7 +5,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { DATA_DIR, HISTORY_FILE, HISTORY_CAP } from './config.ts'
 import type { BenchmarkResult } from './types.ts'
 
-async function ensureDataDir(): Promise<void> {
+export async function ensureDataDir(): Promise<void> {
   await mkdir(DATA_DIR, { recursive: true })
 }
 
@@ -43,14 +43,14 @@ export async function deleteResults(ids: string[]): Promise<void> {
 }
 
 /**
- * Actualiza la calificación (1-5 estrellas) de un resultado por id.
+ * Actualiza la calificación (0-10) de un resultado por id.
  * `rating` null elimina la calificación. Devuelve false si el id no existe.
  */
 export async function setRating(id: string, rating: number | null): Promise<boolean> {
   const all = await loadHistory()
   const idx = all.findIndex((r) => r.id === id)
   if (idx === -1) return false
-  // Validar rango 1-10 (o null para "sin calificar").
+  // Validar rango 0-10 (o null para "sin calificar").
   const valid = rating == null || (Number.isFinite(rating) && rating >= 0 && rating <= 10)
   if (!valid) return false
   all[idx] = { ...all[idx], rating: rating ?? null }
@@ -76,5 +76,3 @@ export async function clearHistory(): Promise<void> {
   await ensureDataDir()
   await writeFile(HISTORY_FILE, '[]')
 }
-
-export { ensureDataDir }

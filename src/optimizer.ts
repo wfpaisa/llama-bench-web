@@ -154,7 +154,7 @@ export function parseModelMeta(raw: string | null): ModelMeta {
 }
 
 /** Bytes por parámetro de un quant dado, normalizando el nombre. */
-export function bytesPerParamFor(quant: string): number | null {
+function bytesPerParamFor(quant: string): number | null {
   const q = quant.toUpperCase().replace(/[^A-Z0-9_]/g, '_')
   if (BYTES_PER_PARAM[q] != null) return BYTES_PER_PARAM[q]
   // Normalizar prefijos dinámicos (UD_, IQ_) buscando el quant base.
@@ -233,7 +233,7 @@ interface EstimateInput {
  * Estima el consumo total de VRAM (pesos + KV + overhead) en MiB.
  * Devuelve null si faltan metadatos críticos (paramsB o bytesPerParam).
  */
-export function estimateVramMiB(input: EstimateInput): { weights: number; kv: number; overhead: number; total: number } | null {
+function estimateVramMiB(input: EstimateInput): { weights: number; kv: number; overhead: number; total: number } | null {
   const { meta, ctxSize, cacheTypeK, ubatchSize } = input
   if (meta.paramsB == null || meta.bytesPerParam == null) return null
 
@@ -264,9 +264,6 @@ export function estimateVramMiB(input: EstimateInput): { weights: number; kv: nu
 
 // ── Recomendación automática ─────────────────────────────────────────────────
 
-/** Catálogo de tipos de KV cache ordenados por calidad (más→menos precisión). */
-export const KV_TYPES = ['f16', 'q8_0', 'q5_1', 'q5_0', 'q4_1', 'q4_0', 'iq4_nl'] as const
-
 interface RecommendInput {
   meta: ModelMeta
   devices: LlamaDevice[]
@@ -285,7 +282,7 @@ interface RecommendInput {
  *  3. Buscar el mayor ctx que quepa (búsqueda binaria).
  *  4. batch/ubatch conservadores (512/128).
  */
-export function recommendParams(input: RecommendInput): TunedParams {
+function recommendParams(input: RecommendInput): TunedParams {
   const { meta, freeMiB, priority, current } = input
 
   // Defaults conservadores si faltan datos.
@@ -464,7 +461,7 @@ export function buildEstimateResponse(input: EstimateRequestInput): EstimateResp
 }
 
 /** Filtra los devices por los ids seleccionados (vacío = todos). */
-export function selectDevices(devices: LlamaDevice[], selectedIds: string[]): LlamaDevice[] {
+function selectDevices(devices: LlamaDevice[], selectedIds: string[]): LlamaDevice[] {
   if (!selectedIds.length) return devices
   const allow = new Set(selectedIds)
   return devices.filter((d) => allow.has(d.id))
@@ -474,7 +471,7 @@ export function selectDevices(devices: LlamaDevice[], selectedIds: string[]): Ll
  * Reparte un total de MiB entre los devices seleccionados según tensor-split.
  * Si no hay tensor-split, reparte proporcional a la VRAM libre de cada device.
  */
-export function splitPerDevice(totalMiB: number, devices: LlamaDevice[], tensorSplit: number[] | null): number[] {
+function splitPerDevice(totalMiB: number, devices: LlamaDevice[], tensorSplit: number[] | null): number[] {
   if (devices.length === 0) return []
   if (devices.length === 1) return [totalMiB]
   // Pesos: tensor-split si está, si no proporcional a freeMiB.
@@ -679,7 +676,7 @@ const GGUF_TYPE: Record<number, string> = {
 }
 
 /** Arquitectura extraída del header GGUF. null si el campo no está. */
-export interface GgufArch {
+interface GgufArch {
   layers: number | null
   kvHeads: number | null
   keyLength: number | null
@@ -705,7 +702,7 @@ export interface GgufArch {
  * Lee como máximo los primeros 2MB (suficiente para el header de cualquier
  * modelo conocido; los tensores van después).
  */
-export function readGgufArch(file: string): GgufArch {
+function readGgufArch(file: string): GgufArch {
   let fd: number | null = null
   try {
     fd = openSync(file, 'r')

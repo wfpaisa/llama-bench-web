@@ -5,9 +5,8 @@ import { tags } from '@lezer/highlight';
 /**
  * Tema "Plane" para CodeMirror 6.
  *
- * Construido a mano siguiendo el patrón de `@codemirror/theme-one-dark`
- * (`EditorView.theme` + `HighlightStyle.define` + `syntaxHighlighting`), sin
- * depender de `thememirror`. Los colores provienen del tema equivalente de
+ * Construido a mano (`EditorView.theme` + `HighlightStyle.define` +
+ * `syntaxHighlighting`). Los colores provienen del tema equivalente de
  * VS Code (objeto `colors` para la chrome del editor y `tokenColors` para el
  * resaltado de sintaxis).
  */
@@ -201,4 +200,3 @@ const planeHighlightStyle = /*@__PURE__*/ HighlightStyle.define([
 const planeTheme = [planeEditorTheme, /*@__PURE__*/ syntaxHighlighting(planeHighlightStyle)];
 
 export default planeTheme;
-export { planeEditorTheme, planeHighlightStyle };

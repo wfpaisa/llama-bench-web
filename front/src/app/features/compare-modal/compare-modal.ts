@@ -84,8 +84,6 @@ export class CompareModal {
     { label: 'Draft acc', value: (r) => fmt(r.draftAcceptance, 3) },
     { label: 'Gen drafts', value: (r) => fmt(r.genDrafts, 0) },
     { label: 'Acc drafts', value: (r) => fmt(r.accDrafts, 0) },
-    { label: 'Gen tokens', value: (r) => fmt(r.genTokens, 0) },
-    { label: 'Acc tokens', value: (r) => fmt(r.accTokens, 0) },
     { label: 'Load (s)', value: (r) => fmt(r.loadTimeSeconds, 2) },
     { label: 'Gen time', value: (r) => fmtMs(r.generationTimeMs) },
     { label: 'Latencia (ms)', value: (r) => fmt(r.requestLatencyMs, 0) },

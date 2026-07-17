@@ -101,10 +101,6 @@ export class PlaneLlamaBenchService {
     return this.api.patch<OkResponse>(`/history/${encodeURIComponent(id)}`, { favorite });
   }
 
-  clearHistory(): Observable<OkResponse> {
-    return this.api.delete<OkResponse>('/history');
-  }
-
   /** Elimina múltiples resultados por ids. */
   deleteSelected(ids: string[]): Observable<OkResponse> {
     return this.api.post<OkResponse>('/history/delete', { ids });
