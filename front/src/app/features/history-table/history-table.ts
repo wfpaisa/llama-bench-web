@@ -111,8 +111,6 @@ const COLUMN_DEFS: HistoryColumn[] = [
   { key: 'draftAcc', header: 'draft acc', group: 'draft' },
   { key: 'genDr', header: 'gen dr', group: 'draft' },
   { key: 'accDr', header: 'acc dr', group: 'draft' },
-  { key: 'genTk', header: 'gen tk', group: 'draft' },
-  { key: 'accTk', header: 'acc tk', group: 'draft' },
   { key: 'loadTime', header: 'load s' },
   { key: 'vram', header: 'VRAM' },
   { key: 'totalVram', header: 'Total VRAM' },

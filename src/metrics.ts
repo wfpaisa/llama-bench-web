@@ -19,8 +19,6 @@ export interface ParsedMetrics {
   draftAcceptance: number | null
   genDrafts: number | null
   accDrafts: number | null
-  genTokens: number | null
-  accTokens: number | null
   loadTimeSeconds: number | null
   /** Tiempo de generación (eval time) en ms, sin incluir prompt ni startup. */
   generationTimeMs: number | null
@@ -78,8 +76,6 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
     draftAcceptance: null,
     genDrafts: null,
     accDrafts: null,
-    genTokens: null,
-    accTokens: null,
     loadTimeSeconds: null,
     generationTimeMs: null,
   }
@@ -114,16 +110,25 @@ export function parseMetricsFromLogs(lines: LogEntry[]): ParsedMetrics {
       const mm = l.match(/draft acceptance\s*=?\s*([0-9.]+)/i)
       if (mm) m.draftAcceptance = Number(mm[1])
     }
-    // draft-mtp: una sola línea con #gen drafts, #acc drafts, #gen tokens, #acc tokens.
-    //   statistics        draft-mtp: #calls(b,g,a) = ..., #gen drafts =  418,
-    //   #acc drafts = 403, #gen tokens = 836, #acc tokens = 783, ...
+    // draft-mtp: drafts generados (#gen drafts) y aceptados (#acc drafts).
+    // Dos formatos según la versión de llama-server:
+    //   - Formato nuevo (post-merge draft-mtp): los contadores van embebidos en
+    //     la línea de draft acceptance:
+    //       draft acceptance = 0.82667 ( 1240 accepted /  1500 generated), mean len =  2.65
+    //     Aquí "generated"/"accepted" son drafts (pasos de decodificación
+    //     especulativa), no tokens individuales.
+    //   - Formato antiguo (pre-merge): una línea dedicada con #gen drafts / #acc drafts.
     if (m.genDrafts === null) {
-      const mm = l.match(/draft-mtp:.*?#gen drafts\s*=\s*(\d+).*?#acc drafts\s*=\s*(\d+).*?#gen tokens\s*=\s*(\d+).*?#acc tokens\s*=\s*(\d+)/i)
+      const mm = l.match(/draft acceptance\s*=\s*[0-9.]+\s*\(\s*(\d+)\s*accepted\s*\/\s*(\d+)\s*generated/i)
       if (mm) {
-        m.genDrafts = Number(mm[1])
-        m.accDrafts = Number(mm[2])
-        m.genTokens = Number(mm[3])
-        m.accTokens = Number(mm[4])
+        m.accDrafts = Number(mm[1])
+        m.genDrafts = Number(mm[2])
+      } else {
+        const mm2 = l.match(/draft-mtp:.*?#gen drafts\s*=\s*(\d+).*?#acc drafts\s*=\s*(\d+)/i)
+        if (mm2) {
+          m.genDrafts = Number(mm2[1])
+          m.accDrafts = Number(mm2[2])
+        }
       }
     }
     if (m.loadTimeSeconds === null) {

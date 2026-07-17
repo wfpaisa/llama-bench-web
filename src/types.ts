@@ -191,10 +191,6 @@ export interface BenchmarkResult {
   genDrafts: number | null
   /** draft-mtp: drafts aceptados (`#acc drafts`). null si no aplica. */
   accDrafts: number | null
-  /** draft-mtp: tokens generados (`#gen tokens`). null si no aplica. */
-  genTokens: number | null
-  /** draft-mtp: tokens aceptados (`#acc tokens`). null si no aplica. */
-  accTokens: number | null
   /** Tiempo de carga del modelo en segundos. */
   loadTimeSeconds: number | null
   /** Tiempo de generación (eval time) en ms, sin incluir prompt ni startup. */
