@@ -107,6 +107,10 @@ export class CodeEditor implements OnDestroy {
    * esa función al merge y reemplaza todo el doc con el resultado (paridad con
    * el textarea anterior, que reemplazaba todo el contenido formateado). Así se
    * evita acoplar CodeMirror al dominio: la función de formateo la aporta el padre.
+   *
+   * El cursor se deja justo después del texto pegado (posición natural de un
+   * pegado, `sel.from + pasted.length`), clampeada al rango del resultado por si
+   * el transform reformateó y cambió longitudes. Así NO salta al final del doc.
    */
   private handlePaste(event: ClipboardEvent): boolean {
     const transform = this.pasteTransform();
@@ -121,10 +125,16 @@ export class CodeEditor implements OnDestroy {
     const merged = current.slice(0, sel.from) + pasted + current.slice(sel.to);
     const result = transform(merged);
 
+    // Posición natural del cursor: justo después del texto pegado. Si el
+    // transform no reformateó (result === merged), es exacta; si reformateó,
+    // quedará cerca del punto de pegado en vez de saltar al final del doc.
+    const anchor = Math.min(Math.max(sel.from + pasted.length, 0), result.length);
+
     this.suppressChange = false;
     v.dispatch({
       changes: { from: 0, to: current.length, insert: result },
-      selection: { anchor: result.length },
+      selection: { anchor },
+      userEvent: 'input.paste',
     });
     this.valueChange.emit(result);
     return true;
