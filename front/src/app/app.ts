@@ -5,6 +5,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
 import { StatusBar } from './features/status-bar/status-bar';
 import { GpuGrid } from './features/gpu-grid/gpu-grid';
+import { APP_VERSION } from '../version';
 
 /**
  * App (shell raíz).
@@ -20,7 +21,8 @@ import { GpuGrid } from './features/gpu-grid/gpu-grid';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('plane-llama-bench');
+  /** Versión de la app, leída de package.json (raíz) en build time. */
+  protected readonly version = signal(APP_VERSION);
 
   /** Alterna la clase `.dark` en <html> (darkModeSelector del preset PrimeNG). */
   toggleDarkMode(): void {

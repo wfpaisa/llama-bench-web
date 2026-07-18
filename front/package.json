@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "gen:version": "node scripts/generate-version.mjs",
+    "start": "bun run gen:version && ng serve",
+    "build": "bun run gen:version && ng build",
+    "watch": "bun run gen:version && ng build --watch --configuration development"
   },
   "private": true,
   "packageManager": "bun@1.3.14",

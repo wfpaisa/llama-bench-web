@@ -39,19 +39,5 @@ if ! bun run dist; then
   exit 1
 fi
 
-# ── 4) Limpiar release/ — dejar solo el último AppImage ───────────────────
-echo "→ Limpiando builds pasados en release/…"
-rm -rf release/linux-unpacked
-rm -f release/*.yml
-# Conservar solo el .AppImage recién generado (versión actual); borrar los
-# anteriores. Se filtra por nombre con la versión del bump en vez de por mtime,
-# que no es fiable cuando varios builds se generan en ráfaga.
-for f in release/*.AppImage; do
-  [ -e "$f" ] || continue
-  case "$f" in
-    *"-$NEW_VERSION-"*) ;;            # el actual → se conserva
-    *) rm -f "$f" ;;
-  esac
-done
 
 echo "✓ Done — v$NEW_VERSION listo en release/"

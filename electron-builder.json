@@ -24,6 +24,6 @@
     "maintainer": "plane-llama-bench"
   },
   "appImage": {
-    "artifactName": "plane-llama-bench-${version}-${arch}.AppImage"
+    "artifactName": "plane-llama-bench.AppImage"
   }
 }
