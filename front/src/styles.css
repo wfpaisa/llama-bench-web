@@ -301,3 +301,16 @@ pre {
   --p-button-success-hover-color: #000;
   --p-button-danger-hover-color: #000;
 }
+
+.p-datatable-header {
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+.p-datatable tr:last-child td:first-child {
+  border-bottom-left-radius: var(--radius);
+}
+
+.p-datatable tr:last-child td:last-child {
+  border-bottom-right-radius: var(--radius);
+}

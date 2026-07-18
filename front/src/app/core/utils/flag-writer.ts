@@ -203,13 +203,18 @@ export function parseParamsFromScript(script: string): TunedParams {
 export function applyTunedParams(script: string, params: TunedParams): string {
   let tokens = tokenizeScriptTokens(script);
   tokens = setFlagValue(tokens, '--ctx-size', String(params.ctxSize));
+  // --n-gpu-layers: limpiar la forma corta -ngl por si estaba en el script,
+  // si no quedaría duplicada con valor viejo (bug: dos flags contradictorias).
+  tokens = removeFlag(tokens, '-ngl');
   tokens = setFlagValue(tokens, '--n-gpu-layers', String(params.ngl));
   tokens = setFlagValue(tokens, '--cache-type-k', params.cacheTypeK);
   tokens = setFlagValue(tokens, '--cache-type-v', params.cacheTypeV);
   tokens = setFlagValue(tokens, '--batch-size', String(params.batchSize));
   tokens = setFlagValue(tokens, '--ubatch-size', String(params.ubatchSize));
-  // --flash-attn on/off: se escribe como flag con valor.
+  // --flash-attn on/off: se escribe como flag con valor. Se limpia también la
+  // forma corta -fa por si estaba en el script (mismo bug que -ngl).
   tokens = removeFlag(tokens, '--flash-attn');
+  tokens = removeFlag(tokens, '-fa');
   if (params.flashAttn) {
     tokens = setFlagValue(tokens, '--flash-attn', 'on');
   }
@@ -249,6 +254,8 @@ export function applyTunedParams(script: string, params: TunedParams): string {
     tokens = removeFlag(tokens, '--spec-draft-n-max');
   }
   // --cache-ram: se escribe siempre con el valor del slider (default 8192).
+  // Se limpia la forma corta -cram por si estaba en el script.
+  tokens = removeFlag(tokens, '-cram');
   tokens = setFlagValue(tokens, '--cache-ram', String(params.cacheRam));
   return rebuildScript(tokens);
 }

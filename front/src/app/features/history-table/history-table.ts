@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { RatingModule } from 'primeng/rating';
 import { TableModule } from 'primeng/table';
@@ -167,6 +168,7 @@ const GROUPED_COLUMNS: SelectItemGroup[] = GROUP_ORDER.map((gk) => {
   imports: [
     FormsModule,
     ButtonModule,
+    CheckboxModule,
     MultiSelectModule,
     RatingModule,
     TableModule,
@@ -461,8 +463,11 @@ export class HistoryTable {
   protected isSelected(id: string): boolean {
     return this.store.isSelected(id);
   }
-  protected onToggle(ev: Event, id: string): void {
-    const checked = (ev.target as HTMLInputElement).checked;
+  /**
+   * Toggle del checkbox de una fila. Recibe el `CheckboxChangeEvent` de PrimeNG,
+   * que ya trae `checked` directo (no hay que leer `event.target`).
+   */
+  protected onToggle(checked: boolean, id: string): void {
     this.store.toggleSelected(id, checked);
   }
 
@@ -490,11 +495,10 @@ export class HistoryTable {
 
   /**
    * Handler del checkbox del header: marca/desmarca todas las filas visibles.
-   * Recibe el array de filas actualmente renderizadas (respetando filtro y
-   * paginación si se pasa el valor de la tabla).
+   * Recibe `checked` del `CheckboxChangeEvent` de PrimeNG y el array de filas
+   * actualmente renderizadas (respetando filtro y paginación).
    */
-  protected onToggleAll(ev: Event, rows: HistoryRow[]): void {
-    const checked = (ev.target as HTMLInputElement).checked;
+  protected onToggleAll(checked: boolean, rows: HistoryRow[]): void {
     this.store.selectMany(
       rows.map((r) => r.id),
       checked,
