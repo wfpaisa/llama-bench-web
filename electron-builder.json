@@ -15,11 +15,16 @@
     {
       "from": "front/dist/plane-llama-bench/browser",
       "to": "frontend"
+    },
+    {
+      "from": "electron/icons/512x512.png",
+      "to": "icons/512x512.png"
     }
   ],
   "linux": {
     "target": ["AppImage"],
     "category": "Utility",
+    "icon": "electron/icons/512x512.png",
     "executableName": "plane-llama-bench",
     "maintainer": "plane-llama-bench"
   },

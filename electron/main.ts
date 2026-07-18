@@ -16,6 +16,7 @@ import { app, BrowserWindow, dialog } from 'electron'
 import { ChildProcess, spawn } from 'node:child_process'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
+import { existsSync } from 'node:fs'
 
 // ── Resolución de rutas ───────────────────────────────────────────────────────
 
@@ -30,6 +31,18 @@ function backendBinaryPath(): string {
   }
   // En dev, dist-electron/ está al mismo nivel que electron/ y data/.
   return join(__dirname, '..', 'electron', 'backend', 'plane-llama-bench-backend')
+}
+
+/**
+ * Ruta al PNG del icono de la ventana (taskbar/dock en runtime).
+ * - Empaquetado (AppImage): process.resourcesPath/icons/512x512.png
+ *   (extraResources lo copia a resources/icons/).
+ * - Dev: electron/icons/512x512.png (relativo a dist-electron/main.js).
+ * Devuelve '' si no existe (BrowserWindow ignora icon vacío → no crashea).
+ */
+function windowIconPath(): string {
+  const file = app.isPackaged ? join(process.resourcesPath, 'icons', '512x512.png') : join(__dirname, '..', 'electron', 'icons', '512x512.png')
+  return existsSync(file) ? file : ''
 }
 
 // ── Puerto libre ──────────────────────────────────────────────────────────────
@@ -158,6 +171,7 @@ function createWindow(port: number): void {
     minHeight: 600,
     backgroundColor: '#0f1115',
     title: 'plane-llama-bench',
+    icon: windowIconPath(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -175,6 +189,19 @@ function createWindow(port: number): void {
 
 // Evita el cierre prematuro mientras el backend hace cleanup de la GPU.
 let quitting = false
+
+// ── Identidad de la app para el desktop (icono en dock/taskbar) ───────────────
+// En Linux/Wayland GNOME resuelve el icono de la ventana corriendo matcheando
+// el app-id/WM_CLASS contra el StartupWMClass del .desktop. Desde un AppImage
+// el proceso se monta con nombre distinto (/tmp/.mount_plane-XXXX/), así que el
+// app-id hay que forzarlo o el dock cae al icono genérico de Electron.
+// setName() alimenta el app-id GTK/Wayland; setAppUserModelId() cubre Windows.
+const APP_ID = 'plane-llama-bench'
+app.setName(APP_ID)
+app.setAppUserModelId(APP_ID)
+// ozone-platform-hint=auto deja que Electron use Wayland nativo cuando esté
+// disponible (ahí el app-id se respeta para el dock); cae a X11 si no lo está.
+app.commandLine.appendSwitch('ozone-platform-hint', 'auto')
 
 app.whenReady().then(async () => {
   try {

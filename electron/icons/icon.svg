@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Icono del AppImage: rayo #00AAFF (marca del favicon) sobre cuadrado
+       redondeado oscuro #0f1115 (backgroundColor de la ventana de Electron).
+       Fuente del rayo: front/public/favicon-lightning.svg (bbox x:[6,18] y:[1,23]).
+       Se reescala (scale 14) y se centra (translate al centro 256,256) vía <g>. -->
+  <rect width="512" height="512" rx="96" ry="96" fill="#0f1115" />
+  <g transform="translate(256 256) scale(14) translate(-12 -12)">
+    <path fill="#00AAFF" d="M11 15H6l7-14v8h5l-7 14z" />
+  </g>
+</svg>

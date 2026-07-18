@@ -4,5 +4,6 @@ data/*
 
 # Empaquetado Electron / AppImage
 electron/backend/
+electron/icons/*.png
 dist-electron/
 release/
