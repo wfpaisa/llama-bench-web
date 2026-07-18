@@ -17,6 +17,8 @@ import {
   computeBackendLabel,
   deviceVramLine,
   deviceVramRows,
+  effectiveBatch,
+  effectiveCache,
   fmt,
   modelBase,
   modelDisplayName,
@@ -377,6 +379,25 @@ export class HistoryTable {
   }
   protected modelBaseName(m: string | null | undefined): string {
     return modelDisplayName(m) ?? '—';
+  }
+  /**
+   * Texto de la celda batch/ubatch: usa el valor del script si estaba explícito
+   * o el default de llama-server (2048/512) si no. Aplica separador de miles
+   * es-CO a cada número.
+   */
+  protected batchTxt(c: ParsedScript | undefined): string {
+    if (!c) return '—/—';
+    const { batch, ubatch } = effectiveBatch(c.batchSize, c.ubatchSize);
+    return `${fmt(batch, 0)}/${fmt(ubatch, 0)}`;
+  }
+  /**
+   * Texto de la celda cache K/V: usa el valor del script si estaba explícito o
+   * el default de llama-server (f16/f16) si no.
+   */
+  protected cacheTxt(c: ParsedScript | undefined): string {
+    if (!c) return '—/—';
+    const { k, v } = effectiveCache(c.cacheTypeK, c.cacheTypeV);
+    return `${k}/${v}`;
   }
   protected parsed(m: string | null | undefined) {
     return parseModel(m);

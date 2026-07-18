@@ -3,6 +3,7 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { DATA_DIR, HISTORY_FILE, HISTORY_CAP } from './config.ts'
+import { parseScript } from './script-parser.ts'
 import type { BenchmarkResult } from './types.ts'
 
 export async function ensureDataDir(): Promise<void> {
@@ -18,10 +19,32 @@ export async function saveResult(r: BenchmarkResult): Promise<void> {
   await writeFile(HISTORY_FILE, JSON.stringify(trimmed, null, 2))
 }
 
+/**
+ * Backfill en memoria (sin tocar el JSON en disco): las entradas guardadas
+ * antes de que el parser cubriera `--hf-repo`/`--model`/`-m` tienen
+ * `config.model === null` aunque el script sí traía el modelo. Re-parseamos el
+ * `script` guardado y, si ahora resolvemos un modelo, lo inyectamos en la copia
+ * en memoria. Es idempotente y solo afecta al render.
+ */
+function backfillModel(results: BenchmarkResult[]): BenchmarkResult[] {
+  for (const r of results) {
+    const c = r.config
+    if (c && c.model == null && typeof c.script === 'string' && c.script.length > 0) {
+      try {
+        const parsed = parseScript(c.script)
+        if (parsed.model) r.config = { ...c, model: parsed.model }
+      } catch {
+        // Script inválido/irrelevante: se deja tal cual.
+      }
+    }
+  }
+  return results
+}
+
 /** Lee todo el historial (array; [] si no existe o está corrupto). */
 export async function loadHistory(): Promise<BenchmarkResult[]> {
   try {
-    return JSON.parse(await readFile(HISTORY_FILE, 'utf8'))
+    return backfillModel(JSON.parse(await readFile(HISTORY_FILE, 'utf8')))
   } catch {
     return []
   }

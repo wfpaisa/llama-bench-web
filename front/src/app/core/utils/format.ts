@@ -22,6 +22,43 @@ export interface DeviceVramRow {
   detail: string;
 }
 
+// ── Defaults de llama-server (espejo de front/.../core/data/llama-flags.ts) ──
+// Se usan para mostrar el valor efectivo en el historial cuando el flag no
+// estaba explícito en el script: llama-server aplica estos defaults en runtime.
+export const DEFAULT_BATCH_SIZE = 2048;
+export const DEFAULT_UBATCH_SIZE = 512;
+export const DEFAULT_CACHE_TYPE_K = 'f16';
+export const DEFAULT_CACHE_TYPE_V = 'f16';
+
+/**
+ * batch/ubatch efectivos para display: el valor del script si estaba explícito,
+ * o el default de llama-server si no. Devuelve SOLO los números (sin unidad);
+ * el separador '/' lo añade el llamador ( historial y compare-modal).
+ */
+export function effectiveBatch(
+  batchSize: number | null | undefined,
+  ubatchSize: number | null | undefined,
+): { batch: number; ubatch: number } {
+  return {
+    batch: batchSize ?? DEFAULT_BATCH_SIZE,
+    ubatch: ubatchSize ?? DEFAULT_UBATCH_SIZE,
+  };
+}
+
+/**
+ * cache K/V efectiva para display: el valor del script si estaba explícito, o
+ * el default de llama-server ('f16') si no. Devuelve SOLO los strings.
+ */
+export function effectiveCache(
+  cacheTypeK: string | null | undefined,
+  cacheTypeV: string | null | undefined,
+): { k: string; v: string } {
+  return {
+    k: cacheTypeK ?? DEFAULT_CACHE_TYPE_K,
+    v: cacheTypeV ?? DEFAULT_CACHE_TYPE_V,
+  };
+}
+
 // ── Formateo numérico con locale es-CO (separador de miles "." y decimal ",") ──
 // Cache de Intl.NumberFormat por nº de decimales: crear formatters es caro y se
 // reutilizan muchísimas veces (una por celda de la tabla de historial).

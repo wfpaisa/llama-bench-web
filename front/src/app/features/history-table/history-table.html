@@ -298,22 +298,22 @@
             <div class="row-actions">
               @if (hasScript(r.config)) {
                 <p-button
+                  icon="pi pi-file-arrow-up"
+                  [text]="true"
+                  size="small"
+                  (onClick)="apply(r)"
+                  pTooltip="Cargar script en editor"
+                />
+                <p-button
                   icon="pi pi-code"
                   [text]="true"
                   size="small"
                   [pTooltip]="r.config?.script || null"
                   tooltipPosition="right"
                   [autoHide]="false"
-                  [hideDelay]="500"
+                  [hideDelay]="200"
                   tooltipStyleClass="script-tooltip"
                   [escape]="false"
-                />
-                <p-button
-                  icon="pi pi-file-arrow-up"
-                  [text]="true"
-                  size="small"
-                  (onClick)="apply(r)"
-                  pTooltip="Cargar script en editor"
                 />
               }
             </div>
@@ -389,12 +389,10 @@
           <td class="num">{{ r.config?.ctxSize | fmtNum: 0 }}</td>
         }
         @if (colVisible('batch')) {
-          <td class="num">
-            {{ r.config?.batchSize | fmtNum: 0 }}/{{ r.config?.ubatchSize | fmtNum: 0 }}
-          </td>
+          <td class="num">{{ batchTxt(r.config) }}</td>
         }
         @if (colVisible('cache')) {
-          <td>{{ r.config?.cacheTypeK ?? '—' }}/{{ r.config?.cacheTypeV ?? '—' }}</td>
+          <td>{{ cacheTxt(r.config) }}</td>
         }
         @if (colVisible('tsplit')) {
           <td>{{ r.config?.tensorSplit ?? '—' }}</td>

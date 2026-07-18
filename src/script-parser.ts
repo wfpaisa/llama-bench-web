@@ -93,7 +93,9 @@ export function parseScript(script: string): ParsedScript {
     script,
     binary,
     argv,
-    model: flagValue(argv, '-hf'),
+    // Modelo para display del historial: prioriza HF (--hf-repo / -hf / -hfr,
+    // más legible) y cae a la ruta local (--model / -m) si no había HF.
+    model: flagValue(argv, '-hf') ?? flagValue(argv, '--hf-repo') ?? flagValue(argv, '-hfr') ?? flagValue(argv, '--model') ?? flagValue(argv, '-m'),
     host: flagValue(argv, '--host') ?? '127.0.0.1',
     port: toNumOrNull(flagValue(argv, '--port')) ?? 8080,
     ctxSize: toNumOrNull(flagValue(argv, '--ctx-size')),

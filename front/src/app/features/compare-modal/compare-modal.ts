@@ -8,6 +8,8 @@ import {
   fmtMs,
   backendLabel,
   deviceVramLine,
+  effectiveBatch,
+  effectiveCache,
   shortModel,
 } from '../../core/utils/format';
 
@@ -70,11 +72,19 @@ export class CompareModal {
     { label: 'ctx', value: (r) => String(r.config?.ctxSize ?? '—') },
     {
       label: 'batch/ubatch',
-      value: (r) => `${r.config?.batchSize ?? '—'}/${r.config?.ubatchSize ?? '—'}`,
+      value: (r) => {
+        if (!r.config) return '—/—';
+        const { batch, ubatch } = effectiveBatch(r.config.batchSize, r.config.ubatchSize);
+        return `${fmt(batch, 0)}/${fmt(ubatch, 0)}`;
+      },
     },
     {
       label: 'cache',
-      value: (r) => `${r.config?.cacheTypeK ?? '—'}/${r.config?.cacheTypeV ?? '—'}`,
+      value: (r) => {
+        if (!r.config) return '—/—';
+        const { k, v } = effectiveCache(r.config.cacheTypeK, r.config.cacheTypeV);
+        return `${k}/${v}`;
+      },
     },
     { label: 'device', value: (r) => r.config?.device || '—' },
     { label: 'backend', value: (r) => backendLabel(r.backend) || '—' },
