@@ -6,6 +6,7 @@
         <p-checkbox
           [(ngModel)]="autoscrollModel"
           [binary]="true"
+          inputId="autoscroll"
           (ngModelChange)="store.setAutoscroll($event)"
         />
         <label for="autoscroll">auto-scroll</label>

@@ -23,7 +23,7 @@
           <tr>
             <td>{{ row.label }}</td>
             @for (r of items(); track r.id) {
-              <td class="num">{{ row.value(r) }}</td>
+              <td class="num" [class.best]="isBest(row, r)">{{ row.value(r) }}</td>
             }
           </tr>
         }

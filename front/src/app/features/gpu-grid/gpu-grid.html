@@ -30,7 +30,7 @@
         <!-- VRAM -->
         <div class="bars">
           <div class="bar-group">
-            <div class="hbar-track" title="'VRAM ' + vramPct(g) + '% — ' + vramLabel(g)">
+            <div class="hbar-track" [title]="'VRAM ' + vramPct(g) + '% — ' + vramLabel(g)">
               <div
                 class="hbar-fill"
                 [class]="alert(vramPct(g))"
@@ -42,7 +42,7 @@
 
           <!-- Utilización -->
           <div class="bar-group bar-group-sm">
-            <div class="hbar-track" title="'Utilización ' + utilPct(g)">
+            <div class="hbar-track" [title]="'Utilización ' + utilPct(g)">
               <div
                 class="hbar-fill"
                 [class]="alert(utilValue(g))"
@@ -56,7 +56,7 @@
     }
 
     @if (ram(); as r) {
-      <div class="metric-row" title="'RAM del sistema — ' + ramPct(r) + '% — ' + ramLabel(r)">
+      <div class="metric-row" [title]="'RAM del sistema — ' + ramPct(r) + '% — ' + ramLabel(r)">
         <span class="chip chip-ram">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path
@@ -67,7 +67,7 @@
         </span>
         <div class="bars">
           <div class="bar-group">
-            <div class="hbar-track" title="'RAM ' + ramPct(r) + '% — ' + ramLabel(r)">
+            <div class="hbar-track" [title]="'RAM ' + ramPct(r) + '% — ' + ramLabel(r)">
               <div
                 class="hbar-fill"
                 [class]="alert(ramPct(r))"

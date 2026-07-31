@@ -7,3 +7,8 @@ electron/backend/
 electron/icons/*.png
 dist-electron/
 release/
+
+.claude
+.agents
+.crush
+.kilo

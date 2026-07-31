@@ -12,7 +12,11 @@ import { tags } from '@lezer/highlight';
  */
 
 // --- Paleta base (extraída del tema VS Code "Plane") -------------------------
-const bg = 'var(--p-form-field-background)'; // editor.background
+// bg fijo a --p-surface-950 (no --p-form-field-background): ese último sigue el
+// modo claro/oscuro de la app y en claro resuelve casi blanco, lo que dejaría el
+// foreground (fg, gris muy claro) ilegible. El editor de código es un lienzo
+// deliberadamente oscuro (tema "Plane", { dark: true }) en ambos modos de la app.
+const bg = 'var(--p-surface-950)'; // editor.background
 const fg = '#e6e8ef'; // editor.foreground
 const caret = '#aeafad'; // editorCursor.foreground
 const selection = '#e8f2f334'; // editor.selectionBackground

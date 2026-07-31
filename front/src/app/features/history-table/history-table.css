@@ -105,9 +105,10 @@
     gap: 1rem;
   }
 
-  /* Fila seleccionada. */
+  /* Fila seleccionada: mismo azul de marca que el resto de acentos, mezclado
+     con el fondo para que funcione tanto en modo oscuro como en claro. */
   ::ng-deep tr.selected td {
-    background: rgba(7, 48, 95, 0.4) !important;
+    background: color-mix(in srgb, var(--color-accent), var(--color-surface) 78%) !important;
   }
 
   /* Celda de modelo con tags. */
@@ -309,7 +310,7 @@
 
     &:hover {
       color: var(--p-red-400);
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--color-border);
     }
     &:active {
       transform: scale(0.88);
@@ -355,6 +356,6 @@
   }
 
   tr:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: var(--color-border) !important;
   }
 }

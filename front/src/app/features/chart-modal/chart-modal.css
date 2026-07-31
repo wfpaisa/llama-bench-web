@@ -1,5 +1,15 @@
 /* ChartModal: diálogo full-screen con bar chart de resultados seleccionados. */
 :host {
+  /* Es un diálogo superpuesto, no una sección de la página: no debe ocupar
+     una casilla en el flex de .home ni "cobrar" gap cuando está oculto.
+     El propio <p-dialog> es también una caja real (bloque, alto 0 cuando
+     cerrado), así que hay que aplanarlo un nivel más. */
+  display: contents;
+
+  ::ng-deep p-dialog {
+    display: contents;
+  }
+
   ::ng-deep .p-dialog {
     border-radius: 0;
   }

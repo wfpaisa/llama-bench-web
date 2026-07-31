@@ -28,7 +28,10 @@
     margin-top: 0.75rem;
     height: 44rem;
     overflow-y: auto;
-    background: var(--color-bg);
+    /* Panel de terminal deliberadamente oscuro en ambos modos de la app (igual
+       criterio que el editor de script): los colores por stream están
+       calibrados sobre un fondo oscuro y perderían contraste en modo claro. */
+    background: var(--p-surface-950);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: 0.5rem 0.75rem;
@@ -38,30 +41,33 @@
     white-space: pre-wrap;
     word-break: break-word;
 
+    /* Panel siempre oscuro (ver nota arriba): los colores por stream se
+       calibran sobre los primitivos de marca (theme.ts), que son estables
+       entre modo claro/oscuro, en vez de una paleta ajena tipo terminal. */
     &.empty {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--color-text-muted);
+      color: #71717a;
     }
 
     .muted {
-      color: var(--color-text-muted);
+      color: #71717a;
     }
 
     /* Color por stream. */
     .ln-stdout {
-      color: #c9d1d9;
+      color: #d4d4d8;
     }
     .ln-stderr {
-      color: #ff9b8a;
+      color: var(--p-red-400);
     }
     .ln-system {
-      color: #58a6ff;
+      color: var(--p-primary-400);
     }
 
     .ts {
-      color: #4a5568;
+      color: #52525b;
       margin-right: 0.5rem;
       user-select: none;
     }

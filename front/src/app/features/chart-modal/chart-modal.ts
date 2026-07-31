@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   PLATFORM_ID,
   computed,
   inject,
@@ -129,6 +130,23 @@ export class ChartModal {
   protected readonly store = inject(BenchStore);
   private readonly platformId = inject(PLATFORM_ID);
 
+  /**
+   * Se incrementa cada vez que cambia la clase `.dark` de <html> (toggle del
+   * header). `chartOptions` la lee para recomputar los colores del chart:
+   * `getComputedStyle` no es reactivo, así que sin esto el chart quedaría con
+   * los colores del tema con el que se abrió, aunque el usuario cambie de modo
+   * con el diálogo abierto.
+   */
+  private readonly themeTick = signal(0);
+
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      const observer = new MutationObserver(() => this.themeTick.update((v) => v + 1));
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      inject(DestroyRef).onDestroy(() => observer.disconnect());
+    }
+  }
+
   /** Métricas disponibles para el selector. */
   protected readonly metrics = METRICS;
   /** Opciones del selector (label visible). */
@@ -224,13 +242,17 @@ export class ChartModal {
       }
     });
 
+    const rootStyle = getComputedStyle(document.documentElement);
+    const bestColor = rootStyle.getPropertyValue('--p-green-500').trim() || '#16a34a';
+    const restColor = rootStyle.getPropertyValue('--p-primary-500').trim() || '#2563eb';
+
     const colors = data.map(
       (_, i) =>
         i === bestIdx
-          ? 'rgba(34, 197, 94, 0.55)' // verde: mejor
-          : 'rgba(59, 130, 246, 0.45)', // azul: resto
+          ? `color-mix(in srgb, ${bestColor}, transparent 45%)` // verde: mejor
+          : `color-mix(in srgb, ${restColor}, transparent 55%)`, // azul de marca: resto
     );
-    const borders = data.map((_, i) => (i === bestIdx ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)'));
+    const borders = data.map((_, i) => (i === bestIdx ? bestColor : restColor));
 
     return {
       labels,
@@ -254,6 +276,7 @@ export class ChartModal {
   /** Opciones del chart; el tooltip usa callbacks.label multi-línea. */
   protected readonly chartOptions = computed(() => {
     if (!isPlatformBrowser(this.platformId)) return {};
+    this.themeTick();
     const ds = getComputedStyle(document.documentElement);
     const textColor = ds.getPropertyValue('--color-text') || '#f0efed';
     const textColorSecondary = ds.getPropertyValue('--color-text-muted') || '#9b9b96';
