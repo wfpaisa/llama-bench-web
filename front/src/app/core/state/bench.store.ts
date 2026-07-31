@@ -94,6 +94,12 @@ export class BenchStore {
   readonly sortDir = signal<'asc' | 'desc' | null>('desc');
   readonly showCompare = signal(false);
   readonly showChart = signal(false);
+  /**
+   * Ids seleccionados en el orden de la tabla al momento de abrir el chart
+   * (lo calcula history-table a partir de su `tableData()` ordenado). Fuente
+   * de `chartResults`, independiente del orden de inserción de `history`.
+   */
+  readonly chartOrder = signal<string[]>([]);
   readonly showOptimizer = signal(false);
 
   // ── Logs UI ──
@@ -152,6 +158,18 @@ export class BenchStore {
   readonly selectedResults = computed<BenchmarkResult[]>(() => {
     const sel = this.selected();
     return this.history().filter((h) => sel.has(h.id));
+  });
+
+  /**
+   * Resultados seleccionados para el chart, en el orden de `chartOrder`
+   * (el orden de la tabla al abrir el diálogo), no el de inserción en
+   * `history`. Ids que ya no existan en el historial se descartan.
+   */
+  readonly chartResults = computed<BenchmarkResult[]>(() => {
+    const map = new Map(this.history().map((r) => [r.id, r]));
+    return this.chartOrder()
+      .map((id) => map.get(id))
+      .filter((r): r is BenchmarkResult => !!r);
   });
 
   /** "Mejores" valores sobre TODA la history (no la filtrada). */
@@ -396,8 +414,15 @@ export class BenchStore {
   }
 
   // ── Gráfico ──
-  openChart(): boolean {
-    if (this.selectedResults().length < 1) return false;
+  /**
+   * Abre el chart con los resultados seleccionados en el orden indicado por
+   * `orderedIds` (el orden actual de la tabla de historial en el momento del
+   * clic), en vez del orden de inserción en `history`. Ids que ya no estén
+   * seleccionados/existan se ignoran.
+   */
+  openChart(orderedIds: string[]): boolean {
+    if (orderedIds.length < 1) return false;
+    this.chartOrder.set(orderedIds);
     this.showChart.set(true);
     return true;
   }

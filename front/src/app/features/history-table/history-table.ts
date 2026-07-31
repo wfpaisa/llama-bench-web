@@ -617,8 +617,16 @@ export class HistoryTable {
     this.store.openCompare();
   }
 
+  /**
+   * Abre el chart con los seleccionados en el orden actual de la tabla
+   * (respeta el sort de 3 estados aplicado en `tableData`), no el orden de
+   * inserción en el historial.
+   */
   protected chart(): void {
-    if (this.store.selectedCount() < 1) {
+    const orderedIds = this.tableData()
+      .filter((r) => this.store.isSelected(r.id))
+      .map((r) => r.id);
+    if (orderedIds.length < 1) {
       this.messages.add({
         severity: 'warn',
         summary: 'Selecciona al menos un resultado.',
@@ -626,7 +634,7 @@ export class HistoryTable {
       });
       return;
     }
-    this.store.openChart();
+    this.store.openChart(orderedIds);
   }
 
   protected deleteSelected(event: Event): void {

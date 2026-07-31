@@ -155,8 +155,8 @@ export class ChartModal {
   /** Métrica seleccionada (default: 'genTps' → Generation speed). */
   protected readonly selectedMetric = signal<string>('genTps');
 
-  /** Resultados seleccionados para graficar. */
-  protected readonly items = computed<BenchmarkResult[]>(() => this.store.selectedResults());
+  /** Resultados seleccionados para graficar, en el orden de la tabla al abrir el chart. */
+  protected readonly items = computed<BenchmarkResult[]>(() => this.store.chartResults());
 
   /** Métrica activa como objeto (buscada por key). */
   private readonly metric = computed<ChartMetric>(
