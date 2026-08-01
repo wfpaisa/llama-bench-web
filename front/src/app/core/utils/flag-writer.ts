@@ -8,12 +8,13 @@
 //
 // Flags gestionados por applyTunedParams / parseParamsFromScript:
 //   --ctx-size, --n-gpu-layers, --cache-type-k, --cache-type-v,
+//   --cache-type-k-draft, --cache-type-v-draft,
 //   --batch-size, --ubatch-size, --flash-attn on/off,
 //   --device (coma-separado), --tensor-split (coma-separado),
 //   --n-cpu-moe, --cache-reuse, --no-mmproj (switch),
 //   --spec-draft-n-max, --cache-ram.
 
-import type { TunedParams } from '../models/types';
+import type { TunedFlagsEnabled, TunedParams } from '../models/types';
 
 /**
  * Colapsa un script (quita `\` de continuación) y lo tokeniza por espacios.
@@ -171,6 +172,8 @@ export function parseParamsFromScript(script: string): TunedParams {
     ngl: flagNum(tokens, '--n-gpu-layers', ['-ngl', '--ngl']) ?? 999,
     cacheTypeK: (flagValue(tokens, '--cache-type-k') ?? 'q8_0').toLowerCase(),
     cacheTypeV: (flagValue(tokens, '--cache-type-v') ?? 'q8_0').toLowerCase(),
+    cacheTypeKDraft: (flagValue(tokens, '--cache-type-k-draft') ?? 'q8_0').toLowerCase(),
+    cacheTypeVDraft: (flagValue(tokens, '--cache-type-v-draft') ?? 'q8_0').toLowerCase(),
     batchSize: flagNum(tokens, '--batch-size') ?? 512,
     ubatchSize: flagNum(tokens, '--ubatch-size') ?? 128,
     flashAttn: flagSwitch(tokens, '--flash-attn', ['-fa', '--fa']),
@@ -189,6 +192,31 @@ export function parseParamsFromScript(script: string): TunedParams {
 }
 
 /**
+ * Determina, para cada flag con checkbox propio, si está presente en el script.
+ * Usado para sembrar los checkboxes del optimizador al abrir: un flag ausente
+ * arranca con el checkbox desactivado.
+ */
+export function parseEnabledFromScript(script: string): TunedFlagsEnabled {
+  const tokens = tokenizeScriptTokens(script);
+  return {
+    ctxSize: flagValue(tokens, '--ctx-size') != null,
+    ngl: flagValue(tokens, '--n-gpu-layers', ['-ngl', '--ngl']) != null,
+    nCpuMoe: flagValue(tokens, '--n-cpu-moe', ['--cpu-moe']) != null,
+    batchSize: flagValue(tokens, '--batch-size') != null,
+    ubatchSize: flagValue(tokens, '--ubatch-size') != null,
+    cacheReuse: flagValue(tokens, '--cache-reuse') != null,
+    specDraftMax:
+      flagValue(tokens, '--spec-draft-n-max', ['--draft-max', '--draft', '--draft-n']) != null,
+    cacheRam: flagValue(tokens, '--cache-ram', ['-cram', '--cram']) != null,
+    cacheTypeK: flagValue(tokens, '--cache-type-k') != null,
+    cacheTypeV: flagValue(tokens, '--cache-type-v') != null,
+    cacheTypeKDraft: flagValue(tokens, '--cache-type-k-draft') != null,
+    cacheTypeVDraft: flagValue(tokens, '--cache-type-v-draft') != null,
+    device: flagValue(tokens, '--device') != null,
+  };
+}
+
+/**
  * Aplica los parámetros afinados del optimizador a un script, preservando todo
  * lo demás (binario, modelo, sampling, etc.). Reconstruye con una flag por línea.
  *
@@ -199,19 +227,60 @@ export function parseParamsFromScript(script: string): TunedParams {
  * - flashAttn → --flash-attn on (value flag); false → elimina
  * - device[] → --device (join por coma); [] = elimina el flag
  * - tensorSplit[] → --tensor-split (join por coma); null = elimina el flag
+ *
+ * `enabled` gobierna los flags con checkbox propio: si su checkbox está
+ * desactivado, el flag se elimina del script sin importar el valor del slider.
  */
-export function applyTunedParams(script: string, params: TunedParams): string {
+export function applyTunedParams(
+  script: string,
+  params: TunedParams,
+  enabled: TunedFlagsEnabled,
+): string {
   let tokens = tokenizeScriptTokens(script);
-  tokens = setFlagValue(tokens, '--ctx-size', String(params.ctxSize));
+  if (enabled.ctxSize) {
+    tokens = setFlagValue(tokens, '--ctx-size', String(params.ctxSize));
+  } else {
+    tokens = removeFlag(tokens, '--ctx-size');
+  }
   // --n-gpu-layers: limpiar la forma corta -ngl por si estaba en el script,
   // si no quedaría duplicada con valor viejo (bug: dos flags contradictorias).
   tokens = removeFlag(tokens, '-ngl');
   tokens = removeFlag(tokens, '--ngl');
-  tokens = setFlagValue(tokens, '--n-gpu-layers', String(params.ngl));
-  tokens = setFlagValue(tokens, '--cache-type-k', params.cacheTypeK);
-  tokens = setFlagValue(tokens, '--cache-type-v', params.cacheTypeV);
-  tokens = setFlagValue(tokens, '--batch-size', String(params.batchSize));
-  tokens = setFlagValue(tokens, '--ubatch-size', String(params.ubatchSize));
+  if (enabled.ngl) {
+    tokens = setFlagValue(tokens, '--n-gpu-layers', String(params.ngl));
+  } else {
+    tokens = removeFlag(tokens, '--n-gpu-layers');
+  }
+  if (enabled.cacheTypeK) {
+    tokens = setFlagValue(tokens, '--cache-type-k', params.cacheTypeK);
+  } else {
+    tokens = removeFlag(tokens, '--cache-type-k');
+  }
+  if (enabled.cacheTypeV) {
+    tokens = setFlagValue(tokens, '--cache-type-v', params.cacheTypeV);
+  } else {
+    tokens = removeFlag(tokens, '--cache-type-v');
+  }
+  if (enabled.cacheTypeKDraft) {
+    tokens = setFlagValue(tokens, '--cache-type-k-draft', params.cacheTypeKDraft);
+  } else {
+    tokens = removeFlag(tokens, '--cache-type-k-draft');
+  }
+  if (enabled.cacheTypeVDraft) {
+    tokens = setFlagValue(tokens, '--cache-type-v-draft', params.cacheTypeVDraft);
+  } else {
+    tokens = removeFlag(tokens, '--cache-type-v-draft');
+  }
+  if (enabled.batchSize) {
+    tokens = setFlagValue(tokens, '--batch-size', String(params.batchSize));
+  } else {
+    tokens = removeFlag(tokens, '--batch-size');
+  }
+  if (enabled.ubatchSize) {
+    tokens = setFlagValue(tokens, '--ubatch-size', String(params.ubatchSize));
+  } else {
+    tokens = removeFlag(tokens, '--ubatch-size');
+  }
   // --flash-attn on/off: se escribe como flag con valor. Se limpian también las
   // formas cortas -fa y --fa por si estaban en el script (mismo bug que -ngl).
   tokens = removeFlag(tokens, '--flash-attn');
@@ -220,7 +289,7 @@ export function applyTunedParams(script: string, params: TunedParams): string {
   if (params.flashAttn) {
     tokens = setFlagValue(tokens, '--flash-attn', 'on');
   }
-  if (params.device.length > 0) {
+  if (enabled.device && params.device.length > 0) {
     tokens = setFlagValue(tokens, '--device', params.device.join(','));
   } else {
     tokens = removeFlag(tokens, '--device');
@@ -230,35 +299,37 @@ export function applyTunedParams(script: string, params: TunedParams): string {
   } else {
     tokens = removeFlag(tokens, '--tensor-split');
   }
-  // --n-cpu-moe: si 0, quitar el flag; si >0, setearlo. Se limpia también el
-  // --cpu-moe viejo por si quedó de una versión anterior (no son el mismo flag).
+  // --n-cpu-moe: se limpia también el --cpu-moe viejo por si quedó de una
+  // versión anterior (no son el mismo flag).
   tokens = removeFlag(tokens, '--cpu-moe');
-  if (params.nCpuMoe > 0) {
+  if (enabled.nCpuMoe) {
     tokens = setFlagValue(tokens, '--n-cpu-moe', String(params.nCpuMoe));
   } else {
     tokens = removeFlag(tokens, '--n-cpu-moe');
   }
-  // --cache-reuse: si 0, quitar; si >0, setearlo.
-  if (params.cacheReuse > 0) {
+  if (enabled.cacheReuse) {
     tokens = setFlagValue(tokens, '--cache-reuse', String(params.cacheReuse));
   } else {
     tokens = removeFlag(tokens, '--cache-reuse');
   }
   // --no-mmproj: switch.
   tokens = setFlagSwitch(tokens, '--no-mmproj', params.noMmproj);
-  // --spec-draft-n-max: si 0, quitar; si >0, setearlo (limpia aliases viejos).
+  // --spec-draft-n-max: limpia aliases viejos.
   for (const alias of ['--draft-max', '--draft', '--draft-n']) {
     tokens = removeFlag(tokens, alias);
   }
-  if (params.specDraftMax > 0) {
+  if (enabled.specDraftMax) {
     tokens = setFlagValue(tokens, '--spec-draft-n-max', String(params.specDraftMax));
   } else {
     tokens = removeFlag(tokens, '--spec-draft-n-max');
   }
-  // --cache-ram: se escribe siempre con el valor del slider (default 8192).
-  // Se limpian las formas cortas -cram y --cram por si estaban en el script.
+  // --cache-ram: se limpian las formas cortas -cram y --cram por si estaban en el script.
   tokens = removeFlag(tokens, '-cram');
   tokens = removeFlag(tokens, '--cram');
-  tokens = setFlagValue(tokens, '--cache-ram', String(params.cacheRam));
+  if (enabled.cacheRam) {
+    tokens = setFlagValue(tokens, '--cache-ram', String(params.cacheRam));
+  } else {
+    tokens = removeFlag(tokens, '--cache-ram');
+  }
   return rebuildScript(tokens);
 }

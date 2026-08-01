@@ -188,6 +188,10 @@ export interface TunedParams {
   ngl: number;
   cacheTypeK: string;
   cacheTypeV: string;
+  /** --cache-type-k-draft: tipo de cuantización del KV cache K del modelo draft (speculative). */
+  cacheTypeKDraft: string;
+  /** --cache-type-v-draft: tipo de cuantización del KV cache V del modelo draft (speculative). */
+  cacheTypeVDraft: string;
   batchSize: number;
   ubatchSize: number;
   flashAttn: boolean;
@@ -205,6 +209,28 @@ export interface TunedParams {
   specDraftMax: number;
   /** --cache-ram: presupuesto máximo (MiB) que el KV cache puede derramar a RAM. */
   cacheRam: number;
+}
+
+/**
+ * Estado del checkbox de cada control del optimizador con checkbox propio: si
+ * está desactivado, el flag correspondiente NO se agrega al script al aplicar
+ * (independientemente del valor del control). No aplica a tensor-split, que
+ * se maneja aparte.
+ */
+export interface TunedFlagsEnabled {
+  ctxSize: boolean;
+  ngl: boolean;
+  nCpuMoe: boolean;
+  batchSize: boolean;
+  ubatchSize: boolean;
+  cacheReuse: boolean;
+  specDraftMax: boolean;
+  cacheRam: boolean;
+  cacheTypeK: boolean;
+  cacheTypeV: boolean;
+  cacheTypeKDraft: boolean;
+  cacheTypeVDraft: boolean;
+  device: boolean;
 }
 
 /** Desglose heurístico del consumo de VRAM de una configuración. */

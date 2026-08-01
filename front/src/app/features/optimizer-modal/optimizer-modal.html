@@ -74,167 +74,36 @@
         <!-- Columna izquierda: controles -->
         <div class="opt-controls">
           <div class="control-block">
-            <div class="ctrl-head">
-              <label
-                class="ctrl-label"
-                for="ctxSlider"
-                pTooltip="Cantidad máxima de tokens (prompt + generación) que el modelo puede atender en memoria. Más contexto permite conversaciones o documentos más largos, pero aumenta linealmente el consumo de VRAM del KV cache. Default de llama-server: 0 (tomado del modelo)."
-                >Contexto (ctx-size)</label
-              >
-              <span class="ctrl-val tabular-nums">{{
-                params().ctxSize.toLocaleString('es-CO')
-              }}</span>
-            </div>
-            <p-slider
-              inputId="ctxSlider"
-              [ngModel]="params().ctxSize"
-              (ngModelChange)="params.set({ ...params(), ctxSize: $event })"
-              [min]="512"
-              [max]="ctxMax"
-              [step]="2048"
-            />
-          </div>
-
-          <div class="control-block">
-            <div class="ctrl-head">
-              <label
-                class="ctrl-label"
-                for="nglSlider"
-                pTooltip="Capas del modelo descargadas a la GPU. Más capas en GPU = más velocidad, pero más VRAM ocupada por los pesos. 999 = todas en GPU (offload completo). Default de llama-server: auto (el binario decide según la VRAM disponible)."
-                >Capas en GPU (n-gpu-layers)</label
-              >
-              <span class="ctrl-val tabular-nums">{{ params().ngl }}</span>
-            </div>
-            <p-slider
-              inputId="nglSlider"
-              [ngModel]="params().ngl"
-              (ngModelChange)="params.set({ ...params(), ngl: $event })"
-              [min]="0"
-              [max]="999"
-              [step]="1"
-            />
-          </div>
-
-          @if (isMoe()) {
-            <div class="control-block">
-              <div class="ctrl-head">
-                <label
-                  class="ctrl-label"
-                  for="moeSlider"
-                  pTooltip="Indica cuántos expertos (experts) se dejan en la CPU para ahorrar VRAM."
-                  >MOE</label
-                >
-                <span class="ctrl-val tabular-nums">{{ params().nCpuMoe }}</span>
-              </div>
-              <p-slider
-                inputId="moeSlider"
-                [ngModel]="params().nCpuMoe"
-                (ngModelChange)="params.set({ ...params(), nCpuMoe: $event })"
-                [min]="0"
-                [max]="64"
-                [step]="1"
+            <div class="ctrl-head-left">
+              <p-checkbox
+                size="small"
+                [binary]="true"
+                [ngModel]="enabled().device"
+                (ngModelChange)="setEnabled('device', $event)"
+                pTooltip="Si está desactivado, --device no se agrega al script (usa todos los dispositivos detectados)."
               />
-            </div>
-          }
-
-          <div class="control-block">
-            <div class="ctrl-head">
               <label
                 class="ctrl-label"
-                for="batchSlider"
-                pTooltip="Tokens de prompt procesados en paralelo por pasada. Más grande acelera el prompt eval, pero sube el uso de VRAM del compute buffer. Default de llama-server: 2048."
-                >Batch size</label
+                for="deviceSelect"
+                pTooltip="Devices del backend (CUDA0, Vulkan0, …) usados para cargar el modelo. Sin selección = todos los detectados."
+                >Devices <span class="flag-hint">(--device)</span></label
               >
-              <span class="ctrl-val tabular-nums">{{ params().batchSize }}</span>
             </div>
-            <p-slider
-              inputId="batchSlider"
-              [ngModel]="params().batchSize"
-              (ngModelChange)="params.set({ ...params(), batchSize: $event })"
-              [min]="64"
-              [max]="2048"
-              [step]="64"
-            />
-          </div>
-
-          <div class="control-block">
-            <div class="ctrl-head">
-              <label
-                class="ctrl-label"
-                for="ubatchSlider"
-                pTooltip="Tokens físicos procesados en paralelo por pasada (micro-batch). Más grande acelera el cómputo, pero aumenta linealmente el compute buffer en VRAM. Suele ser ≤ batch-size. Default de llama-server: 512."
-                >μbatch size</label
-              >
-              <span class="ctrl-val tabular-nums">{{ params().ubatchSize }}</span>
-            </div>
-            <p-slider
-              inputId="ubatchSlider"
-              [ngModel]="params().ubatchSize"
-              (ngModelChange)="params.set({ ...params(), ubatchSize: $event })"
-              [min]="32"
-              [max]="1024"
-              [step]="32"
-            />
-          </div>
-
-          <div class="control-row2">
-            <div class="control-block">
-              <label
-                class="ctrl-label"
-                for="kvkSelect"
-                pTooltip="Tipo de cuantización del KV cache de Keys. Menor precisión (q4_0) reduce VRAM pero puede bajar levemente la calidad; f16 es la más precisa y la que más VRAM consume. Default de llama-server: f16."
-                >KV cache K</label
-              >
-              <p-select
-                inputId="kvkSelect"
-                [options]="kvOptions"
-                [ngModel]="params().cacheTypeK"
-                (ngModelChange)="params.set({ ...params(), cacheTypeK: $event })"
+            @if (enabled().device) {
+              <p-multiSelect
+                inputId="deviceSelect"
+                [options]="deviceOptions()"
+                [ngModel]="params().device"
+                (ngModelChange)="params.set({ ...params(), device: $event })"
                 optionLabel="label"
                 optionValue="value"
                 [style]="{ width: '100%' }"
+                display="chip"
+                placeholder="Todos"
                 appendTo="body"
+                size="small"
               />
-            </div>
-            <div class="control-block">
-              <label
-                class="ctrl-label"
-                for="kvvSelect"
-                pTooltip="Tipo de cuantización del KV cache de Values. Igual que K: menor precisión ahorra VRAM a costa de algo de calidad. Default de llama-server: f16."
-                >KV cache V</label
-              >
-              <p-select
-                inputId="kvvSelect"
-                [options]="kvOptions"
-                [ngModel]="params().cacheTypeV"
-                (ngModelChange)="params.set({ ...params(), cacheTypeV: $event })"
-                optionLabel="label"
-                optionValue="value"
-                [style]="{ width: '100%' }"
-                appendTo="body"
-              />
-            </div>
-          </div>
-
-          <div class="control-block">
-            <label
-              class="ctrl-label"
-              for="deviceSelect"
-              pTooltip="Devices del backend (CUDA0, Vulkan0, …) usados para cargar el modelo. Sin selección = todos los detectados."
-              >Devices</label
-            >
-            <p-multiSelect
-              inputId="deviceSelect"
-              [options]="deviceOptions()"
-              [ngModel]="params().device"
-              (ngModelChange)="params.set({ ...params(), device: $event })"
-              optionLabel="label"
-              optionValue="value"
-              [style]="{ width: '100%' }"
-              display="chip"
-              placeholder="Todos"
-              appendTo="body"
-            />
+            }
           </div>
 
           <!-- Tensor split: slider por device + toggle automático -->
@@ -243,16 +112,16 @@
               <label
                 class="ctrl-label"
                 pTooltip="Reparto del modelo entre los devices seleccionados (proporciones, p.ej. 2:7). Automático reparte proporcional a la VRAM libre de cada device; manual te da control fino, p.ej. para reservar una GPU más libre."
-                >Tensor split (--tensor-split)</label
+                >Tensor split <span class="flag-hint">(--tensor-split)</span></label
               >
-              <button
-                type="button"
-                class="auto-btn"
-                [class.active]="!tensorSplitAuto()"
-                (click)="toggleTensorSplitAuto()"
-              >
-                {{ tensorSplitAuto() ? 'Auto' : 'Manual' }}
-              </button>
+              <span class="auto-switch">
+                <span class="muted small">Auto:</span>
+                <p-toggleswitch
+                  size="small"
+                  [ngModel]="tensorSplitAuto()"
+                  (ngModelChange)="toggleTensorSplitAuto()"
+                />
+              </span>
             </div>
             @if (!tensorSplitAuto()) {
               @for (it of tensorSplitItems(); track it.device.id) {
@@ -271,76 +140,274 @@
                 </div>
               }
             } @else {
-              <small class="muted">Reparto proporcional a la VRAM libre de cada device.</small>
+              <small class="muted small"
+                >Reparto proporcional a la VRAM libre de cada device.</small
+              >
+            }
+          </div>
+
+          <p-divider />
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <div class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().ctxSize"
+                  (ngModelChange)="setEnabled('ctxSize', $event)"
+                  pTooltip="Si está desactivado, --ctx-size no se agrega al script (queda el default del modelo)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="ctxSlider"
+                  pTooltip="Cantidad máxima de tokens (prompt + generación) que el modelo puede atender en memoria. Más contexto permite conversaciones o documentos más largos, pero aumenta linealmente el consumo de VRAM del KV cache. Default de llama-server: 0 (tomado del modelo)."
+                  >Contexto <span class="flag-hint">(--ctx-size)</span></label
+                >
+              </div>
+              <span class="ctrl-val tabular-nums">{{
+                params().ctxSize.toLocaleString('es-CO')
+              }}</span>
+            </div>
+            @if (enabled().ctxSize) {
+              <p-slider
+                inputId="ctxSlider"
+                [ngModel]="params().ctxSize"
+                (ngModelChange)="params.set({ ...params(), ctxSize: $event })"
+                [min]="512"
+                [max]="ctxMax"
+                [step]="2048"
+              />
             }
           </div>
 
           <div class="control-block">
             <div class="ctrl-head">
-              <label
-                class="ctrl-label"
-                for="reuseSlider"
-                pTooltip="Cantidad de tokens del cache de la solicitud anterior que el servidor puede reutilizar para la siguiente. Reduce el costo de re-procesar prompts repetitivos (p.ej. en una conversación larga o RAG): solo se paga en VRAM el contexto fresco (ctx-size − cache-reuse). Más alto ahorra KV cache, pero requiere que los prompts tengan prefijos comunes. Default de llama-server: 0 (sin reutilización)."
-                >Cache reuse (--cache-reuse)</label
-              >
+              <span class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().ngl"
+                  (ngModelChange)="setEnabled('ngl', $event)"
+                  pTooltip="Si está desactivado, --n-gpu-layers no se agrega al script (queda el default del binario)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="nglSlider"
+                  pTooltip="Capas del modelo descargadas a la GPU. Más capas en GPU = más velocidad, pero más VRAM ocupada por los pesos. 999 = todas en GPU (offload completo). Default de llama-server: auto (el binario decide según la VRAM disponible)."
+                  >Capas en GPU <span class="flag-hint">(--n-gpu-layers)</span></label
+                >
+              </span>
+              <span class="ctrl-val tabular-nums">{{ params().ngl }}</span>
+            </div>
+            @if (enabled().ngl) {
+              <p-slider
+                inputId="nglSlider"
+                [ngModel]="params().ngl"
+                (ngModelChange)="params.set({ ...params(), ngl: $event })"
+                [min]="0"
+                [max]="999"
+                [step]="1"
+              />
+            }
+          </div>
+
+          @if (isMoe()) {
+            <div class="control-block">
+              <div class="ctrl-head">
+                <span class="ctrl-head-left">
+                  <p-checkbox
+                    size="small"
+                    [binary]="true"
+                    [ngModel]="enabled().nCpuMoe"
+                    (ngModelChange)="setEnabled('nCpuMoe', $event)"
+                    pTooltip="Si está desactivado, --n-cpu-moe no se agrega al script."
+                  />
+                  <label
+                    class="ctrl-label"
+                    for="moeSlider"
+                    pTooltip="Indica cuántos expertos (experts) se dejan en la CPU para ahorrar VRAM."
+                    >MOE <span class="flag-hint">(--n-cpu-moe)</span></label
+                  >
+                </span>
+                <span class="ctrl-val tabular-nums">{{ params().nCpuMoe }}</span>
+              </div>
+              @if (enabled().nCpuMoe) {
+                <p-slider
+                  inputId="moeSlider"
+                  [ngModel]="params().nCpuMoe"
+                  (ngModelChange)="params.set({ ...params(), nCpuMoe: $event })"
+                  [min]="0"
+                  [max]="64"
+                  [step]="1"
+                />
+              }
+            </div>
+          }
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <span class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().batchSize"
+                  (ngModelChange)="setEnabled('batchSize', $event)"
+                  pTooltip="Si está desactivado, --batch-size no se agrega al script (queda el default del binario)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="batchSlider"
+                  pTooltip="Tokens de prompt procesados en paralelo por pasada. Más grande acelera el prompt eval, pero sube el uso de VRAM del compute buffer. Default de llama-server: 2048."
+                  >Batch size <span class="flag-hint">(--batch-size)</span></label
+                >
+              </span>
+              <span class="ctrl-val tabular-nums">{{ params().batchSize }}</span>
+            </div>
+            @if (enabled().batchSize) {
+              <p-slider
+                inputId="batchSlider"
+                [ngModel]="params().batchSize"
+                (ngModelChange)="params.set({ ...params(), batchSize: $event })"
+                [min]="64"
+                [max]="2048"
+                [step]="64"
+              />
+            }
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <span class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().ubatchSize"
+                  (ngModelChange)="setEnabled('ubatchSize', $event)"
+                  pTooltip="Si está desactivado, --ubatch-size no se agrega al script (queda el default del binario)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="ubatchSlider"
+                  pTooltip="Tokens físicos procesados en paralelo por pasada (micro-batch). Más grande acelera el cómputo, pero aumenta linealmente el compute buffer en VRAM. Suele ser ≤ batch-size. Default de llama-server: 512."
+                  >μbatch size <span class="flag-hint">(--ubatch-size)</span></label
+                >
+              </span>
+              <span class="ctrl-val tabular-nums">{{ params().ubatchSize }}</span>
+            </div>
+            @if (enabled().ubatchSize) {
+              <p-slider
+                inputId="ubatchSlider"
+                [ngModel]="params().ubatchSize"
+                (ngModelChange)="params.set({ ...params(), ubatchSize: $event })"
+                [min]="32"
+                [max]="1024"
+                [step]="32"
+              />
+            }
+          </div>
+
+          <div class="control-block">
+            <div class="ctrl-head">
+              <span class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().cacheReuse"
+                  (ngModelChange)="setEnabled('cacheReuse', $event)"
+                  pTooltip="Si está desactivado, --cache-reuse no se agrega al script."
+                />
+                <label
+                  class="ctrl-label"
+                  for="reuseSlider"
+                  pTooltip="Cantidad de tokens del cache de la solicitud anterior que el servidor puede reutilizar para la siguiente. Reduce el costo de re-procesar prompts repetitivos (p.ej. en una conversación larga o RAG): solo se paga en VRAM el contexto fresco (ctx-size − cache-reuse). Más alto ahorra KV cache, pero requiere que los prompts tengan prefijos comunes. Default de llama-server: 0 (sin reutilización)."
+                  >Cache reuse <span class="flag-hint">(--cache-reuse)</span></label
+                >
+              </span>
               <span class="ctrl-val tabular-nums">{{ params().cacheReuse }}</span>
             </div>
-            <p-slider
-              inputId="reuseSlider"
-              [ngModel]="params().cacheReuse"
-              (ngModelChange)="params.set({ ...params(), cacheReuse: $event })"
-              [min]="0"
-              [max]="8192"
-              [step]="64"
-            />
+            @if (enabled().cacheReuse) {
+              <p-slider
+                inputId="reuseSlider"
+                [ngModel]="params().cacheReuse"
+                (ngModelChange)="params.set({ ...params(), cacheReuse: $event })"
+                [min]="0"
+                [max]="8192"
+                [step]="64"
+              />
+            }
           </div>
 
           <div class="control-block">
             <div class="ctrl-head">
-              <label
-                class="ctrl-label"
-                for="specDraftSlider"
-                pTooltip="Tokens draft propuestos por paso en speculative decoding (MTP). Más tokens pueden acelerar la generación si la tasa de aceptación es alta, pero suben el consumo de VRAM: el batch de verificación pasa de 1 a (n+1) tokens, agrandando los buffers de atención en cada capa. No hay fórmula oficial de llama.cpp; los costes estimados aquí se calibraron empíricamente: activar (~8 % del peso del modelo) + ~3,5 % por cada token extra. En modelos grandes con tensor-split, n=3 suele ser el punto dulce antes de que los retornos decrecientes se aplanen. 0 = desactivado."
-                >Spec draft (--spec-draft-n-max)</label
-              >
+              <span class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().specDraftMax"
+                  (ngModelChange)="setEnabled('specDraftMax', $event)"
+                  pTooltip="Si está desactivado, --spec-draft-n-max no se agrega al script."
+                />
+                <label
+                  class="ctrl-label"
+                  for="specDraftSlider"
+                  pTooltip="Tokens draft propuestos por paso en speculative decoding (MTP). Más tokens pueden acelerar la generación si la tasa de aceptación es alta, pero suben el consumo de VRAM: el batch de verificación pasa de 1 a (n+1) tokens, agrandando los buffers de atención en cada capa. No hay fórmula oficial de llama.cpp; los costes estimados aquí se calibraron empíricamente: activar (~8 % del peso del modelo) + ~3,5 % por cada token extra. En modelos grandes con tensor-split, n=3 suele ser el punto dulce antes de que los retornos decrecientes se aplanen. 0 = desactivado."
+                  >Spec draft <span class="flag-hint">(--spec-draft-n-max)</span></label
+                >
+              </span>
               <span class="ctrl-val tabular-nums">{{ params().specDraftMax }}</span>
             </div>
-            <p-slider
-              inputId="specDraftSlider"
-              [ngModel]="params().specDraftMax"
-              (ngModelChange)="params.set({ ...params(), specDraftMax: $event })"
-              [min]="0"
-              [max]="4"
-              [step]="1"
-            />
+            @if (enabled().specDraftMax) {
+              <p-slider
+                inputId="specDraftSlider"
+                [ngModel]="params().specDraftMax"
+                (ngModelChange)="params.set({ ...params(), specDraftMax: $event })"
+                [min]="0"
+                [max]="8"
+                [step]="1"
+              />
+            }
           </div>
 
           <div class="control-block">
             <div class="ctrl-head">
-              <label
-                class="ctrl-label"
-                for="cacheRamSlider"
-                pTooltip="Presupuesto máximo (MiB) que el KV cache puede derramar a la RAM del sistema cuando la VRAM se llena. llama-server carga primero en VRAM y desborda el exceso a RAM, así que este valor NO resta de la VRAM estimada: es un colchón de overflow que evita OOM cuando el contexto excede la GPU. El tope del slider es la RAM total del sistema. Default de llama-server: 8192."
-                >Cache RAM (--cache-ram)</label
-              >
+              <span class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().cacheRam"
+                  (ngModelChange)="setEnabled('cacheRam', $event)"
+                  pTooltip="Si está desactivado, --cache-ram no se agrega al script (queda el default del binario)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="cacheRamSlider"
+                  pTooltip="Presupuesto máximo (MiB) que el KV cache puede derramar a la RAM del sistema cuando la VRAM se llena. llama-server carga primero en VRAM y desborda el exceso a RAM, así que este valor NO resta de la VRAM estimada: es un colchón de overflow que evita OOM cuando el contexto excede la GPU. El tope del slider es la RAM total del sistema. Default de llama-server: 8192."
+                  >Cache RAM <span class="flag-hint">(--cache-ram)</span></label
+                >
+              </span>
               <span class="ctrl-val tabular-nums">{{ fmtGB(params().cacheRam) }}</span>
             </div>
-            <p-slider
-              inputId="cacheRamSlider"
-              [ngModel]="params().cacheRam"
-              (ngModelChange)="params.set({ ...params(), cacheRam: $event })"
-              [min]="0"
-              [max]="cacheRamMax()"
-              [step]="1024"
-            />
+            @if (enabled().cacheRam) {
+              <p-slider
+                inputId="cacheRamSlider"
+                [ngModel]="params().cacheRam"
+                (ngModelChange)="params.set({ ...params(), cacheRam: $event })"
+                [min]="0"
+                [max]="cacheRamMax()"
+                [step]="1024"
+              />
+            }
           </div>
+
+          <p-divider />
 
           <div class="control-block switch-row">
             <label
               class="ctrl-label"
               for="faToggle"
               pTooltip="Activa Flash Attention: reduce el consumo de VRAM del KV cache y acelera el cómputo en GPU moderna. Recomendado salvo compatibilidad. Default de llama-server: auto (activado en GPUs que lo soportan)."
-              >Flash attention</label
+              >Flash attention <span class="flag-hint">(--flash-attn)</span></label
             >
             <p-toggleswitch
               inputId="faToggle"
@@ -354,13 +421,141 @@
               class="ctrl-label"
               for="mmprojToggle"
               pTooltip="Cargar el vision projector (mmproj): el módulo de visión que permite procesar imágenes (modelos multimodales). Si tu modelo es solo de texto, desactivar este switch ahorra toda la VRAM que ocuparía el mmproj (típicamente 0,5–2 GB). Si el modelo es multimodal y lo desactivás, perderás la capacidad de procesar imágenes. Default de llama-server: on (carga el mmproj si existe)."
-              >Cargar vision (--no-mmproj)</label
+              >Cargar vision <span class="flag-hint">(--no-mmproj)</span></label
             >
             <p-toggleswitch
               inputId="mmprojToggle"
               [ngModel]="!params().noMmproj"
               (ngModelChange)="params.set({ ...params(), noMmproj: !$event })"
             />
+          </div>
+
+          <p-divider />
+
+          <div class="control-row2">
+            <div class="control-block">
+              <div class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().cacheTypeK"
+                  (ngModelChange)="setEnabled('cacheTypeK', $event)"
+                  pTooltip="Si está desactivado, --cache-type-k no se agrega al script (queda el default del binario)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="kvkSelect"
+                  pTooltip="Tipo de cuantización del KV cache de Keys. Menor precisión (q4_0) reduce VRAM pero puede bajar levemente la calidad; f16 es la más precisa y la que más VRAM consume. Default de llama-server: f16."
+                  >KV cache K <span class="flag-hint">(--cache-type-k)</span></label
+                >
+              </div>
+              @if (enabled().cacheTypeK) {
+                <p-select
+                  size="small"
+                  inputId="kvkSelect"
+                  [options]="kvOptions"
+                  [ngModel]="params().cacheTypeK"
+                  (ngModelChange)="params.set({ ...params(), cacheTypeK: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  [style]="{ width: '100%' }"
+                  appendTo="body"
+                />
+              }
+            </div>
+            <div class="control-block">
+              <div class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().cacheTypeV"
+                  (ngModelChange)="setEnabled('cacheTypeV', $event)"
+                  pTooltip="Si está desactivado, --cache-type-v no se agrega al script (queda el default del binario)."
+                />
+                <label
+                  class="ctrl-label"
+                  for="kvvSelect"
+                  pTooltip="Tipo de cuantización del KV cache de Values. Igual que K: menor precisión ahorra VRAM a costa de algo de calidad. Default de llama-server: f16."
+                  >KV cache V <span class="flag-hint">(--cache-type-v)</span></label
+                >
+              </div>
+              @if (enabled().cacheTypeV) {
+                <p-select
+                  size="small"
+                  inputId="kvvSelect"
+                  [options]="kvOptions"
+                  [ngModel]="params().cacheTypeV"
+                  (ngModelChange)="params.set({ ...params(), cacheTypeV: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  [style]="{ width: '100%' }"
+                  appendTo="body"
+                />
+              }
+            </div>
+          </div>
+
+          <div class="control-row2">
+            <div class="control-block">
+              <div class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().cacheTypeKDraft"
+                  (ngModelChange)="setEnabled('cacheTypeKDraft', $event)"
+                  pTooltip="Si está desactivado, --cache-type-k-draft no se agrega al script."
+                />
+                <label
+                  class="ctrl-label"
+                  for="kvkDraftSelect"
+                  pTooltip="Tipo de cuantización del KV cache de Keys del modelo draft (speculative decoding/MTP). Solo aplica cuando hay un draft model configurado."
+                  >KV cache K draft <span class="flag-hint">(--cache-type-k-draft)</span></label
+                >
+              </div>
+              @if (enabled().cacheTypeKDraft) {
+                <p-select
+                  size="small"
+                  inputId="kvkDraftSelect"
+                  [options]="kvOptions"
+                  [ngModel]="params().cacheTypeKDraft"
+                  (ngModelChange)="params.set({ ...params(), cacheTypeKDraft: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  [style]="{ width: '100%' }"
+                  appendTo="body"
+                />
+              }
+            </div>
+            <div class="control-block">
+              <div class="ctrl-head-left">
+                <p-checkbox
+                  size="small"
+                  [binary]="true"
+                  [ngModel]="enabled().cacheTypeVDraft"
+                  (ngModelChange)="setEnabled('cacheTypeVDraft', $event)"
+                  pTooltip="Si está desactivado, --cache-type-v-draft no se agrega al script."
+                />
+                <label
+                  class="ctrl-label"
+                  for="kvvDraftSelect"
+                  pTooltip="Tipo de cuantización del KV cache de Values del modelo draft (speculative decoding/MTP). Solo aplica cuando hay un draft model configurado."
+                  >KV cache V draft <span class="flag-hint">(--cache-type-v-draft)</span></label
+                >
+              </div>
+              @if (enabled().cacheTypeVDraft) {
+                <p-select
+                  size="small"
+                  inputId="kvvDraftSelect"
+                  [options]="kvOptions"
+                  [ngModel]="params().cacheTypeVDraft"
+                  (ngModelChange)="params.set({ ...params(), cacheTypeVDraft: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  [style]="{ width: '100%' }"
+                  appendTo="body"
+                />
+              }
+            </div>
           </div>
         </div>
 

@@ -9,7 +9,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
+import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
 import { SliderModule } from 'primeng/slider';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -20,13 +22,18 @@ import { BenchStore } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
 import { StorageService } from '../../core/services/storage.service';
 import type { StoredCalibration } from '../../core/services/storage.service';
-import { applyTunedParams, parseParamsFromScript } from '../../core/utils/flag-writer';
+import {
+  applyTunedParams,
+  parseEnabledFromScript,
+  parseParamsFromScript,
+} from '../../core/utils/flag-writer';
 import { buildBreakdown, totalFreeFor, KV_TYPES } from '../../core/utils/vram-estimate';
 import { fmtGB, fmt, backendLabel, isModelMoe } from '../../core/utils/format';
 import type {
   DryfitResponse,
   LlamaDevice,
   ModelMeta,
+  TunedFlagsEnabled,
   TunedParams,
   VramBreakdown,
 } from '../../core/models/types';
@@ -62,7 +69,7 @@ interface DeviceBar {
  * El único HTTP es al abrir el diálogo (POST /estimate: obtiene devices vía
  * --list-devices + resuelve el archivo del modelo y lee su header GGUF).
  *
- * Controles: ctx-size, n-gpu-layers, batch/ubatch, KV cache K/V, devices,
+ * Controles: ctx-size, n-gpu-layers, batch/ubatch, KV cache K/V (+ K/V draft), devices,
  * tensor-split (slider por device), --n-cpu-moe, --cache-reuse, --spec-draft-n-max,
  * --cache-ram, --flash-attn, --no-mmproj. Botón "Default" restaura los valores de llama-server --help.
  *
@@ -74,7 +81,9 @@ interface DeviceBar {
   imports: [
     FormsModule,
     ButtonModule,
+    CheckboxModule,
     DialogModule,
+    DividerModule,
     SelectModule,
     SliderModule,
     MultiSelectModule,
@@ -94,6 +103,13 @@ export class OptimizerModal {
 
   // ── Estado del diálogo (copia temporal, no toca el store) ──
   protected readonly params = signal<TunedParams>(this.defaultParams());
+
+  /**
+   * Checkbox de cada slider con flag propio: si está desactivado, el flag no
+   * se agrega al script al aplicar, sin importar el valor del slider. Se
+   * siembra desde la presencia del flag en el script al abrir (ausente = off).
+   */
+  protected readonly enabled = signal<TunedFlagsEnabled>(this.defaultEnabled());
 
   /** Devices + meta cargados una sola vez al abrir (vía /estimate del backend). */
   protected readonly devices = signal<LlamaDevice[]>([]);
@@ -374,6 +390,7 @@ export class OptimizerModal {
     // Sembrar params desde el script UNA sola vez al abrir.
     if (!this.seeded) {
       this.params.set(parseParamsFromScript(script));
+      this.enabled.set(parseEnabledFromScript(script));
       this.seeded = true;
     }
     const params = untracked(this.params);
@@ -426,6 +443,8 @@ export class OptimizerModal {
       ngl: 0,
       cacheTypeK: 'f16',
       cacheTypeV: 'f16',
+      cacheTypeKDraft: 'f16',
+      cacheTypeVDraft: 'f16',
       batchSize: 2048,
       ubatchSize: 512,
       flashAttn: true,
@@ -437,12 +456,13 @@ export class OptimizerModal {
       specDraftMax: 0,
       cacheRam: 8192,
     });
+    this.enabled.set(this.defaultEnabled());
     this.messages.add({ severity: 'info', summary: 'Valores por defecto aplicados', life: 2600 });
   }
 
   /** Aplica los params al script del editor y cierra. */
   protected applyToScript(): void {
-    const next = applyTunedParams(this.store.script(), this.params());
+    const next = applyTunedParams(this.store.script(), this.params(), this.enabled());
     this.store.setScript(next);
     this.messages.add({
       severity: 'success',
@@ -476,6 +496,11 @@ export class OptimizerModal {
     this.params.set({ ...this.params(), tensorSplit: allZero ? null : next });
   }
 
+  /** Prende/apaga el checkbox de un flag con slider propio. */
+  protected setEnabled(key: keyof TunedFlagsEnabled, value: boolean): void {
+    this.enabled.set({ ...this.enabled(), [key]: value });
+  }
+
   /** Alterna tensor-split entre automático (null) y manual (uniforme 1:1). */
   protected toggleTensorSplitAuto(): void {
     if (this.tensorSplitAuto()) {
@@ -505,7 +530,7 @@ export class OptimizerModal {
     // Aplicar los params actuales del optimizador al script antes de medir, para
     // que el dry-fit refleje lo que el usuario ve en los sliders (ctx, ngl,
     // spec-draft, cache-ram, …). El script del editor queda intacto.
-    const script = applyTunedParams(this.store.script(), this.params());
+    const script = applyTunedParams(this.store.script(), this.params(), this.enabled());
     const key = this.modelKey();
     // Capturar la heurística actual (con los params del momento) como referencia:
     // los sliders moverán las barras por delta respecto a esta + la medición real.
@@ -562,6 +587,8 @@ export class OptimizerModal {
       ngl: 999,
       cacheTypeK: 'q8_0',
       cacheTypeV: 'q8_0',
+      cacheTypeKDraft: 'q8_0',
+      cacheTypeVDraft: 'q8_0',
       batchSize: 512,
       ubatchSize: 128,
       flashAttn: true,
@@ -572,6 +599,29 @@ export class OptimizerModal {
       noMmproj: false,
       specDraftMax: 0,
       cacheRam: 8192,
+    };
+  }
+
+  /**
+   * Checkboxes por defecto: activos para los flags que antes siempre se
+   * escribían (ctx-size, n-gpu-layers, batch/ubatch-size, cache-ram);
+   * apagados para los que antes solo se escribían si su valor era > 0.
+   */
+  private defaultEnabled(): TunedFlagsEnabled {
+    return {
+      ctxSize: true,
+      ngl: true,
+      nCpuMoe: false,
+      batchSize: true,
+      ubatchSize: true,
+      cacheReuse: false,
+      specDraftMax: false,
+      cacheRam: true,
+      cacheTypeK: true,
+      cacheTypeV: true,
+      cacheTypeKDraft: false,
+      cacheTypeVDraft: false,
+      device: false,
     };
   }
 }

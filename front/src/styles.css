@@ -315,3 +315,7 @@ pre {
 .p-datatable tr:last-child td:last-child {
   border-bottom-right-radius: var(--radius);
 }
+
+.p-slider-handle {
+  --p-slider-handle-content-background: var(--color-accent);
+}
