@@ -155,8 +155,11 @@ export async function runBenchmark(script: string, prompt: string, maxTokens: nu
     //    llegan tarde y el parseo pilla el buffer antes de tiempo → todas las
     //    métricas quedan null. Hacemos polling hasta ver la señal fiable de fin
     //    (tokens/s de generación) o un timeout de seguridad.
-    const relevantLines = getLogBuffer().slice(logStartIndex)
     const parsedMetrics = await pollMetricsUntilReady(() => getLogBuffer().slice(logStartIndex), controller.signal)
+    // El slice se toma DESPUÉS del polling: las líneas `print_timing` llegan al
+    // final, así que capturarlo antes dejaba fuera del dump de diagnóstico
+    // justo las líneas de las que salen las métricas.
+    const relevantLines = getLogBuffer().slice(logStartIndex)
 
     // 5) GPU y RAM stats finales y restar baseline.
     const [gpusFinal, ramFinal] = await Promise.all([readGpuStats(), readRamStats()])

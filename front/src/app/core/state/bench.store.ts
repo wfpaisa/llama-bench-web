@@ -26,8 +26,12 @@ export interface Bests {
   gt: number;
 }
 
-/** Tope de líneas de log retenidas en memoria (drop oldest). */
-const LOG_CAP = 4000;
+/**
+ * Tope de líneas de log retenidas en memoria (drop oldest).
+ * Alineado con el `LOG_CAP` del backend (`src/config.ts`): si el cliente
+ * retuviera menos, el panel descartaría líneas que el backend todavía sirve.
+ */
+const LOG_CAP = 5000;
 
 /** Prompt por defecto hardcodeado (último recurso si no hay storage ni backend). */
 export const DEFAULT_PROMPT_UI = `Un agricultor tiene 17 ovejas. Todas menos 9 se escapan. ¿Cuántas ovejas le quedan? Explica tu razonamiento paso a paso.
@@ -104,6 +108,12 @@ export class BenchStore {
 
   // ── Logs UI ──
   readonly autoscroll = signal(true);
+  /**
+   * Muestra la marca de tiempo relativa que añade el backend (+12,3s). Apagada
+   * por defecto: las líneas de llama-server ya traen su propio timestamp y el
+   * panel se lee como la terminal real.
+   */
+  readonly showTimestamps = signal(false);
 
   // ════════════ Estado derivado (computed) ════════════
 
@@ -147,12 +157,12 @@ export class BenchStore {
   });
 
   /**
-   * Historial para renderizar en la tabla. El orden lo maneja PrimeNG
-   * internamente (sort por columna con `field` reales), y el filtrado por
-   * modelo también lo hace PrimeNG (p-columnFilter). Aquí solo devolvemos el
-   * historial crudo; la tabla aplica su propio sort sobre este `[value]`.
+   * Historial para renderizar en la tabla. El orden y el filtrado por modelo los
+   * maneja la propia tabla (sort en `tableData`, p-columnFilter para el filtro),
+   * así que aquí se devuelve el historial tal cual: copiarlo solo generaría una
+   * referencia nueva en cada lectura e invalidaría la memoización aguas abajo.
    */
-  readonly visibleHistory = computed<BenchmarkResult[]>(() => [...this.history()]);
+  readonly visibleHistory = computed<BenchmarkResult[]>(() => this.history());
 
   /** Resultados seleccionados (para comparar). */
   readonly selectedResults = computed<BenchmarkResult[]>(() => {
@@ -227,24 +237,38 @@ export class BenchStore {
     this.status.set(s);
   }
 
-  /** Añade entradas de log nuevas y avanza el cursor. Respeta el cap (drop oldest). */
+  /**
+   * Añade entradas de log nuevas y avanza el cursor. Respeta el cap (drop
+   * oldest).
+   *
+   * Descarta las entradas cuyo `seq` no supere al cursor actual: al reconectar
+   * el stream reenvía el backlog desde el cursor, y un solapamiento (o un tick
+   * del polling de respaldo que se cruce con el stream) no debe duplicar
+   * líneas ya pintadas.
+   */
   appendLogs(entries: LogEntry[], cursor: number): void {
-    if (!entries.length) {
-      // Aun sin entradas, mantener el cursor sincronizado.
-      if (cursor !== this.logCursor()) this.logCursor.set(cursor);
+    const seen = this.logCursor();
+    const fresh = entries.filter((e) => e.seq > seen);
+    if (!fresh.length) {
+      // Aun sin entradas nuevas, mantener el cursor sincronizado (p.ej. tras
+      // limpiar el buffer en el backend, que lo hace avanzar).
+      if (cursor > seen) this.logCursor.set(cursor);
       return;
     }
-    const next = [...this.logs(), ...entries];
+    const next = [...this.logs(), ...fresh];
     // Drop oldest si excede el cap.
     const overflow = next.length - LOG_CAP;
-    const trimmed = overflow > 0 ? next.slice(overflow) : next;
-    this.logs.set(trimmed);
-    this.logCursor.set(cursor);
+    this.logs.set(overflow > 0 ? next.slice(overflow) : next);
+    this.logCursor.set(Math.max(cursor, fresh[fresh.length - 1].seq));
   }
 
+  /**
+   * Vacía el panel. NO rebobina el cursor: el backend también conserva su
+   * secuencia global al limpiar, así que volver a 0 solo conseguiría repintar
+   * lo que se acaba de descartar.
+   */
   clearLogs(): void {
     this.logs.set([]);
-    this.logCursor.set(0);
   }
 
   setGpus(gpus: GpuInfo[]): void {
@@ -275,6 +299,10 @@ export class BenchStore {
 
   setAutoscroll(v: boolean): void {
     this.autoscroll.set(v);
+  }
+
+  setShowTimestamps(v: boolean): void {
+    this.showTimestamps.set(v);
   }
 
   // ════════════ Actions: flags destacadas ════════════
@@ -383,24 +411,34 @@ export class BenchStore {
   }
 
   /**
-   * Actualiza optimistamente la calificación de un resultado en el historial
-   * local (para feedback inmediato en la UI). El componente que la invoca es
-   * responsable de persistirla vía el servicio; si falla, debe recargar el
-   * historial para revertir.
+   * Reemplaza un resultado del historial por su versión actualizada (la que
+   * devuelve el backend tras un PATCH). Sustituye a recargar el historial
+   * entero por cada clic en una estrella.
    */
-  setRating(id: string, rating: number | null): void {
-    const next = this.history().map((r) => (r.id === id ? { ...r, rating } : r));
-    this.history.set(next);
+  replaceResult(updated: BenchmarkResult): void {
+    this.history.update((all) => all.map((r) => (r.id === updated.id ? updated : r)));
+  }
+
+  /** Elimina un resultado del historial local y de la selección. */
+  removeResults(ids: string[]): void {
+    const gone = new Set(ids);
+    this.history.update((all) => all.filter((r) => !gone.has(r.id)));
+    this.selectMany(ids, false);
   }
 
   /**
-   * Actualiza optimistamente la marca de favorito (corazón) de un resultado en
-   * el historial local. El componente que la invoca es responsable de
-   * persistirla vía el servicio; si falla, debe recargar el historial.
+   * Aplica un cambio optimista a un resultado y devuelve el historial previo,
+   * para poder revertirlo si la persistencia falla.
    */
-  setFavorite(id: string, favorite: boolean): void {
-    const next = this.history().map((r) => (r.id === id ? { ...r, favorite } : r));
-    this.history.set(next);
+  patchResultOptimistic(id: string, patch: Partial<BenchmarkResult>): BenchmarkResult[] {
+    const previous = this.history();
+    this.history.set(previous.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    return previous;
+  }
+
+  /** Restaura un snapshot del historial (rollback de un cambio optimista). */
+  restoreHistory(snapshot: BenchmarkResult[]): void {
+    this.history.set(snapshot);
   }
 
   // ── Comparación ──

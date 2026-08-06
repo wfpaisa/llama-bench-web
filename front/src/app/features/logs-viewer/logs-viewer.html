@@ -2,7 +2,24 @@
   <div class="row-between">
     <h2>Logs en tiempo real</h2>
     <div class="logs-controls">
-      <div class="autoscroll">
+      @if (degraded()) {
+        <span
+          class="degraded"
+          title="El stream en vivo no está disponible; se está sondeando cada segundo."
+        >
+          <i class="pi pi-exclamation-triangle"></i> sin stream
+        </span>
+      }
+      <div class="logs-toggle">
+        <p-checkbox
+          [(ngModel)]="timestampsModel"
+          [binary]="true"
+          inputId="timestamps"
+          (ngModelChange)="store.setShowTimestamps($event)"
+        />
+        <label for="timestamps">marca de tiempo</label>
+      </div>
+      <div class="logs-toggle">
         <p-checkbox
           [(ngModel)]="autoscrollModel"
           [binary]="true"
@@ -21,10 +38,12 @@
     </div>
   </div>
 
-  <div #logsEl class="logs" [class.empty]="!logs().length">
-    @for (e of logs(); track $index) {
+  <div #logsEl class="logs" [class.empty]="!logs().length" (scroll)="onScroll()">
+    @for (e of logs(); track e.seq) {
       <div [class]="'ln-' + e.stream">
-        <span class="ts">+{{ e.t / 1000 | fmtNum: 1 }}s</span>
+        @if (showTimestamps()) {
+          <span class="ts">+{{ e.t / 1000 | fmtNum: 1 }}s</span>
+        }
         <span class="msg">{{ e.msg }}</span>
       </div>
     } @empty {

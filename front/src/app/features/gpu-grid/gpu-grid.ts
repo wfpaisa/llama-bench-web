@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BenchStore } from '../../core/state/bench.store';
 import { GpuInfo, RamInfo } from '../../core/models/types';
 import { alertCls, fmtGB } from '../../core/utils/format';
@@ -11,7 +11,6 @@ import { alertCls, fmtGB } from '../../core/utils/format';
  */
 @Component({
   selector: 'app-gpu-grid',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gpu-grid.html',
   styleUrl: './gpu-grid.css',
 })

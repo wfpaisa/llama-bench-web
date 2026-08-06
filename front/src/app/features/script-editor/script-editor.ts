@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-  viewChild,
-} from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -16,9 +7,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { Table, TableModule } from 'primeng/table';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { formatScript } from '../../core/utils/format';
 import {
   addFlagToScript,
@@ -46,7 +38,6 @@ const CATEGORY_ORDER: FlagCategory[] = ['Común', 'Muestreo', 'Especulativo', 'S
  */
 @Component({
   selector: 'app-script-editor',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
     ButtonModule,
@@ -66,11 +57,15 @@ const CATEGORY_ORDER: FlagCategory[] = ['Común', 'Muestreo', 'Especulativo', 'S
 export class ScriptEditor {
   protected readonly store = inject(BenchStore);
   private readonly api = inject(PlaneLlamaBenchService);
-  private readonly messages = inject(MessageService);
+  private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmationService);
 
-  /** Modelo local del editor, sincronizado bidireccionalmente con store.script. */
-  protected readonly script = signal(this.store.script());
+  /**
+   * Modelo local del editor. `linkedSignal` lo reengancha cuando el script del
+   * store cambia desde fuera (aplicar desde el historial, formatear, insertar un
+   * flag) y admite escritura local mientras se teclea.
+   */
+  protected readonly script = linkedSignal(() => this.store.script());
   protected readonly running = this.store.running;
 
   /** Función de formateo pasada al CodeEditor para normalizar el texto pegado. */
@@ -128,12 +123,7 @@ export class ScriptEditor {
       error: (e: Error) => {
         // Revertir: volver a alternar para dejar el signal como estaba.
         this.store.toggleFavorite(f.long);
-        this.messages.add({
-          severity: 'error',
-          summary: 'No se pudo guardar el destacado',
-          detail: e.message,
-          life: 4000,
-        });
+        this.notify.error(e.message, 'No se pudo guardar el destacado');
       },
     });
   }
@@ -195,20 +185,10 @@ export class ScriptEditor {
   }
 
   constructor() {
-    // Cuando el script cambia externamente (p.ej. "apply" desde el historial),
-    // reflejarlo en el textarea.
-    effect(() => {
-      const s = this.store.script();
-      if (s !== this.script()) this.script.set(s);
-    });
-
     // Cargar las flags destacadas desde el backend una sola vez al iniciar.
-    // untracked: no queremos que este effect se re-dispare si favorites cambia.
-    untracked(() => {
-      this.api.getFlagsFavorites().subscribe({
-        next: ({ favorites }) => this.store.setFavorites(favorites),
-        error: () => this.store.setFavorites([]),
-      });
+    this.api.getFlagsFavorites().subscribe({
+      next: ({ favorites }) => this.store.setFavorites(favorites),
+      error: () => this.store.setFavorites([]),
     });
   }
 
@@ -228,7 +208,7 @@ export class ScriptEditor {
     const formatted = formatScript(this.store.script());
     this.store.setScript(formatted);
     this.script.set(formatted);
-    this.messages.add({ severity: 'success', summary: 'Script formateado', life: 2600 });
+    this.notify.ok('Script formateado');
   }
 
   /** Formatea el script silenciosamente (sin toast). */
@@ -252,35 +232,24 @@ export class ScriptEditor {
     const { script: next, added } = addFlagToScript(this.store.script(), f);
     this.store.setScript(next);
     this.script.set(next);
-    this.messages.add(
-      added
-        ? { severity: 'success', summary: `Flag ${f.long} agregado`, life: 2600 }
-        : {
-            severity: 'info',
-            summary: `El flag ${f.long} ya está en el script`,
-            detail: 'Se conservó el valor existente.',
-            life: 3200,
-          },
-    );
+    if (added) this.notify.ok(`Flag ${f.long} agregado`);
+    else
+      this.notify.info(`El flag ${f.long} ya está en el script`, 'Se conservó el valor existente.');
   }
 
   start(): void {
     // Formatear el script antes de arrancar para enviarlo normalizado al backend.
     this.formatSilent();
     this.api.startServer(this.store.script()).subscribe({
-      next: () =>
-        this.messages.add({ severity: 'info', summary: 'Servidor iniciando…', life: 2600 }),
-      error: (e: Error) =>
-        this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
+      next: () => this.notify.info('Servidor iniciando…'),
+      error: (e: Error) => this.notify.error(e.message, 'Error'),
     });
   }
 
   stop(): void {
     this.api.stopServer().subscribe({
-      next: () =>
-        this.messages.add({ severity: 'success', summary: 'Servidor detenido.', life: 2600 }),
-      error: (e: Error) =>
-        this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
+      next: () => this.notify.ok('Servidor detenido.'),
+      error: (e: Error) => this.notify.error(e.message, 'Error'),
     });
   }
 
@@ -291,15 +260,8 @@ export class ScriptEditor {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.api.saveScriptDefault(this.store.script()).subscribe({
-          next: () =>
-            this.messages.add({ severity: 'success', summary: 'Default guardado', life: 2600 }),
-          error: (e: Error) =>
-            this.messages.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: e.message,
-              life: 4000,
-            }),
+          next: () => this.notify.ok('Default guardado'),
+          error: (e: Error) => this.notify.error(e.message, 'Error'),
         });
       },
     });
@@ -314,15 +276,9 @@ export class ScriptEditor {
         this.api.getScriptDefault().subscribe({
           next: (text) => {
             this.store.setScript(text);
-            this.messages.add({ severity: 'success', summary: 'Default restablecido', life: 2600 });
+            this.notify.ok('Default restablecido');
           },
-          error: (e: Error) =>
-            this.messages.add({
-              severity: 'error',
-              summary: 'No hay default guardado',
-              detail: e.message,
-              life: 4000,
-            }),
+          error: (e: Error) => this.notify.error(e.message, 'No hay default guardado'),
         });
       },
     });

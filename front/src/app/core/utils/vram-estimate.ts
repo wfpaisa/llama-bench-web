@@ -46,7 +46,7 @@ function bytesPerKvElement(cacheType: string | null): number {
  * @param ngl Capas offload a GPU (--n-gpu-layers). Si es < layers, solo esa
  *            fracción de los pesos va a VRAM; el resto a RAM del sistema.
  */
-export function estimateVramMiB(
+function estimateVramMiB(
   meta: ModelMeta,
   ctxSize: number,
   cacheTypeK: string,

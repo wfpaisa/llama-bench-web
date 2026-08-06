@@ -1,19 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnDestroy,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnDestroy, effect, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { formatScript } from '../../core/utils/format';
 
 /**
@@ -32,7 +26,6 @@ import { formatScript } from '../../core/utils/format';
  */
 @Component({
   selector: 'app-benchmark-panel',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, ButtonModule, TextareaModule, InputNumberModule, CheckboxModule],
   templateUrl: './benchmark-panel.html',
   styleUrl: './benchmark-panel.css',
@@ -40,30 +33,48 @@ import { formatScript } from '../../core/utils/format';
 export class BenchmarkPanel implements OnDestroy {
   protected readonly store = inject(BenchStore);
   private readonly api = inject(PlaneLlamaBenchService);
-  private readonly messages = inject(MessageService);
+  private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmationService);
 
-  /** Modelo del prompt, sincronizado con store.prompt. */
-  protected readonly prompt = signal(this.store.prompt());
+  /**
+   * Modelo del prompt para el textarea. `linkedSignal` lo reengancha solo cuando
+   * el prompt del store cambia desde fuera (restablecer default, cargar de
+   * historial) y admite escritura local mientras se teclea, que es justo lo que
+   * antes hacía a mano un signal espejo + un effect de sincronización.
+   */
+  protected readonly prompt = linkedSignal(() => this.store.prompt());
   protected readonly maxTokens = this.store.maxTokens;
   protected readonly maxTokensEnabled = this.store.maxTokensEnabled;
   protected readonly running = this.store.running;
 
-  /** Timer interval (200ms) que refresca el elapsed mientras el benchmark corre. */
-  private readonly timerHandle: ReturnType<typeof setInterval>;
+  /**
+   * Timer (200ms) que refresca el elapsed. Solo vive mientras el benchmark
+   * corre: antes se creaba en el constructor y seguía disparando cada 200ms
+   * durante toda la sesión aunque no hubiera nada que medir.
+   */
+  private timerHandle: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    // Reflejar cambios externos del prompt en el textarea.
+    // Arrancar/parar el timer siguiendo el estado del benchmark.
     effect(() => {
-      const p = this.store.prompt();
-      if (p !== this.prompt()) this.prompt.set(p);
+      if (this.store.benchRunning()) this.startTimer();
+      else this.stopTimer();
     });
-
-    this.timerHandle = setInterval(() => this.store.tickBenchTimer(), 200);
   }
 
   ngOnDestroy(): void {
+    this.stopTimer();
+  }
+
+  private startTimer(): void {
+    if (this.timerHandle) return;
+    this.timerHandle = setInterval(() => this.store.tickBenchTimer(), 200);
+  }
+
+  private stopTimer(): void {
+    if (!this.timerHandle) return;
     clearInterval(this.timerHandle);
+    this.timerHandle = null;
   }
 
   onPromptChange(value: string): void {
@@ -96,32 +107,18 @@ export class BenchmarkPanel implements OnDestroy {
               next: (h) => this.store.setHistory(h.results || []),
             });
             if (r.errors.length) {
-              this.messages.add({
-                severity: 'warn',
-                summary: 'Benchmark con errores',
-                detail: r.errors.join('; '),
-                life: 5000,
-              });
+              this.notify.warn('Benchmark con errores', r.errors.join('; '));
             } else {
-              this.messages.add({
-                severity: 'success',
-                summary: 'Benchmark completado',
-                life: 2600,
-              });
+              this.notify.ok('Benchmark completado');
             }
           } else {
             this.store.failBenchmark();
-            this.messages.add({
-              severity: 'error',
-              summary: 'Benchmark falló',
-              detail: data.error || 'Error desconocido',
-              life: 5000,
-            });
+            this.notify.error(data.error || 'Error desconocido', 'Benchmark falló');
           }
         },
         error: (e: Error) => {
           this.store.failBenchmark();
-          this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 });
+          this.notify.error(e.message, 'Error');
         },
       });
   }
@@ -147,19 +144,8 @@ export class BenchmarkPanel implements OnDestroy {
         // Si el prompt está en blanco, persistir el prompt por defecto.
         const toSave = this.store.prompt().trim() ? this.store.prompt() : DEFAULT_PROMPT_UI;
         this.api.savePromptDefault(toSave).subscribe({
-          next: () =>
-            this.messages.add({
-              severity: 'success',
-              summary: 'Prompt default guardado',
-              life: 2600,
-            }),
-          error: (e: Error) =>
-            this.messages.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: e.message,
-              life: 4000,
-            }),
+          next: () => this.notify.ok('Prompt default guardado'),
+          error: (e: Error) => this.notify.error(e.message, 'Error'),
         });
       },
     });
@@ -174,19 +160,9 @@ export class BenchmarkPanel implements OnDestroy {
         this.api.getPromptDefault().subscribe({
           next: (text) => {
             this.store.setPrompt(text);
-            this.messages.add({
-              severity: 'success',
-              summary: 'Prompt default restablecido',
-              life: 2600,
-            });
+            this.notify.ok('Prompt default restablecido');
           },
-          error: (e: Error) =>
-            this.messages.add({
-              severity: 'error',
-              summary: 'No hay prompt default guardado',
-              detail: e.message,
-              life: 4000,
-            }),
+          error: (e: Error) => this.notify.error(e.message, 'No hay prompt default guardado'),
         });
       },
     });
@@ -195,10 +171,6 @@ export class BenchmarkPanel implements OnDestroy {
   /** Restablece el textarea al prompt por defecto built-in (sin confirmación). */
   resetPrompt(_event: Event): void {
     this.store.setPrompt(DEFAULT_PROMPT_UI);
-    this.messages.add({
-      severity: 'info',
-      summary: 'Prompt restablecido al default',
-      life: 2200,
-    });
+    this.notify.info('Prompt restablecido al default');
   }
 }

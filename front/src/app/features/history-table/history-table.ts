@@ -7,12 +7,14 @@ import { RatingModule } from 'primeng/rating';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationService, MessageService, SelectItemGroup, SortEvent } from 'primeng/api';
+import { ConfirmationService, SelectItemGroup, SortEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
+import { Observable } from 'rxjs';
 import { BenchStore } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { StorageService } from '../../core/services/storage.service';
-import { BenchmarkResult, ParsedScript } from '../../core/models/types';
+import { BenchmarkResult, ParsedScript, PatchResultResponse } from '../../core/models/types';
 import {
   backendSeverity,
   computeBackendLabel,
@@ -184,7 +186,7 @@ const GROUPED_COLUMNS: SelectItemGroup[] = GROUP_ORDER.map((gk) => {
 export class HistoryTable {
   protected readonly store = inject(BenchStore);
   private readonly api = inject(PlaneLlamaBenchService);
-  private readonly messages = inject(MessageService);
+  private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmationService);
   private readonly storage = inject(StorageService);
 
@@ -225,8 +227,10 @@ export class HistoryTable {
   /**
    * Valor seleccionado en el multiselect: claves de columnas (string[]).
    * En modo agrupado el p-multiselect emite los `value` de los ítems.
+   * Es el mismo array del signal: `visibleColumnKeys` solo se reemplaza entero
+   * (nunca se muta), así que copiarlo no aportaría nada.
    */
-  protected readonly selectedColumns = computed<string[]>(() => [...this.visibleColumnKeys()]);
+  protected readonly selectedColumns = this.visibleColumnKeys.asReadonly();
 
   /** Devuelve true si la columna `key` está visible. */
   protected colVisible(key: string): boolean {
@@ -508,58 +512,45 @@ export class HistoryTable {
   // ── Acciones de fila ──
 
   /**
-   * Persiste el cambio de calificación (1-5 estrellas) de un resultado.
-   * Aplica el nuevo valor optimistamente en el store para feedback inmediato;
-   * si el backend falla, recarga el historial para revertir y muestra un toast.
+   * Persiste el cambio de calificación (1-10 estrellas) de un resultado.
    * Un valor de 0 se interpreta como "sin calificar" (null en backend).
    */
   protected onRatingChange(r: BenchmarkResult, value: number | null): void {
     const normalized = !value || value <= 0 ? null : value;
-    this.store.setRating(r.id, normalized);
-    this.api.setRating(r.id, normalized).subscribe({
-      next: () => {
-        this.api.getHistory().subscribe({
-          next: (h) => this.store.setHistory(h.results || []),
-        });
-      },
-      error: (e: Error) => {
-        this.api.getHistory().subscribe({
-          next: (h) => this.store.setHistory(h.results || []),
-        });
-        this.messages.add({
-          severity: 'error',
-          summary: 'Error al guardar calificación',
-          detail: e.message,
-          life: 4000,
-        });
-      },
-    });
+    this.persist(
+      r.id,
+      { rating: normalized },
+      this.api.setRating(r.id, normalized),
+      'calificación',
+    );
+  }
+
+  /** Alterna la marca de favorito (corazón) de un resultado. */
+  protected onToggleFavorite(r: BenchmarkResult): void {
+    const next = !r.favorite;
+    this.persist(r.id, { favorite: next }, this.api.setFavorite(r.id, next), 'favorito');
   }
 
   /**
-   * Alterna la marca de favorito (corazón) de un resultado. Aplica el nuevo
-   * valor optimistamente en el store para feedback inmediato; si el backend
-   * falla, recarga el historial para revertir y muestra un toast.
+   * Aplica un cambio en el historial: optimista en el store para feedback
+   * inmediato, y al confirmar el backend se adopta el resultado que devuelve
+   * (ya no hace falta recargar el historial entero). Si falla, revierte al
+   * snapshot previo y avisa.
    */
-  protected onToggleFavorite(r: BenchmarkResult): void {
-    const next = !r.favorite;
-    this.store.setFavorite(r.id, next);
-    this.api.setFavorite(r.id, next).subscribe({
-      next: () => {
-        this.api.getHistory().subscribe({
-          next: (h) => this.store.setHistory(h.results || []),
-        });
+  private persist(
+    id: string,
+    patch: Partial<BenchmarkResult>,
+    request: Observable<PatchResultResponse>,
+    what: string,
+  ): void {
+    const snapshot = this.store.patchResultOptimistic(id, patch);
+    request.subscribe({
+      next: (res) => {
+        if (res.result) this.store.replaceResult(res.result);
       },
       error: (e: Error) => {
-        this.api.getHistory().subscribe({
-          next: (h) => this.store.setHistory(h.results || []),
-        });
-        this.messages.add({
-          severity: 'error',
-          summary: 'Error al guardar favorito',
-          detail: e.message,
-          life: 4000,
-        });
+        this.store.restoreHistory(snapshot);
+        this.notify.error(e, `Error al guardar ${what}`);
       },
     });
   }
@@ -568,11 +559,7 @@ export class HistoryTable {
     const script = r.config?.script;
     if (script) {
       this.store.setScript(script);
-      this.messages.add({
-        severity: 'info',
-        summary: `Script de ${shortModel(r.config?.model)} cargado.`,
-        life: 2600,
-      });
+      this.notify.info(`Script de ${shortModel(r.config?.model)} cargado.`);
     }
   }
 
@@ -586,19 +573,10 @@ export class HistoryTable {
       accept: () => {
         this.api.deleteResult(r.id).subscribe({
           next: () => {
-            this.store.toggleSelected(r.id, false);
-            this.api.getHistory().subscribe({
-              next: (h) => this.store.setHistory(h.results || []),
-            });
-            this.messages.add({ severity: 'success', summary: 'Resultado eliminado.', life: 2600 });
+            this.store.removeResults([r.id]);
+            this.notify.ok('Resultado eliminado.');
           },
-          error: (e: Error) =>
-            this.messages.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: e.message,
-              life: 4000,
-            }),
+          error: (e: Error) => this.notify.error(e),
         });
       },
     });
@@ -607,11 +585,7 @@ export class HistoryTable {
   // ── Acciones de cabecera ──
   protected compare(): void {
     if (this.store.selectedCount() < 2) {
-      this.messages.add({
-        severity: 'warn',
-        summary: 'Selecciona 2 o más resultados.',
-        life: 3000,
-      });
+      this.notify.warn('Selecciona 2 o más resultados.');
       return;
     }
     this.store.openCompare();
@@ -627,11 +601,7 @@ export class HistoryTable {
       .filter((r) => this.store.isSelected(r.id))
       .map((r) => r.id);
     if (orderedIds.length < 1) {
-      this.messages.add({
-        severity: 'warn',
-        summary: 'Selecciona al menos un resultado.',
-        life: 3000,
-      });
+      this.notify.warn('Selecciona al menos un resultado.');
       return;
     }
     this.store.openChart(orderedIds);
@@ -652,23 +622,12 @@ export class HistoryTable {
       accept: () => {
         this.api.deleteSelected(ids).subscribe({
           next: () => {
-            this.store.selectMany(ids, false);
-            this.api.getHistory().subscribe({
-              next: (h) => this.store.setHistory(h.results || []),
-            });
-            this.messages.add({
-              severity: 'success',
-              summary: count === 1 ? 'Resultado eliminado.' : `${count} resultados eliminados.`,
-              life: 2600,
-            });
+            this.store.removeResults(ids);
+            this.notify.ok(
+              count === 1 ? 'Resultado eliminado.' : `${count} resultados eliminados.`,
+            );
           },
-          error: (e: Error) =>
-            this.messages.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: e.message,
-              life: 4000,
-            }),
+          error: (e: Error) => this.notify.error(e),
         });
       },
     });
@@ -681,11 +640,10 @@ export class HistoryTable {
  * aquí para no depender de una API no exportada.
  */
 function resolveFieldPath(obj: unknown, path: string): unknown {
-  if (obj == null) return undefined;
-  let cur: any = obj;
+  let cur: unknown = obj;
   for (const part of path.split('.')) {
-    if (cur == null) return undefined;
-    cur = cur[part];
+    if (cur == null || typeof cur !== 'object') return undefined;
+    cur = (cur as Record<string, unknown>)[part];
   }
   return cur;
 }
@@ -697,11 +655,16 @@ function resolveFieldPath(obj: unknown, path: string): unknown {
  * orden; el llamador lo aplica).
  */
 function compareField<T>(a: T, b: T, field: string): number {
-  const v1: any = resolveFieldPath(a, field);
-  const v2: any = resolveFieldPath(b, field);
+  const v1 = resolveFieldPath(a, field);
+  const v2 = resolveFieldPath(b, field);
   if (v1 == null && v2 != null) return -1;
   if (v1 != null && v2 == null) return 1;
   if (v1 == null && v2 == null) return 0;
   if (typeof v1 === 'string' && typeof v2 === 'string') return v1.localeCompare(v2);
-  return v1 < v2 ? -1 : v1 > v2 ? 1 : 0;
+  if (typeof v1 === 'number' && typeof v2 === 'number') return v1 - v2;
+  // Resto de tipos (boolean, Date…): comparación por su representación textual,
+  // que es estable y no requiere ensanchar a `any`.
+  const s1 = String(v1);
+  const s2 = String(v2);
+  return s1 < s2 ? -1 : s1 > s2 ? 1 : 0;
 }

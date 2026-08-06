@@ -1,13 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  PLATFORM_ID,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChartModule } from 'primeng/chart';
 import { DialogModule } from 'primeng/dialog';
@@ -121,7 +113,6 @@ function sumVramMiB(r: BenchmarkResult): number | null {
  */
 @Component({
   selector: 'app-chart-modal',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, DialogModule, ChartModule, SelectModule],
   templateUrl: './chart-modal.html',
   styleUrl: './chart-modal.css',

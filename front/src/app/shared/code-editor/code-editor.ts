@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnDestroy,
@@ -36,7 +35,6 @@ import planeTheme from './plane-theme';
  */
 @Component({
   selector: 'app-code-editor',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<div #host class="cm-host"></div>`,
   styleUrl: './code-editor.css',
 })

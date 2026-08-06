@@ -40,46 +40,65 @@ async function readNvidiaGpus(): Promise<GpuInfo[]> {
   return gpus
 }
 
-/** Lee VRAM/util de GPUs AMD vía sysfs (sin depender de radeontop). */
-async function readAmdGpus(): Promise<GpuInfo[]> {
-  const gpus: GpuInfo[] = []
+/**
+ * Tarjetas AMD detectadas, cacheadas tras el primer sondeo. La enumeración
+ * (readdir de /sys/class/drm + lectura del vendor de cada card) no cambia
+ * mientras el proceso vive, así que repetirla en cada poll de 4s es trabajo
+ * inútil: solo se conservan las rutas ya validadas.
+ */
+let amdCards: { card: string; dev: string }[] | null = null
+
+/** Enumera las tarjetas AMD de sysfs (una sola vez). */
+async function discoverAmdCards(): Promise<{ card: string; dev: string }[]> {
+  if (amdCards) return amdCards
   const base = '/sys/class/drm'
+  const found: { card: string; dev: string }[] = []
   let cards: string[]
   try {
     cards = await readdir(base)
   } catch {
-    return []
+    amdCards = found
+    return found
   }
   for (const c of cards) {
     if (!c.startsWith('card') || c.includes('-')) continue // card0, no card0-DP-1
-    const idx = Number(c.replace('card', ''))
-    if (Number.isNaN(idx)) continue
+    if (Number.isNaN(Number(c.replace('card', '')))) continue
     const dev = join(base, c, 'device')
-    const memUsedPath = join(dev, 'mem_info_vram_used')
-    const memTotalPath = join(dev, 'mem_info_vram_total')
-    const utilPath = join(dev, 'gpu_busy_percent')
-    const vendorPath = join(dev, 'vendor')
     // Solo AMD.
     let vendor = ''
     try {
-      vendor = (await readFile(vendorPath, 'utf8')).trim()
+      vendor = (await readFile(join(dev, 'vendor'), 'utf8')).trim()
     } catch {
       continue
     }
     if (!vendor.includes('0x1002') && !/amd|advanced micro/i.test(vendor)) continue
+    found.push({ card: c, dev })
+  }
+  amdCards = found
+  return found
+}
+
+/** Lee VRAM/util de GPUs AMD vía sysfs (sin depender de radeontop). */
+async function readAmdGpus(): Promise<GpuInfo[]> {
+  const gpus: GpuInfo[] = []
+  for (const { card, dev } of await discoverAmdCards()) {
     const gi: GpuInfo = {
-      index: `amdgpu-${c}`,
+      index: `amdgpu-${card}`,
       vendor: 'amd',
       memUsedMiB: null,
       memTotalMiB: null,
       gpuUtilPct: null,
     }
-    const used = await readNumFile(memUsedPath)
-    const total = await readNumFile(memTotalPath)
-    const util = await readNumFile(utilPath)
+    const [used, total, util] = await Promise.all([
+      readNumFile(join(dev, 'mem_info_vram_used')),
+      readNumFile(join(dev, 'mem_info_vram_total')),
+      readNumFile(join(dev, 'gpu_busy_percent')),
+    ])
     if (used !== null) gi.memUsedMiB = used / (1024 * 1024)
     if (total !== null) gi.memTotalMiB = total / (1024 * 1024)
     if (util !== null) gi.gpuUtilPct = util
+    // La tarjeta desapareció (hot-unplug / driver recargado): reenumerar luego.
+    if (used === null && total === null) amdCards = null
     gpus.push(gi)
   }
   return gpus

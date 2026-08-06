@@ -14,6 +14,7 @@ import type {
   GpuInfo,
   LogsResponse,
   OkResponse,
+  PatchResultResponse,
   RamInfo,
   StartResponse,
   StatusResponse,
@@ -87,18 +88,19 @@ export class PlaneLlamaBenchService {
   }
 
   /**
-   * Actualiza la calificación (1-5 estrellas) de un resultado.
-   * Pasar null limpia la calificación.
+   * Actualiza la calificación (1-10 estrellas) de un resultado.
+   * Pasar null limpia la calificación. Devuelve el resultado ya actualizado.
    */
-  setRating(id: string, rating: number | null): Observable<OkResponse> {
-    return this.api.patch<OkResponse>(`/history/${encodeURIComponent(id)}`, { rating });
+  setRating(id: string, rating: number | null): Observable<PatchResultResponse> {
+    return this.api.patch<PatchResultResponse>(`/history/${encodeURIComponent(id)}`, { rating });
   }
 
   /**
    * Alterna la marca de favorito (corazón) de un resultado.
+   * Devuelve el resultado ya actualizado.
    */
-  setFavorite(id: string, favorite: boolean): Observable<OkResponse> {
-    return this.api.patch<OkResponse>(`/history/${encodeURIComponent(id)}`, { favorite });
+  setFavorite(id: string, favorite: boolean): Observable<PatchResultResponse> {
+    return this.api.patch<PatchResultResponse>(`/history/${encodeURIComponent(id)}`, { favorite });
   }
 
   /** Elimina múltiples resultados por ids. */

@@ -1,4 +1,4 @@
-/* LogsViewer: panel de logs con scroll y colores por stream. */
+/* LogsViewer: panel de terminal con la salida cruda de llama-server. */
 :host {
   display: block;
 
@@ -6,26 +6,35 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 
   .logs-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-4);
   }
 
-  .autoscroll {
+  .logs-toggle {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
     color: var(--color-text-muted);
   }
 
+  /* Aviso de que el stream en vivo cayó y se está sondeando de respaldo. */
+  .degraded {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--p-amber-500);
+  }
+
   .logs {
-    margin-top: 0.75rem;
+    margin-top: var(--space-3);
     height: 44rem;
     overflow-y: auto;
     /* Panel de terminal deliberadamente oscuro en ambos modos de la app (igual
@@ -34,30 +43,34 @@
     background: var(--p-surface-950);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    padding: 0.5rem 0.75rem;
+    padding: var(--space-2) var(--space-3);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
-    line-height: 1.5;
+    font-size: var(--text-xs);
+    line-height: var(--leading-normal);
     white-space: pre-wrap;
     word-break: break-word;
 
-    /* Panel siempre oscuro (ver nota arriba): los colores por stream se
-       calibran sobre los primitivos de marca (theme.ts), que son estables
-       entre modo claro/oscuro, en vez de una paleta ajena tipo terminal. */
+    /* Los colores por stream salen de los primitivos de marca (theme.ts), no de
+       una paleta ajena tipo terminal, para que sigan la escala de superficies. */
     &.empty {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #71717a;
+      color: var(--p-surface-500);
     }
 
     .muted {
-      color: #71717a;
+      color: var(--p-surface-500);
     }
 
-    /* Color por stream. */
+    /* Comando ejecutado: encabeza la salida, como en una sesión de terminal. */
+    .ln-command {
+      color: var(--p-primary-300);
+      font-weight: 500;
+    }
+
     .ln-stdout {
-      color: #d4d4d8;
+      color: var(--p-surface-300);
     }
     .ln-stderr {
       color: var(--p-red-400);
@@ -67,8 +80,8 @@
     }
 
     .ts {
-      color: #52525b;
-      margin-right: 0.5rem;
+      color: var(--p-surface-600);
+      margin-right: var(--space-2);
       user-select: none;
     }
   }

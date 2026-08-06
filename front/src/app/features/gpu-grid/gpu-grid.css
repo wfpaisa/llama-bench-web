@@ -15,7 +15,7 @@
   .metric-row {
     display: flex;
     align-items: flex-start;
-    gap: 0.35rem;
+    gap: var(--space-1);
     min-width: 0;
 
     .bars {
@@ -35,25 +35,27 @@
     height: 2rem;
     flex-shrink: 0;
     border-radius: 0.1875rem;
-    padding: 0.1rem;
+    padding: var(--space-05);
 
     > svg {
       display: block;
     }
 
+    /* Colores de fabricante: definidos como tokens en styles.css para que el
+       chip, la barra y cualquier leyenda futura usen el mismo verde/rojo. */
     &.chip-nvidia {
-      background: rgba(118, 185, 0, 0.5);
-      color: #fff;
+      background: color-mix(in srgb, var(--vendor-nvidia), transparent 50%);
+      color: var(--p-surface-0);
     }
 
     &.chip-amd {
-      background: rgba(237, 28, 36, 0.5);
-      color: #fff;
+      background: color-mix(in srgb, var(--vendor-amd), transparent 50%);
+      color: var(--p-surface-0);
     }
 
     &.chip-ram {
       background: color-mix(in srgb, var(--color-accent), transparent 30%);
-      color: #fff;
+      color: var(--p-surface-0);
     }
   }
 
@@ -61,7 +63,7 @@
   .bar-group {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--space-1);
     min-width: 0;
   }
 
@@ -99,7 +101,7 @@
 
   /* Valor en GB al final de la barra. */
   .metric-value {
-    font-size: 0.65rem;
+    font-size: var(--text-2xs);
     font-weight: 500;
     color: var(--color-text-secondary);
     white-space: nowrap;
@@ -108,6 +110,6 @@
 
   .muted {
     color: var(--color-text-muted);
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
   }
 }

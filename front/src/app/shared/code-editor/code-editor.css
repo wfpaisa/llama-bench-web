@@ -17,7 +17,7 @@
 
     ::ng-deep .cm-scroller {
       font-family: var(--font-mono);
-      font-size: 1rem;
+      font-size: var(--text-base);
       line-height: 1.5;
     }
   }

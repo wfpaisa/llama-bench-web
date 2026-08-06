@@ -25,10 +25,10 @@ export interface DeviceVramRow {
 // ── Defaults de llama-server (espejo de front/.../core/data/llama-flags.ts) ──
 // Se usan para mostrar el valor efectivo en el historial cuando el flag no
 // estaba explícito en el script: llama-server aplica estos defaults en runtime.
-export const DEFAULT_BATCH_SIZE = 2048;
-export const DEFAULT_UBATCH_SIZE = 512;
-export const DEFAULT_CACHE_TYPE_K = 'f16';
-export const DEFAULT_CACHE_TYPE_V = 'f16';
+const DEFAULT_BATCH_SIZE = 2048;
+const DEFAULT_UBATCH_SIZE = 512;
+const DEFAULT_CACHE_TYPE_K = 'f16';
+const DEFAULT_CACHE_TYPE_V = 'f16';
 
 /**
  * batch/ubatch efectivos para display: el valor del script si estaba explícito,
@@ -468,7 +468,7 @@ export function gpuLabel(g: GpuInfo): string {
  * (Historial) omite la unidad porque va como <small> estilado en la celda.
  * Devuelve '—' si no hay GPUs.
  */
-export function gpuVramLine(r: BenchmarkResult, compact = false): string {
+function gpuVramLine(r: BenchmarkResult, compact = false): string {
   if (!r.gpus || r.gpus.length === 0) return '—';
   return (
     r.gpus
@@ -485,7 +485,7 @@ export function gpuVramLine(r: BenchmarkResult, compact = false): string {
  * Devuelve SOLO el valor (sin unidad "GB"); la unidad se añade como `<small>`
  * estilado en la plantilla.
  */
-export function totalVramTxt(r: BenchmarkResult): string {
+function totalVramTxt(r: BenchmarkResult): string {
   const totalMiB = (r.gpus || []).reduce((sum, g) => sum + (g.memUsedMiB ?? 0), 0);
   return totalMiB > 0 ? fmtGB(totalMiB, 1) : '—';
 }

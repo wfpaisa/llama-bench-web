@@ -6,7 +6,7 @@
   .cols {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: 1.25rem;
+    gap: var(--space-5);
     align-items: start;
 
     @media (max-width: 1100px) {
@@ -24,14 +24,14 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-4);
     flex-wrap: wrap;
-    margin-top: 0.75rem;
+    margin-top: var(--space-3);
   }
 
   .buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
     align-items: center;
   }
@@ -40,7 +40,7 @@
 
   .flags-toolbar {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
     align-items: center;
     flex-wrap: wrap;
 
@@ -64,7 +64,7 @@
 
   /* Fila del flag ya presente en el script: borde a la izquierda. */
   ::ng-deep tr.present td {
-    background-color: rgba(100, 100, 100, 0.05);
+    background-color: color-mix(in srgb, var(--color-text), transparent 95%);
   }
 
   /* ── Row group header (categoría expandible) ── */
@@ -75,10 +75,10 @@
     td {
       background-color: var(--p-surface-800, #1f2937);
       font-weight: 600;
-      padding: 0.5rem 0.65rem;
+      padding: var(--space-2) var(--space-3);
 
       > i.pi {
-        margin-right: 0.5rem;
+        margin-right: var(--space-2);
 
         opacity: 0.8;
       }
@@ -88,8 +88,8 @@
       }
 
       .flag-group-count {
-        margin-left: 0.5rem;
-        padding: 0 0.4rem;
+        margin-left: var(--space-2);
+        padding: 0 var(--space-2);
         border-radius: 0.4rem;
 
         font-weight: 500;
@@ -106,7 +106,7 @@
 
     .star-toggle {
       cursor: pointer;
-      font-size: 1rem;
+      font-size: var(--text-base);
       opacity: 0.5;
       transition:
         opacity 0.15s ease,
@@ -134,11 +134,11 @@
   }
 
   .flag-group-title {
-    margin: 0 0.5rem;
+    margin: 0 var(--space-2);
   }
 
   .cell-code code {
-    font-size: 1rem;
+    font-size: var(--text-base);
     font-family: var(--font-mono);
     white-space: nowrap;
   }
@@ -162,7 +162,7 @@
 
   .empty {
     text-align: center;
-    padding: 1.5rem;
+    padding: var(--space-6);
     opacity: 0.7;
   }
 }

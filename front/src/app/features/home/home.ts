@@ -1,17 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  OnDestroy,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, interval, Subscription } from 'rxjs';
+import { EMPTY, interval } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 import { BenchStore, DEFAULT_PROMPT_UI } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
+import { LogStreamService } from '../../core/services/log-stream.service';
 import { StorageService } from '../../core/services/storage.service';
 
 import { TabsModule } from 'primeng/tabs';
@@ -30,12 +24,12 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
  * Home: orquestador de la página principal.
  * - Siembra el store desde localStorage al iniciar.
  * - Carga inicial: script, prompt, status, history, gpus.
- * - Arranca el polling (status 1.5s, logs 1s, gpu 4s) y lo libera al destruir.
+ * - Abre el stream SSE (logs + status en vivo) y deja solo el polling de GPU
+ *   (4s), que es un muestreo con cadencia propia.
  * - Compone todos los feature components en secciones.
  */
 @Component({
   selector: 'app-home',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TabsModule,
     ScriptEditor,
@@ -51,13 +45,13 @@ import { LogsViewer } from '../logs-viewer/logs-viewer';
   templateUrl: './home.html',
   styleUrls: ['./home.css'],
 })
-export class Home implements OnDestroy {
-  private readonly store = inject(BenchStore);
+export class Home {
+  /** Protegido: la plantilla lee los flags de apertura para los @defer. */
+  protected readonly store = inject(BenchStore);
   private readonly api = inject(PlaneLlamaBenchService);
+  private readonly logStream = inject(LogStreamService);
   private readonly storage = inject(StorageService);
   private readonly destroyRef = inject(DestroyRef);
-
-  private readonly subs: Subscription[] = [];
 
   /** Pestaña activa: 0 = Script server, 1 = Benchmark. */
   protected readonly tab = signal(0);
@@ -71,16 +65,14 @@ export class Home implements OnDestroy {
     this.loadInitialPrompt();
 
     // 3) Cargas iniciales puntuales.
-    this.pollStatus();
     this.loadHistory();
     this.loadGpus();
 
-    // 4) Polling periódico.
-    this.startPolling();
-  }
+    // 4) Logs + status en vivo por SSE (el servicio se cierra solo al destruir).
+    this.logStream.start();
 
-  ngOnDestroy(): void {
-    this.subs.forEach((s) => s.unsubscribe());
+    // 5) Polling de GPU (lo único que sigue siendo muestreo periódico).
+    this.startGpuPolling();
   }
 
   // ── Carga inicial de script ──
@@ -117,15 +109,6 @@ export class Home implements OnDestroy {
   }
 
   // ── Cargas puntuales ──
-  private pollStatus(): void {
-    this.api.getStatus().subscribe({
-      next: (s) => this.store.setStatus(s),
-      error: () => {
-        /* backend reiniciándose */
-      },
-    });
-  }
-
   private loadHistory(): void {
     this.api.getHistory().subscribe({
       next: (h) => this.store.setHistory(h.results || []),
@@ -149,7 +132,7 @@ export class Home implements OnDestroy {
     });
   }
 
-  // ── Polling ──
+  // ── Polling de GPU ──
   // Nota de resiliencia: el catchError va DENTRO del switchMap (sobre el
   // observable del request, no del interval). Así, ante un error transitorio
   // (p.ej. ERR_NETWORK_IO_SUSPENDED al suspender el equipo, backend reiniciándo-
@@ -159,25 +142,8 @@ export class Home implements OnDestroy {
   // quedaría muerto hasta recargar la página. Ante error conservamos el último
   // estado conocido del store (no lo vaciamos): el monitor de GPU sigue
   // mostrando la última lectura en vez de colapsar a "—".
-  private startPolling(): void {
-    // Status cada 1.5s.
-    const status$ = interval(1500)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        switchMap(() => this.api.getStatus().pipe(catchError(() => EMPTY))),
-      )
-      .subscribe((s) => this.store.setStatus(s));
-
-    // Logs cada 1s (incremental vía cursor).
-    const logs$ = interval(1000)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        switchMap(() => this.api.getLogs(this.store.logCursor()).pipe(catchError(() => EMPTY))),
-      )
-      .subscribe((data) => this.store.appendLogs(data.entries, data.cursor));
-
-    // GPU cada 4s.
-    const gpu$ = interval(4000)
+  private startGpuPolling(): void {
+    interval(4000)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap(() => this.api.getGpus().pipe(catchError(() => EMPTY))),
@@ -186,7 +152,5 @@ export class Home implements OnDestroy {
         this.store.setGpus(data.gpus);
         this.store.setRam(data.ram ?? null);
       });
-
-    this.subs.push(status$, logs$, gpu$);
   }
 }

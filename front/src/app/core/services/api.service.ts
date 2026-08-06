@@ -14,10 +14,18 @@ import { catchError } from 'rxjs/operators';
  * en el mismo origen e inyecta `window.__API_BASE_URL = ''` en index.html, así
  * las rutas son relativas (same-origin). Ver `src/router.ts` (serveStatic).
  */
-export const API_BASE_URL: string =
-  (typeof window !== 'undefined' &&
-    (window as unknown as { __API_BASE_URL?: string }).__API_BASE_URL) ||
-  'http://localhost:3000';
+export const API_BASE_URL: string = resolveApiBaseUrl();
+
+function resolveApiBaseUrl(): string {
+  if (typeof window === 'undefined') return 'http://localhost:3000';
+  const injected = (window as unknown as { __API_BASE_URL?: string }).__API_BASE_URL;
+  // OJO: la base del modo empaquetado es la cadena VACÍA (rutas relativas al
+  // mismo origen). Hay que comprobar la presencia, no la verdad: un `||` la
+  // descartaría por falsy y mandaría la app al :3000 absoluto, que en el
+  // AppImage puede ni siquiera ser el puerto del backend (electron/main.ts
+  // elige el primer puerto libre a partir del 3000).
+  return typeof injected === 'string' ? injected : 'http://localhost:3000';
+}
 
 /** Respuesta exitosa con cuerpo JSON { ok, error?, ... }. */
 type JsonBody = object;
@@ -36,7 +44,7 @@ export class ApiService {
   getText(path: string): Observable<string> {
     return this.http
       .get(this.url(path), { responseType: 'text' })
-      .pipe(catchError(this.mapTextError()));
+      .pipe(catchError(this.mapError<string>()));
   }
 
   /** POST JSON; lanza Error(body.error || status) si no es 2xx. */
@@ -62,19 +70,12 @@ export class ApiService {
     return `${this.base}${path}`;
   }
 
-  /** Mapea un HttpErrorResponse a Error con el mensaje del backend. */
+  /**
+   * Mapea un HttpErrorResponse a Error con el mensaje del backend. Genérico en
+   * el tipo del stream, así sirve igual para respuestas JSON y de texto plano.
+   */
   private mapError<T>() {
-    return (err: unknown): Observable<T> => {
-      const msg = this.extractError(err);
-      return throwError(() => new Error(msg));
-    };
-  }
-
-  private mapTextError() {
-    return (err: unknown): Observable<string> => {
-      const msg = this.extractError(err);
-      return throwError(() => new Error(msg));
-    };
+    return (err: unknown): Observable<T> => throwError(() => new Error(this.extractError(err)));
   }
 
   /**

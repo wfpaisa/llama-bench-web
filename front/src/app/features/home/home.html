@@ -22,9 +22,18 @@
   </p-tabs>
 
   <app-history-table />
-  <app-compare-modal />
-  <app-chart-modal />
-  <app-optimizer-modal />
+
+  <!-- Los modales se cargan la primera vez que se abren: así chart.js y el
+       optimizador salen del chunk inicial, que es lo que se descarga siempre. -->
+  @defer (when store.showCompare()) {
+    <app-compare-modal />
+  }
+  @defer (when store.showChart()) {
+    <app-chart-modal />
+  }
+  @defer (when store.showOptimizer()) {
+    <app-optimizer-modal />
+  }
 
   <!-- Logs en tiempo real: siempre presentes, como última sección de la página. -->
   <app-logs-viewer />

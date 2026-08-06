@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BenchStore } from '../../core/state/bench.store';
 
 /**
@@ -8,7 +8,6 @@ import { BenchStore } from '../../core/state/bench.store';
  */
 @Component({
   selector: 'app-status-bar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './status-bar.html',
   styles: [
     `

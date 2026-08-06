@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -17,9 +9,9 @@ import { SliderModule } from 'primeng/slider';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
 import { BenchStore } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { StorageService } from '../../core/services/storage.service';
 import type { StoredCalibration } from '../../core/services/storage.service';
 import {
@@ -77,7 +69,6 @@ interface DeviceBar {
  */
 @Component({
   selector: 'app-optimizer-modal',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
     ButtonModule,
@@ -96,7 +87,7 @@ interface DeviceBar {
 export class OptimizerModal {
   protected readonly store = inject(BenchStore);
   private readonly api = inject(PlaneLlamaBenchService);
-  private readonly messages = inject(MessageService);
+  private readonly notify = inject(NotifyService);
   private readonly storage = inject(StorageService);
 
   protected readonly kvOptions = KV_OPTIONS;
@@ -457,18 +448,14 @@ export class OptimizerModal {
       cacheRam: 8192,
     });
     this.enabled.set(this.defaultEnabled());
-    this.messages.add({ severity: 'info', summary: 'Valores por defecto aplicados', life: 2600 });
+    this.notify.info('Valores por defecto aplicados');
   }
 
   /** Aplica los params al script del editor y cierra. */
   protected applyToScript(): void {
     const next = applyTunedParams(this.store.script(), this.params(), this.enabled());
     this.store.setScript(next);
-    this.messages.add({
-      severity: 'success',
-      summary: 'Parámetros aplicados al script',
-      life: 2600,
-    });
+    this.notify.ok('Parámetros aplicados al script');
     this.store.closeOptimizer();
   }
 

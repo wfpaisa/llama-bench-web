@@ -13,23 +13,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-4);
     height: var(--header-h);
-    padding: 0 1.25rem;
+    padding: 0 var(--space-5);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-surface);
 
     .app-title {
       h1 {
         margin: 0;
-        font-size: 1.05rem;
+        font-size: var(--text-base);
         font-weight: 600;
 
         small {
-          font-size: 0.7rem;
+          font-size: var(--text-2xs);
           font-weight: 400;
           color: var(--color-text-muted);
-          margin-left: 0.4rem;
+          margin-left: var(--space-2);
         }
       }
     }
@@ -37,7 +37,7 @@
     .section-right {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: var(--space-4);
     }
 
     /* Cards de métricas: alineadas a la derecha, centradas verticalmente. */

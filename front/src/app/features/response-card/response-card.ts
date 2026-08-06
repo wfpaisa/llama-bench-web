@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { BenchStore } from '../../core/state/bench.store';
 
 /**
@@ -7,7 +7,6 @@ import { BenchStore } from '../../core/state/bench.store';
  */
 @Component({
   selector: 'app-response-card',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './response-card.html',
   styles: [
     `

@@ -16,6 +16,7 @@
 
 import { managed, benchAbortController, setManaged, setStatus } from './state.ts'
 import { stopServer } from './server-manager.ts'
+import { flushHistory } from './history.ts'
 import { systemLog } from './logs.ts'
 
 const FORCED_KILL_TIMEOUT_MS = 3000
@@ -27,7 +28,7 @@ let cleaned = false
  * Cierre ordenado: detiene el llama-server gestionado y aborta el benchmark.
  * Idempotente: seguro llamarlo varias veces (signals dobles, exit + signal…).
  */
-export async function shutdownCleanup(reason: string): Promise<void> {
+async function shutdownCleanup(reason: string): Promise<void> {
   if (cleaned || cleaning) return
   cleaning = true
 
@@ -57,6 +58,10 @@ export async function shutdownCleanup(reason: string): Promise<void> {
     setManaged(null)
     setStatus('stopped')
   }
+
+  // 4) Volcar el historial pendiente: las mutaciones se escriben con debounce,
+  //    así que un cierre justo después de calificar podría perderlas.
+  await flushHistory()
 
   cleaned = true
   console.log('— cierre limpio completado.')

@@ -25,6 +25,11 @@ const server = Bun.serve({
   port: PORT,
   hostname: '0.0.0.0',
   fetch: handleRequest,
+  // El default de Bun son 10s de inactividad, que corta tanto el stream SSE de
+  // /events en los silencios como un POST /benchmark largo (un run puede tardar
+  // minutos sin enviar un solo byte). 255s es el máximo que admite Bun; el
+  // heartbeat del stream (5s) mantiene viva la conexión muy por debajo de eso.
+  idleTimeout: 255,
 })
 
 systemLog(`backend escuchando en http://localhost:${server.port}`)

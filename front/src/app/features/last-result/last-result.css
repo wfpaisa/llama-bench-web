@@ -5,44 +5,44 @@
   .metrics {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
   }
 
   .metric {
     background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    padding: 0.6rem 0.75rem;
+    padding: var(--space-2) var(--space-3);
 
     .k {
-      font-size: 0.7rem;
+      font-size: var(--text-2xs);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       color: var(--color-text-muted);
     }
 
     .k-sub {
-      font-size: 0.68rem;
+      font-size: var(--text-2xs);
       color: var(--color-text-muted);
       opacity: 0.8;
-      margin-top: 0.1rem;
+      margin-top: var(--space-05);
     }
 
     .v {
-      font-size: 1.1rem;
+      font-size: var(--text-lg);
       font-weight: 600;
-      margin-top: 0.25rem;
+      margin-top: var(--space-1);
       font-family: var(--font-mono);
 
       small {
-        font-size: 0.7rem;
+        font-size: var(--text-2xs);
         color: var(--color-text-muted);
         font-weight: 400;
       }
 
       &.v-small {
-        font-size: 0.8rem;
+        font-size: var(--text-xs);
       }
 
       &.green {
@@ -55,7 +55,7 @@
 
       &.v-error {
         color: var(--p-red-500);
-        font-size: 0.75rem;
+        font-size: var(--text-xs);
         white-space: pre-wrap;
       }
     }

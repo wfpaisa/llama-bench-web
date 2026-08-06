@@ -1,17 +1,22 @@
-import { Component, computed, effect, ElementRef, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { BenchStore } from '../../core/state/bench.store';
 import { PlaneLlamaBenchService } from '../../core/services/plane-llama-bench.service';
-import { MessageService } from 'primeng/api';
+import { NotifyService } from '../../core/services/notify.service';
+import { LogStreamService } from '../../core/services/log-stream.service';
 import { FmtNumPipe } from '../../core/utils/pipes';
 
 /**
  * LogsViewer: salida de logs en tiempo real del servidor.
- * - Polling incremental manejado en Home (este componente solo lee store.logs).
- * - Auto-scroll al pie cuando está activado (checkbox).
- * - Color por stream: stdout/stderr/system.
+ * - Las líneas llegan empujadas por SSE (LogStreamService); este componente solo
+ *   lee store.logs.
+ * - Se renderizan verbatim, como en la terminal: el timestamp propio de
+ *   llama-server ya viene en la línea. La marca de tiempo relativa del backend
+ *   es un toggle opcional, apagado por defecto.
+ * - Auto-scroll al pie, que se suspende solo si el usuario sube a leer.
+ * - Color por stream: command/stdout/stderr/system.
  * - Botón limpiar (POST /logs/clear + reset local).
  */
 @Component({
@@ -23,34 +28,52 @@ import { FmtNumPipe } from '../../core/utils/pipes';
 export class LogsViewer {
   protected readonly store = inject(BenchStore);
   private readonly api = inject(PlaneLlamaBenchService);
-  private readonly messages = inject(MessageService);
+  private readonly logStream = inject(LogStreamService);
+  private readonly notify = inject(NotifyService);
 
   private readonly logsEl = viewChild<ElementRef<HTMLDivElement>>('logsEl');
 
   protected readonly logs = this.store.logs;
-  /** Modelo del checkbox (sembrado del store). */
+  protected readonly showTimestamps = this.store.showTimestamps;
+  /** True cuando el stream está caído y se está sondeando de respaldo. */
+  protected readonly degraded = this.logStream.degraded;
+
+  /** Modelos de los checkboxes (sembrados del store). */
   protected autoscrollModel = this.store.autoscroll();
+  protected timestampsModel = this.store.showTimestamps();
+
+  /**
+   * True mientras el usuario está leyendo hacia arriba. Suspende el auto-scroll
+   * sin tocar su preferencia: con líneas llegando de a una, arrastrar la vista
+   * al pie en mitad de una lectura haría el panel inservible.
+   */
+  private readonly pinnedToBottom = signal(true);
 
   constructor() {
-    // Auto-scroll al pie cuando llegan logs nuevos y está activado.
-    effect(() => {
-      // Tocar logs() para reaccionar a cambios.
+    // Auto-scroll al pie cuando llegan logs nuevos, tras renderizar el DOM.
+    afterRenderEffect(() => {
       this.logs();
+      if (!this.store.autoscroll() || !this.pinnedToBottom()) return;
       const el = this.logsEl()?.nativeElement;
-      if (el && this.store.autoscroll()) {
-        // Defer al siguiente tick para que el DOM se haya renderizado.
-        queueMicrotask(() => {
-          el.scrollTop = el.scrollHeight;
-        });
-      }
+      if (el) el.scrollTop = el.scrollHeight;
     });
+  }
+
+  /** Detecta si el usuario se despegó del pie (margen de 1 línea). */
+  protected onScroll(): void {
+    const el = this.logsEl()?.nativeElement;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    this.pinnedToBottom.set(distance < 24);
   }
 
   clear(): void {
     this.api.clearLogs().subscribe({
-      next: () => this.store.clearLogs(),
-      error: (e: Error) =>
-        this.messages.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 }),
+      next: () => {
+        this.store.clearLogs();
+        this.pinnedToBottom.set(true);
+      },
+      error: (e: Error) => this.notify.error(e.message, 'Error'),
     });
   }
 }

@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import type { ParsedScript, LogEntry } from './types.ts'
 import { type ManagedServer, managed, setManaged, status, setStatus, setStatusError } from './state.ts'
-import { pushLog, systemLog } from './logs.ts'
+import { pushCommand, pushLog, systemLog } from './logs.ts'
 
 /**
  * Construye el entorno de runtime del binario de llama-server:
@@ -61,6 +61,23 @@ export function assertBinaryExists(binary: string): void {
   }
 }
 
+/**
+ * Reconstruye el comando en el formato multilínea de un script de shell: el
+ * binario en la primera línea y cada flag con su valor en las siguientes,
+ * unidas por `\`. Es lo que se vuelca al visor de logs antes de la salida del
+ * proceso, para que el log se lea como una sesión de terminal.
+ */
+function formatCommand(binary: string, argv: string[]): string {
+  const lines: string[] = [binary]
+  for (const token of argv) {
+    // Un token que empieza por "-" abre una línea nueva; cualquier otro es el
+    // valor del flag anterior y se pega a su línea.
+    if (token.startsWith('-') || lines.length === 1) lines.push(`  ${token}`)
+    else lines[lines.length - 1] += ` ${token}`
+  }
+  return lines.join(' \\\n')
+}
+
 /** Construye la URL base del server gestionado a partir de host/port. */
 export function urlFor(c: { host: string; port: number }): string {
   const host = c.host || '127.0.0.1'
@@ -81,7 +98,10 @@ export async function startServer(parsed: ParsedScript): Promise<ManagedServer> 
   // Entorno de runtime del binario (cwd + LD_LIBRARY_PATH).
   const { cwd: binDir, env } = binaryRuntimeEnv(binary)
 
-  systemLog(`spawn: ${binary} ${argv.join(' ')}  (cwd=${binDir})`)
+  // Eco del comando tal cual se ejecuta, en el mismo formato multilínea que se
+  // escribiría en la terminal. Encabeza la salida del proceso en el visor.
+  pushCommand(formatCommand(binary, argv))
+  systemLog(`cwd=${binDir}`)
 
   let resolveReady: (() => void) | undefined
   let rejectReady: ((e: Error) => void) | undefined

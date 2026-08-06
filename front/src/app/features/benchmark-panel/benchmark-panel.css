@@ -5,7 +5,7 @@
   .bench-prompt {
     width: 100%;
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     line-height: 1.5;
     resize: vertical;
     min-height: 6rem;
@@ -17,47 +17,47 @@
 
   .full {
     display: block;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
   }
 
   .bench-params {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-4);
     flex-wrap: wrap;
-    margin-top: 0.5rem;
+    margin-top: var(--space-2);
   }
 
   .prompt-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 
   .bench-row {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1);
     align-items: flex-start;
   }
 
   .max-tokens-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 
   .actions {
-    margin-top: 0.75rem;
+    margin-top: var(--space-3);
   }
 
   .buttons {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 
@@ -70,7 +70,7 @@
   }
 
   .small {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
   }
 
   /* Limitar el ancho del inputnumber. */

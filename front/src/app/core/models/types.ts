@@ -57,17 +57,23 @@ export interface StatusResponse {
 
 /** Línea de log del proceso. */
 export interface LogEntry {
+  /**
+   * Secuencia global monotónica asignada por el backend. Sobrevive a los
+   * recortes del buffer, así que sirve de cursor estable y de `track` de la
+   * lista (el índice no identifica la fila cuando se descartan las más viejas).
+   */
+  seq: number;
   /** Monotónico (ms) desde arranque del backend, para ordenar. */
   t: number;
-  /** 'stdout' | 'stderr' | 'system'. */
-  stream: 'stdout' | 'stderr' | 'system';
+  /** 'stdout' | 'stderr' | 'system' | 'command'. */
+  stream: 'stdout' | 'stderr' | 'system' | 'command';
   msg: string;
 }
 
-/** Respuesta de GET /logs. */
+/** Respuesta de GET /logs y payload del evento `log` del stream SSE. */
 export interface LogsResponse {
   entries: LogEntry[];
-  /** Índice de la última línea incluida, para polling incremental. */
+  /** `seq` de la última línea incluida, para reanudar sin huecos ni repetidos. */
   cursor: number;
 }
 
@@ -176,6 +182,14 @@ export interface StartResponse extends OkResponse {
 }
 export interface BenchmarkResponse extends OkResponse {
   result?: BenchmarkResult;
+}
+/**
+ * Respuesta de PATCH /history/:id. Trae el resultado ya actualizado, para que
+ * el frontend no tenga que recargar el historial entero tras calificar o
+ * marcar un favorito.
+ */
+export interface PatchResultResponse extends OkResponse {
+  result?: BenchmarkResult | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

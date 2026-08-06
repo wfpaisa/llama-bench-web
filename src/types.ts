@@ -97,17 +97,23 @@ export interface StatusResponse {
 
 /** Línea de log del proceso. */
 export interface LogEntry {
+  /**
+   * Número de secuencia global y monotónico, asignado por pushLog. NUNCA se
+   * reinicia al recortar el buffer, así que sirve de cursor estable: el cliente
+   * pide "lo que haya después de seq N" sin que un trim le desplace los índices.
+   */
+  seq: number
   /** Monotónico (ms) desde arranque del backend, para ordenar. */
   t: number
-  /** 'stdout' | 'stderr' | 'system'. */
-  stream: 'stdout' | 'stderr' | 'system'
+  /** 'stdout' | 'stderr' | 'system' | 'command'. */
+  stream: 'stdout' | 'stderr' | 'system' | 'command'
   msg: string
 }
 
 /** Respuesta de GET /logs. */
 export interface LogsResponse {
   entries: LogEntry[]
-  /** Índice de la última línea incluida, para polling incremental. */
+  /** `seq` de la última línea incluida (0 si no hay ninguna): cursor del cliente. */
   cursor: number
 }
 

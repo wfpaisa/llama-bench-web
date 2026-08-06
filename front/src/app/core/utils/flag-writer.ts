@@ -20,7 +20,7 @@ import type { TunedFlagsEnabled, TunedParams } from '../models/types';
  * Colapsa un script (quita `\` de continuación) y lo tokeniza por espacios.
  * Devuelve los tokens limpios (sin vacíos). Respeta comillas simples/dobles.
  */
-export function tokenizeScriptTokens(script: string): string[] {
+function tokenizeScriptTokens(script: string): string[] {
   let clean = '';
   let skipNewline = false;
   for (let i = 0; i < script.length; i++) {
@@ -42,7 +42,7 @@ export function tokenizeScriptTokens(script: string): string[] {
  * Reconstruye un script desde tokens con una flag por línea y `\` de continuación.
  * El primer token es el binario; los demás se agrupan flag+valor cuando aplica.
  */
-export function rebuildScript(tokens: string[]): string {
+function rebuildScript(tokens: string[]): string {
   if (tokens.length === 0) return '';
   const cmd = tokens[0];
   const flags: string[] = [];
@@ -68,7 +68,7 @@ export function rebuildScript(tokens: string[]): string {
  * Setea el valor de un flag en los tokens. Si el flag existe, reemplaza su
  * valor (o lo agrega si era switch). Si no existe, lo añade al final.
  */
-export function setFlagValue(tokens: string[], flag: string, value: string): string[] {
+function setFlagValue(tokens: string[], flag: string, value: string): string[] {
   const out = [...tokens];
   for (let i = 0; i < out.length; i++) {
     if (out[i] === flag) {
@@ -89,7 +89,7 @@ export function setFlagValue(tokens: string[], flag: string, value: string): str
  * Setea un flag switch (booleano). Si value es true, asegura que el flag esté.
  * Si es false, lo elimina (junto con su valor si tiene uno).
  */
-export function setFlagSwitch(tokens: string[], flag: string, value: boolean): string[] {
+function setFlagSwitch(tokens: string[], flag: string, value: boolean): string[] {
   const out = [...tokens];
   const idx = out.indexOf(flag);
   if (value) {
@@ -106,7 +106,7 @@ export function setFlagSwitch(tokens: string[], flag: string, value: boolean): s
 }
 
 /** Elimina un flag y (si lo tiene) su valor siguiente. */
-export function removeFlag(tokens: string[], flag: string): string[] {
+function removeFlag(tokens: string[], flag: string): string[] {
   const out: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i] === flag) {

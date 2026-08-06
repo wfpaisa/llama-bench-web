@@ -35,6 +35,24 @@ export const bootTime = Date.now()
 /** Buffer circular de logs (los últimos N en memoria). */
 export const logBuffer: LogEntry[] = []
 
+/**
+ * `seq` que se asignará a la próxima línea de log. Monotónico durante toda la
+ * vida del proceso: no se reinicia al recortar el buffer.
+ */
+export let logSeqNext = 1
+
+/**
+ * `seq` de la entrada más antigua que sigue en el buffer. Al recortar avanza
+ * junto con las entradas descartadas, de modo que
+ * `índice = seq - firstSeq` traduce un cursor absoluto a posición del array.
+ */
+export let firstSeq = 1
+
+/** Reserva y devuelve el próximo `seq`. */
+export function nextLogSeq(): number {
+  return logSeqNext++
+}
+
 // ── Setters ──────────────────────────────────────────────────────────────────
 // Necesarios porque los `let` son exportados por valor: desde otro módulo no se
 // puede reasignar. Centralizamos las mutaciones aquí.
@@ -60,8 +78,24 @@ export function setBenchAbortController(c: AbortController | null): void {
 }
 
 // ── Trims del buffer de logs ─────────────────────────────────────────────────
+/**
+ * Recorta el buffer al cap descartando las entradas más viejas y avanza
+ * `firstSeq` en la misma cantidad. Mantener ambos sincronizados es lo que evita
+ * que el cursor del cliente (un `seq`) se desalinee: sin esto, los índices se
+ * desplazaban en cada recorte y `slice(since)` terminaba devolviendo siempre
+ * vacío (el log se congelaba) o saltándose líneas.
+ */
 export function trimLogBuffer(): void {
-  if (logBuffer.length > LOG_CAP) logBuffer.splice(0, logBuffer.length - LOG_CAP)
+  const overflow = logBuffer.length - LOG_CAP
+  if (overflow <= 0) return
+  logBuffer.splice(0, overflow)
+  firstSeq += overflow
+}
+
+/** Vacía el buffer conservando la secuencia global (el cursor sigue siendo válido). */
+export function clearLogBuffer(): void {
+  logBuffer.length = 0
+  firstSeq = logSeqNext
 }
 
 /** Crea un ParsedScript "vacío" para casos de error (finalize). */
