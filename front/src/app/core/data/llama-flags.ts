@@ -846,6 +846,97 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     description: 'Placement estricto de CPU para el modelo borrador (0|1).',
   },
   {
+    name: 'Máscara CPU draft (batch)',
+    long: '--cpu-mask-batch-draft',
+    short: '-Cbd',
+    aliases: ['--spec-draft-cpu-mask-batch'],
+    defaultValue: 'igual que --cpu-mask',
+    originalDescription: 'Draft model CPU affinity mask. Complements cpu-range-draft',
+    category: 'Especulativo',
+    description:
+      'Máscara de afinidad de CPU (hex) del modelo borrador en la fase de batch. Complementa --cpu-range-draft.',
+  },
+  {
+    name: 'CPU strict draft (batch)',
+    long: '--cpu-strict-batch-draft',
+    short: null,
+    aliases: ['--spec-draft-cpu-strict-batch'],
+    defaultValue: 'igual que --cpu-strict-draft',
+    originalDescription: 'Use strict CPU placement for draft model',
+    category: 'Especulativo',
+    description:
+      'Placement estricto de CPU (0|1) para el modelo borrador en la fase de batch. Por defecto igual que --cpu-strict-draft.',
+  },
+  {
+    name: 'Prioridad draft',
+    long: '--prio-draft',
+    short: null,
+    aliases: ['--spec-draft-prio'],
+    defaultValue: '0',
+    originalDescription:
+      'set draft process/thread priority : 0-normal, 1-medium, 2-high, 3-realtime',
+    category: 'Especulativo',
+    description:
+      'Prioridad del proceso/thread del modelo borrador: 0-normal, 1-medium, 2-high, 3-realtime.',
+  },
+  {
+    name: 'Prioridad draft (batch)',
+    long: '--prio-batch-draft',
+    short: null,
+    aliases: ['--spec-draft-prio-batch'],
+    defaultValue: '0',
+    originalDescription:
+      'set draft process/thread priority : 0-normal, 1-medium, 2-high, 3-realtime',
+    category: 'Especulativo',
+    description:
+      'Prioridad del proceso/thread del borrador en la fase de batch: 0-normal, 1-medium, 2-high, 3-realtime.',
+  },
+  {
+    name: 'Polling draft',
+    long: '--poll-draft',
+    short: null,
+    aliases: ['--spec-draft-poll'],
+    defaultValue: 'igual que --poll',
+    originalDescription: 'Use polling to wait for draft model work',
+    category: 'Especulativo',
+    description:
+      'Usa polling (0|1) para esperar trabajo del modelo borrador. Por defecto igual que --poll.',
+  },
+  {
+    name: 'Polling draft (batch)',
+    long: '--poll-batch-draft',
+    short: null,
+    aliases: ['--spec-draft-poll-batch'],
+    defaultValue: 'igual que --poll-draft',
+    originalDescription: 'Use polling to wait for draft model work',
+    category: 'Especulativo',
+    description:
+      'Usa polling (0|1) para esperar trabajo del borrador en la fase de batch. Por defecto igual que --poll-draft.',
+  },
+  {
+    name: 'MoE en CPU (draft)',
+    long: '--cpu-moe-draft',
+    short: '-cmoed',
+    aliases: ['--spec-draft-cpu-moe'],
+    defaultValue: null,
+    originalDescription: 'keep all Mixture of Experts (MoE) weights in the CPU for the draft model',
+    category: 'Especulativo',
+    description:
+      'Mantiene todos los pesos MoE del modelo borrador en la CPU, liberando VRAM para el modelo principal.',
+  },
+  {
+    name: 'N capas MoE en CPU (draft)',
+    long: '--n-cpu-moe-draft',
+    short: '-ncmoed',
+    aliases: ['--spec-draft-n-cpu-moe', '--spec-draft-ncmoe'],
+    defaultValue: null,
+    originalDescription:
+      'keep the Mixture of Experts (MoE) weights of the first N layers in the CPU for the draft model',
+    category: 'Especulativo',
+    description:
+      'Mantiene los pesos MoE de las primeras N capas del modelo borrador en la CPU (offload parcial).',
+  },
+  {
     name: 'Override tensor draft',
     long: '--override-tensor-draft',
     short: '-otd',
@@ -919,6 +1010,65 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     originalDescription: 'minimum hits for ngram-simple speculative decoding',
     category: 'Especulativo',
     description: 'Número mínimo de hits para ngram-simple speculative decoding.',
+  },
+  {
+    name: 'ngram-map-k N',
+    long: '--spec-ngram-map-k-size-n',
+    short: null,
+    defaultValue: '12',
+    originalDescription:
+      'ngram size N for ngram-map-k speculative decoding, length of lookup n-gram',
+    category: 'Especulativo',
+    description: 'Tamaño N (longitud del n-gram de lookup) para ngram-map-k speculative decoding.',
+  },
+  {
+    name: 'ngram-map-k M',
+    long: '--spec-ngram-map-k-size-m',
+    short: null,
+    defaultValue: '48',
+    originalDescription:
+      'ngram size M for ngram-map-k speculative decoding, length of draft m-gram',
+    category: 'Especulativo',
+    description: 'Tamaño M (longitud del m-gram borrador) para ngram-map-k speculative decoding.',
+  },
+  {
+    name: 'ngram-map-k min-hits',
+    long: '--spec-ngram-map-k-min-hits',
+    short: null,
+    defaultValue: '1',
+    originalDescription: 'minimum hits for ngram-map-k speculative decoding',
+    category: 'Especulativo',
+    description: 'Número mínimo de hits para ngram-map-k speculative decoding.',
+  },
+  {
+    name: 'ngram-map-k4v N',
+    long: '--spec-ngram-map-k4v-size-n',
+    short: null,
+    defaultValue: '12',
+    originalDescription:
+      'ngram size N for ngram-map-k4v speculative decoding, length of lookup n-gram',
+    category: 'Especulativo',
+    description:
+      'Tamaño N (longitud del n-gram de lookup) para ngram-map-k4v speculative decoding.',
+  },
+  {
+    name: 'ngram-map-k4v M',
+    long: '--spec-ngram-map-k4v-size-m',
+    short: null,
+    defaultValue: '48',
+    originalDescription:
+      'ngram size M for ngram-map-k4v speculative decoding, length of draft m-gram',
+    category: 'Especulativo',
+    description: 'Tamaño M (longitud del m-gram borrador) para ngram-map-k4v speculative decoding.',
+  },
+  {
+    name: 'ngram-map-k4v min-hits',
+    long: '--spec-ngram-map-k4v-min-hits',
+    short: null,
+    defaultValue: '1',
+    originalDescription: 'minimum hits for ngram-map-k4v speculative decoding',
+    category: 'Especulativo',
+    description: 'Número mínimo de hits para ngram-map-k4v speculative decoding.',
   },
   {
     name: 'Cache K del draft',
@@ -1149,6 +1299,18 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
       'Mensaje inyectado antes del tag de fin de pensamiento cuando se agota el presupuesto.',
   },
   {
+    name: 'Preservar reasoning',
+    long: '--reasoning-preserve',
+    short: null,
+    aliases: ['--no-reasoning-preserve'],
+    defaultValue: 'template default',
+    originalDescription:
+      'preserve reasoning trace in the full history, not just the last assistant message',
+    category: 'Servidor',
+    description:
+      'Conserva la traza de razonamiento en todo el historial, no solo en el último mensaje del asistente. Requiere plantillas con capacidad "supports_preserve_reasoning".',
+  },
+  {
     name: 'Skip chat parsing',
     long: '--skip-chat-parsing',
     short: null,
@@ -1319,6 +1481,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     name: 'UI config (JSON)',
     long: '--ui-config',
     short: null,
+    aliases: ['--webui-config'],
     defaultValue: null,
     originalDescription: 'JSON that provides default UI settings',
     category: 'Servidor',
@@ -1328,6 +1491,7 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     name: 'UI config (archivo)',
     long: '--ui-config-file',
     short: null,
+    aliases: ['--webui-config-file'],
     defaultValue: null,
     originalDescription: 'JSON file that provides default UI settings',
     category: 'Servidor',
@@ -1534,6 +1698,27 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     description: 'Modelo vocoder para generación de audio.',
   },
   {
+    name: 'Vocoder (Hugging Face)',
+    long: '--hf-repo-v',
+    short: '-hfv',
+    aliases: ['-hfrv'],
+    defaultValue: null,
+    originalDescription: 'Hugging Face model repository for the vocoder model',
+    category: 'Servidor',
+    description:
+      'Repositorio de Hugging Face desde el que descargar el modelo vocoder (alternativa a --model-vocoder).',
+  },
+  {
+    name: 'Archivo vocoder (HF)',
+    long: '--hf-file-v',
+    short: '-hffv',
+    defaultValue: null,
+    originalDescription: 'Hugging Face model file for the vocoder model',
+    category: 'Servidor',
+    description:
+      'Archivo concreto del repositorio de Hugging Face para el vocoder. Sobreescribe la cuantización elegida en --hf-repo-v.',
+  },
+  {
     name: 'TTS guide tokens',
     long: '--tts-use-guide-tokens',
     short: null,
@@ -1678,6 +1863,24 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     originalDescription: 'YaRN: scale sqrt(t) or attention magnitude',
     category: 'Servidor',
     description: 'YaRN: escala de la magnitud de atención sqrt(t).',
+  },
+  {
+    name: 'YaRN beta fast',
+    long: '--yarn-beta-fast',
+    short: null,
+    defaultValue: '-1.00',
+    originalDescription: 'YaRN: low correction dim or beta',
+    category: 'Servidor',
+    description: 'YaRN: dimensión de corrección baja (beta fast) para el escalado de RoPE.',
+  },
+  {
+    name: 'YaRN beta slow',
+    long: '--yarn-beta-slow',
+    short: null,
+    defaultValue: '-1.00',
+    originalDescription: 'YaRN: high correction dim or alpha',
+    category: 'Servidor',
+    description: 'YaRN: dimensión de corrección alta (alpha / beta slow) para el escalado de RoPE.',
   },
   {
     name: 'Override de tensor',
@@ -1859,6 +2062,58 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     description: 'Nivel de polling para esperar trabajo (0 = sin polling, 0-100).',
   },
   {
+    name: 'Máscara CPU (batch)',
+    long: '--cpu-mask-batch',
+    short: '-Cb',
+    defaultValue: null,
+    originalDescription:
+      'CPU affinity mask: arbitrarily long hex. Complements cpu-range-batch (default: same as --cpu-mask)',
+    category: 'Servidor',
+    description:
+      'Máscara de afinidad de CPU (hex) usada durante batch y procesado del prompt. Por defecto la misma que --cpu-mask. Complementa --cpu-range-batch.',
+  },
+  {
+    name: 'Rango de CPU (batch)',
+    long: '--cpu-range-batch',
+    short: '-Crb',
+    defaultValue: null,
+    originalDescription: 'ranges of CPUs for affinity. Complements --cpu-mask-batch',
+    category: 'Servidor',
+    description:
+      'Rango de CPUs (lo-hi) para afinidad durante batch y procesado del prompt. Complementa --cpu-mask-batch.',
+  },
+  {
+    name: 'CPU estricto (batch)',
+    long: '--cpu-strict-batch',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'use strict CPU placement (default: same as --cpu-strict)',
+    category: 'Servidor',
+    description:
+      'Usa placement estricto de CPU (0|1) en la fase de batch. Por defecto igual que --cpu-strict.',
+  },
+  {
+    name: 'Prioridad proceso (batch)',
+    long: '--prio-batch',
+    short: null,
+    defaultValue: '0',
+    originalDescription:
+      'set process/thread priority : 0-normal, 1-medium, 2-high, 3-realtime (default: 0)',
+    category: 'Servidor',
+    description:
+      'Prioridad del proceso/thread en la fase de batch: 0-normal, 1-medium, 2-high, 3-realtime.',
+  },
+  {
+    name: 'Polling (batch)',
+    long: '--poll-batch',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'use polling to wait for work (default: same as --poll)',
+    category: 'Servidor',
+    description:
+      'Usa polling (0|1) para esperar trabajo en la fase de batch. Por defecto igual que --poll.',
+  },
+  {
     name: 'Repack de pesos',
     long: '--repack',
     short: null,
@@ -1981,6 +2236,154 @@ export const LLAMA_FLAGS: LlamaFlag[] = [
     originalDescription: 'show list of models in cache',
     category: 'Servidor',
     description: 'Muestra la lista de modelos en caché y termina.',
+  },
+  {
+    name: 'Tokens de imagen por batch',
+    long: '--mtmd-batch-max-tokens',
+    short: null,
+    defaultValue: '1024',
+    originalDescription: 'maximum number of image tokens per batch when encoding images',
+    category: 'Servidor',
+    description:
+      'Máximo de tokens de imagen procesados por batch al codificar imágenes. Bajarlo reduce el pico de VRAM en modelos multimodales; subirlo acelera la codificación.',
+  },
+  {
+    name: 'Modo agente',
+    long: '--agent',
+    short: '-ag',
+    aliases: ['--no-agent', '-no-ag'],
+    defaultValue: 'disabled',
+    originalDescription:
+      'whether to enable CORS proxy and all built-in tools - do not enable in untrusted environments',
+    category: 'Servidor',
+    description:
+      'Habilita el proxy CORS y todas las herramientas integradas. No activar en entornos no confiables.',
+  },
+
+  // ── Presets de modelo (descargan pesos de internet) ──
+  {
+    name: 'Preset: spec decoding',
+    long: '--spec-default',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'enable default speculative decoding config',
+    category: 'Servidor',
+    description: 'Activa la configuración por defecto de speculative decoding.',
+  },
+  {
+    name: 'Preset: EmbeddingGemma',
+    long: '--embd-gemma-default',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use default EmbeddingGemma model (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Usa el modelo EmbeddingGemma por defecto. Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Qwen Coder 1.5B (FIM)',
+    long: '--fim-qwen-1.5b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use default Qwen 2.5 Coder 1.5B (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset de Qwen 2.5 Coder 1.5B para autocompletado (FIM). Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Qwen Coder 3B (FIM)',
+    long: '--fim-qwen-3b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use default Qwen 2.5 Coder 3B (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset de Qwen 2.5 Coder 3B para autocompletado (FIM). Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Qwen Coder 7B (FIM)',
+    long: '--fim-qwen-7b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use default Qwen 2.5 Coder 7B (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset de Qwen 2.5 Coder 7B para autocompletado (FIM). Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Qwen Coder 7B + draft',
+    long: '--fim-qwen-7b-spec',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use Qwen 2.5 Coder 7B + 0.5B draft for speculative decoding (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset de Qwen 2.5 Coder 7B con borrador 0.5B para speculative decoding. Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Qwen Coder 14B + draft',
+    long: '--fim-qwen-14b-spec',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use Qwen 2.5 Coder 14B + 0.5B draft for speculative decoding (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset de Qwen 2.5 Coder 14B con borrador 0.5B para speculative decoding. Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Qwen3 Coder 30B A3B',
+    long: '--fim-qwen-30b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription:
+      'use default Qwen 3 Coder 30B A3B Instruct (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset de Qwen 3 Coder 30B A3B Instruct. Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: gpt-oss-20b',
+    long: '--gpt-oss-20b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'use gpt-oss-20b (note: can download weights from the internet)',
+    category: 'Servidor',
+    description: 'Preset de gpt-oss-20b. Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: gpt-oss-120b',
+    long: '--gpt-oss-120b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'use gpt-oss-120b (note: can download weights from the internet)',
+    category: 'Servidor',
+    description: 'Preset de gpt-oss-120b. Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Gemma 3 4B QAT (visión)',
+    long: '--vision-gemma-4b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'use Gemma 3 4B QAT (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset multimodal de Gemma 3 4B QAT (visión). Puede descargar los pesos desde internet.',
+  },
+  {
+    name: 'Preset: Gemma 3 12B QAT (visión)',
+    long: '--vision-gemma-12b-default',
+    short: null,
+    defaultValue: null,
+    originalDescription: 'use Gemma 3 12B QAT (note: can download weights from the internet)',
+    category: 'Servidor',
+    description:
+      'Preset multimodal de Gemma 3 12B QAT (visión). Puede descargar los pesos desde internet.',
   },
 ];
 
