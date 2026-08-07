@@ -311,23 +311,19 @@ export class OptimizerModal {
     () => this.displayUsedMiB() > this.totalCapacityMiB() && this.totalCapacityMiB() > 0,
   );
 
-  /** Consumo del modelo según la heurística, SIN el baseline (solo modelo).
-   * Se calcula directo del breakdown para no mezclar con la medición (bars()
-   * cambia cuando hay medición). Sirve para comparar contra el valor medido. */
-  protected readonly heuristicModelMiB = computed(() => {
-    const h = this.heuristic();
-    if (!h) return 0;
-    return h.totalMiB;
-  });
-
   /**
-   * Diferencia entre lo medido y lo estimado (MiB). null si no hay medición.
-   * Positivo = el real fue mayor que el estimado (la heurística subestimó).
+   * Diferencia entre lo medido y lo estimado en el momento de calibrar (MiB).
+   * null si no hay medición. Positivo = el real fue mayor que el estimado
+   * (la heurística subestimó). Se compara contra heuristicAtCalib() (fija al
+   * calibrar), NO contra la heurística actual: así el badge "Calibrado" refleja
+   * la precisión de esa calibración y no cambia al mover sliders sin recalibrar
+   * (para eso ya está el delta que aplica bars()).
    */
   protected readonly deltaMiB = computed(() => {
     const m = this.measured();
-    if (!m || m.totalMiB == null) return null;
-    return m.totalMiB - this.heuristicModelMiB();
+    const hAtCalib = this.heuristicAtCalib();
+    if (!m || m.totalMiB == null || !hAtCalib) return null;
+    return m.totalMiB - hAtCalib.totalMiB;
   });
 
   /** Tope del slider de ctx: límite físico del binario (--context-length). */
